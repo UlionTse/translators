@@ -13,9 +13,10 @@ class google(object):
 
     def __init__(self):
         self.ua = UserAgent()
+        self.default_ua = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'
 
     def get_tkk(self,host):
-        self.headers = {'User-Agent': self.ua.random}
+        self.headers = {'User-Agent': self.default_ua or self.ua.random}
         res = requests.get(host, headers=self.headers)
 
         RE_TKK = re.compile(r'''TKK=eval\(\'\(\(function\(\)\{(.+?)\}\)\(\)\)\'\);''')
@@ -99,7 +100,7 @@ class google(object):
         except LanguageInputError as e:
             print(e)
 
-        headers = {'User-Agent': self.ua.random}
+        headers = {'User-Agent': self.default_ua or self.ua.random}
         session = requests.Session()
         try:
             res = session.get(url, headers=headers)
