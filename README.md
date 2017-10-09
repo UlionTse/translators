@@ -12,13 +12,13 @@
 '' 
 ## Default function api(): api(text=r'',from_language='en',to_language='zh-CN',host='https://translate.google.cn')
 
->>>print(api('Hello,World!','en','zh-CN'))
+>>>api('Hello,World!')
 '你好，世界！'
 
->>>print(api('你好，世界！','zh-CN','ko'))
+>>>api('你好，世界！','zh-CN','ko')
 '안녕, 세상!'
 
->>>print(api('こんにちは世界！','ja','en'))
+>>>print(api(text=r'こんにちは世界！',from_language='ja',to_language='en',host='https://translate.google.cn'))
 'Hello World!'
 
 ## Finally, you can try switching the `host` to use. 
