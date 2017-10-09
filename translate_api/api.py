@@ -6,7 +6,7 @@ import requests
 from urllib.parse import quote
 import execjs
 from fake_useragent import UserAgent
-from config import *
+from .config import *
 
 
 class google(object):
