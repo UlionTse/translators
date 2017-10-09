@@ -10,7 +10,7 @@
 >>>from translate_api.translate_api import api
 >>>print(api())
 '' 
-## Default function api(): api(text=r'', from_language='en',to_language='zh-CN',host='https://translate.google.cn')
+## Default function api(): api(text=r'',from_language='en',to_language='zh-CN',host='https://translate.google.cn')
 
 >>>print(api('Hello,World!','en','zh-CN'))
 '你好，世界！'
