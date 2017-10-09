@@ -1,0 +1,9 @@
+LICENSE
+MANIFEST
+README.md
+requirements.txt
+setup.cfg
+setup.py
+translate_api/__init__.py
+translate_api/translate_api.py
+translate_api/config.py
