@@ -14,8 +14,10 @@
 
 >>>print(api('Hello,World!','en','zh-CN'))
 '你好，世界！'
+
 >>>print(api('你好，世界！','zh-CN','ko'))
 '안녕, 세상!'
+
 >>>print(api('こんにちは世界！','ja','en'))
 'Hello World!'
 
