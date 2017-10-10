@@ -10,7 +10,6 @@
 >>>from translate_api.translate_api import api
 >>>print(api())
 '' 
-## Default function api(): api(text=r'',from_language='en',to_language='zh-CN',host='https://translate.google.cn')
 
 >>>api('Hello,World!')
 '你好，世界！'
@@ -20,11 +19,12 @@
 
 >>>print(api(text=r'こんにちは世界！',from_language='ja',to_language='en',host='https://translate.google.cn'))
 'Hello World!'
-
-## Finally, you can try switching the `host` to use. 
 ```
+### *3. Tips:*
+- *Default function api(): api(text=r'',from_language='en',to_language='zh-CN',host='https://translate.google.cn')*
+- *Finally, you can try switching the `host` to use.*
 
-### *3. About `LANGUAGES`*:
+### *4. About `LANGUAGES`*:
 ```python
 LANGUAGES = {
     'af': 'afrikaans',
