@@ -8,17 +8,11 @@
 ### *2. Usage:*
 ```python
 >>>from translate_api.translate_api import api
->>>api()
-'' 
-
 >>>api('Hello,World!')
 '你好，世界！'
 
 >>>api('你好，世界！','zh-CN','ko')
 '안녕, 세상!'
-
->>>print(api(text=r'こんにちは世界！',from_language='ja',to_language='en',host='https://translate.google.cn'))
-'Hello World!'
 ```
 ### *3. Tips:*
 - *api(**text**=r'',**from_language**='en',**to_language**='zh-CN',**host**='https://translate.google.cn')*
