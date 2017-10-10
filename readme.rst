@@ -1,4 +1,5 @@
 The document of translate_api_.
+.. _translate_api:
 ==============================
 *1. Feactures:*
 ---------------
