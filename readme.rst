@@ -10,10 +10,6 @@
 -----------
 >>>from translate_api.translate_api import api
 
->>>print(api())
-
-''
-
 >>>api('Hello,World!')
 
 '你好，世界！'
