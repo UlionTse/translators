@@ -15,7 +15,7 @@
 '안녕, 세상!'
 ```
 ### *3. Tips:*
- *api(**text**=r'',**from_language**='en',**to_language**='zh-CN',**host**='https://translate.google.cn')*
+- *api(**text**=r'',**from_language**='en',**to_language**='zh-CN',**host**='https://translate.google.cn')*
 
 ### *4. About `LANGUAGES`*:
 ```python
