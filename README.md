@@ -8,6 +8,7 @@
 ### *2. Usage:*
 ```python
 >>>from translate_api.translate_api import api
+
 >>>api('Hello,World!')
 '你好，世界！'
 
