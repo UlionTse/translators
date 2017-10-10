@@ -22,7 +22,7 @@
 ```
 ### *3. Tips:*
 - *Default:   api(text=r'',from_language='en',to_language='zh-CN',host='https://translate.google.cn')*
-- *Finally, you can try switching the `host` to use.*
+- *Finally, you can try switching the `**host**` to use.*
 
 ### *4. About `LANGUAGES`*:
 ```python
