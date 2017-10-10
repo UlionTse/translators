@@ -9,6 +9,7 @@
 *2. Usage:*
 -----------
 >>>from translate_api.translate_api import api
+
 >>>print(api())
 
 ''
