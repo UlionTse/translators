@@ -12,7 +12,7 @@ AUTHOR_EMAIL = "shinalone@outlook.com"
 URL = "https://github.com/shinalone/translate_api"
 VERSION = __import__(PACKAGE).__version__
 
-with open('readme.rst','r',encoding='utf-8') as file:
+with open('README.rst','r',encoding='utf-8') as file:
     long_description = file.read()
 
 setup(
@@ -27,7 +27,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Environment :: Web Environment",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
@@ -36,11 +36,9 @@ setup(
         "Programming Language :: Python :: 3.6"
     ],
     keywords=['translate','translate_api'],
-    python_requires='>=3',
     install_requires=[
         'requests>=2.9.1',
-        'PyExecJS>=1.2.0',
-        'fake-useragent>=0.1.7'
+        'PyExecJS>=1.2.0'
     ],
     zip_safe=False,
 )
