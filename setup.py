@@ -10,7 +10,7 @@ AUTHOR_EMAIL = "shinalone@outlook.com"
 URL = "https://github.com/shinalone/translate_api"
 VERSION = __import__(PACKAGE).__version__
 
-with open('README.md') as file:
+with open('readme.rst') as file:
     long_description = file.read()
 
 setup(
