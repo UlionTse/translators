@@ -1,20 +1,20 @@
 #coding:utf-8
 
+
 import re
 import requests
 from urllib.parse import quote
 import execjs
-from fake_useragent import UserAgent
 from .config import *
 
 
 class google(object):
+
     def __init__(self):
-        self.ua = UserAgent()
         self.default_ua = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'
 
     def get_tkk(self,host):
-        self.headers = {'User-Agent': self.default_ua or self.ua.random}
+        self.headers = {'User-Agent': self.default_ua}
         res = requests.get(host, headers=self.headers)
 
         RE_TKK = re.compile(r'''TKK=eval\(\'\(\(function\(\)\{(.+?)\}\)\(\)\)\'\);''')
@@ -97,7 +97,7 @@ class google(object):
         except LanguageInputError as e:
             print(e)
 
-        headers = {'User-Agent': self.default_ua or self.ua.random}
+        headers = {'User-Agent': self.default_ua}
         session = requests.Session()
         try:
             res = session.get(url, headers=headers)
@@ -119,12 +119,17 @@ class LanguageInputError(Exception):
         print('LanguageInputError:  from_language[`{0}`] or to_language[`{1}`] is error, Please check dictionary of `LANGUAGES`!\nLANGUAGES={2}'.format(
                 self.from_language, self.to_language, LANGUAGES))
 
+
 def api(text=r'', from_language='en',to_language='zh-CN',host='https://translate.google.cn'):
-    api = google()
-    tkk = api.get_tkk(host)
-    TK = api.acquire(text, tkk)
-    result = api.translate(text, TK, from_language,to_language,host)
-    return result
+    if len(text) <= 4900:
+        api = google()
+        tkk = api.get_tkk(host)
+        TK = api.acquire(text, tkk)
+        result = api.translate(text, TK, from_language,to_language,host)
+        return result
+    return 'Warning: THe length of text bigger than 4900. Please fix it.'
+
+
 
 
 #####################################################################################################
