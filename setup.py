@@ -1,3 +1,5 @@
+#coding:utf-8
+
 from distutils.core import setup
 from setuptools import find_packages
 
@@ -10,7 +12,7 @@ AUTHOR_EMAIL = "shinalone@outlook.com"
 URL = "https://github.com/shinalone/translate_api"
 VERSION = __import__(PACKAGE).__version__
 
-with open('readme.rst') as file:
+with open('readme.rst','r',encoding='utf-8') as file:
     long_description = file.read()
 
 setup(
