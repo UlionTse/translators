@@ -27,7 +27,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     classifiers=[
-        "Development Status :: 5 - Production/stable",
+        "Development Status :: 3 - Alpha",
         "Environment :: Web Environment",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
