@@ -22,4 +22,4 @@
 *3. Tips:*
 ----------
 - *pip install translate_api*
-- *api(text=r'',from_language='en',to_language='zh-CN',host='https://translate.google.cn',proxy=None)*
+- *api(text=r'',from_language='en',to_language='zh-CN',host='https://translate.google.cn', proxy=None)*
