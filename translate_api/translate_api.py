@@ -1,6 +1,28 @@
 #coding:utf-8
 
 
+# License: MIT
+# Author: UlionTse
+#
+# Usage:
+#
+# >>>from translate_api.translate_api import api
+#
+# >>>api(‘Hello,World!’)
+#
+# ‘你好，世界！’
+#
+# >>>api(‘こんにちは！’,’ja’,’ko’)
+#
+# ‘안녕하세요!’
+#
+# Tips:
+#
+# pip install translate_api
+# api(text=r”,from_language=’en’,to_language=’zh-CN’,host=’https://translate.google.cn’,proxy=None)
+
+
+
 import re
 import requests
 from urllib.parse import quote
@@ -13,9 +35,9 @@ class google(object):
     def __init__(self):
         self.default_ua = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'
 
-    def get_tkk(self,host):
+    def get_tkk(self,host,proxy):
         self.headers = {'User-Agent': self.default_ua}
-        res = requests.get(host, headers=self.headers)
+        res = requests.get(host, headers=self.headers, proxies=proxy)
 
         RE_TKK = re.compile(r'''TKK=eval\(\'\(\(function\(\)\{(.+?)\}\)\(\)\)\'\);''')
         code = RE_TKK.search(res.text).group(0).encode().decode('unicode-escape')
@@ -85,7 +107,7 @@ class google(object):
         return '{}.{}'.format(a, a ^ b)
 
 
-    def translate(self, eng_txt, TK, from_language,to_language,host):
+    def translate(self, eng_txt, TK, from_language,to_language,host,proxy):
         QQ = quote(eng_txt)
         try:
             if (from_language not in LANGUAGES.keys()) or (to_language not in LANGUAGES.keys()):
@@ -100,7 +122,7 @@ class google(object):
         headers = {'User-Agent': self.default_ua}
         session = requests.Session()
         try:
-            res = session.get(url, headers=headers)
+            res = session.get(url, headers=headers, proxies=proxy)
             data = res.json()
             result = ''
             for dt in data[0]:
@@ -116,25 +138,26 @@ class LanguageInputError(Exception):
         Exception.__init__(self)
         self.from_language = from_language
         self.to_language = to_language
-        print('LanguageInputError:  from_language[`{0}`] or to_language[`{1}`] is error, Please check dictionary of `LANGUAGES`!\nLANGUAGES={2}'.format(
-                self.from_language, self.to_language, LANGUAGES))
+        print('LanguageInputError:  from_language[`{0}`] or to_language[`{1}`] is error, Please check dictionary of `LANGUAGES`!\n'.format(
+                self.from_language, self.to_language))
 
 
-def api(text=r'', from_language='en',to_language='zh-CN',host='https://translate.google.cn'):
+def api(text=r'', from_language='en',to_language='zh-CN',host='https://translate.google.cn',proxy=None):
     if len(text) <= 4900:
         api = google()
-        tkk = api.get_tkk(host)
+        tkk = api.get_tkk(host,proxy)
         TK = api.acquire(text, tkk)
-        result = api.translate(text, TK, from_language,to_language,host)
+        result = api.translate(text, TK, from_language,to_language,host,proxy)
         return result
     return 'Warning: THe length of text bigger than 4900. Please fix it.'
 
 
 
 
-########################################################################################################################################
-########################################         _xr(),acquire() module js:       ######################################################
-########################################################################################################################################
+########################################################################################################################
+###################################         _xr(),acquire() module js:       ###########################################
+########################################################################################################################
+
 # var b = function (a, b) {
 # 	for (var d = 0; d < b.length - 2; d += 3) {
 # 		var c = b.charAt(d + 2),
