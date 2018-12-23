@@ -30,8 +30,7 @@ import execjs
 from .config import *
 
 
-class google(object):
-
+class Google:
     def __init__(self):
         self.default_ua = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'
 
@@ -39,10 +38,14 @@ class google(object):
         self.headers = {'User-Agent': self.default_ua}
         res = requests.get(host, headers=self.headers, proxies=proxy)
 
-        RE_TKK = re.compile(r'''TKK=eval\(\'\(\(function\(\)\{(.+?)\}\)\(\)\)\'\);''')
-        code = RE_TKK.search(res.text).group(0).encode().decode('unicode-escape')
-        runjs = execjs.get()
-        tkk = runjs.eval(code[10:-3])
+        # version 2.1.0
+        # RE_TKK = re.compile(r'''TKK=eval\(\'\(\(function\(\)\{(.+?)\}\)\(\)\)\'\);''')
+        # code = RE_TKK.search(res.text).group(0).encode().decode('unicode-escape')
+        # runjs = execjs.get()
+        # tkk = runjs.eval(code[10:-3])
+
+        # version 2.2.0
+        tkk = re.findall("tkk:'(.*?)'",res.text)[0]
         return tkk
 
     # def rshift(self,val, n):
@@ -109,27 +112,19 @@ class google(object):
 
     def translate(self, eng_txt, TK, from_language,to_language,host,proxy):
         QQ = quote(eng_txt)
-        try:
-            if (from_language not in LANGUAGES.keys()) or (to_language not in LANGUAGES.keys()):
-                raise LanguageInputError(from_language, to_language)
-            global url
-            url = (host + '/translate_a/single?client=t&sl={0}&tl={1}&hl=zh-CN&dt=at&dt=bd&dt=ex&dt=ld&dt=md'
-                    + '&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&source=bh&ssel=0&tsel=0&kc=1&tk='
-                    + str(TK) + '&q=' + QQ).format(from_language,to_language)
-        except LanguageInputError as e:
-            print(e)
-
-        headers = {'User-Agent': self.default_ua}
+        if (from_language not in LANGUAGES.keys()) or (to_language not in LANGUAGES.keys()):
+            raise LanguageInputError(from_language, to_language)
+        url = (host + '/translate_a/single?client=t&sl={0}&tl={1}&hl=zh-CN&dt=at&dt=bd&dt=ex&dt=ld&dt=md'
+                + '&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&source=bh&ssel=0&tsel=0&kc=1&tk='
+                + str(TK) + '&q=' + QQ).format(from_language,to_language)
         session = requests.Session()
-        try:
-            res = session.get(url, headers=headers, proxies=proxy)
-            data = res.json()
-            result = ''
-            for dt in data[0]:
-                if dt[0]:
-                    result += dt[0]
-        finally:
-            session.close()
+        res = session.get(url, headers={'User-Agent': self.default_ua}, proxies=proxy)
+        data = res.json()
+        result = ''
+        for dt in data[0]:
+            if dt[0]:
+                result += dt[0]
+        session.close()
         return result
 
 
@@ -138,19 +133,26 @@ class LanguageInputError(Exception):
         Exception.__init__(self)
         self.from_language = from_language
         self.to_language = to_language
-        print('LanguageInputError:  from_language[`{0}`] or to_language[`{1}`] is error, Please check dictionary of `LANGUAGES`!\n'.format(
-                self.from_language, self.to_language))
+        print('LanguageInputError:  from_language[`{0}`] or to_language[`{1}`] is error, Please check dictionary of `LANGUAGES`!\n' \
+            .format(self.from_language, self.to_language))
+
+
+class SizeInputError(Exception):
+    def __init__(self,text):
+        Exception.__init__(self)
+        self.size = len(text)
+        print('SizeInputError: The size[{}] of `text` you inputted is over `GOOGLE TRANSLATE LIMIT 5000`!'.format(self.size))
 
 
 def api(text=r'', from_language='en',to_language='zh-CN',host='https://translate.google.cn',proxy=None):
-    if len(text) <= 4900:
-        api = google()
+    if len(text) < 5000:
+        api = Google()
         tkk = api.get_tkk(host,proxy)
         TK = api.acquire(text, tkk)
         result = api.translate(text, TK, from_language,to_language,host,proxy)
         return result
-    return 'Warning: THe length of text bigger than 4900. Please fix it.'
-
+    else:
+        raise SizeInputError(text)
 
 
 
