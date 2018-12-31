@@ -1,6 +1,6 @@
 ## *The document of [translate_api](https://github.com/shinalone/translate_api/blob/master/README.md)*
 
-### *1. Feactures:*
+### *1. Features:*
 - *Google. - translate_api is a python3 library that uses the translation functionality of the Google interface.* 
 - *Switch the server. - The default server is Google-China server, the user can switch to (google.com) server.*
 - *All languages can be translated.*

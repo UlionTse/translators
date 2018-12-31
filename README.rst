@@ -1,6 +1,6 @@
 **translate_api**
 =================
-*1. Feactures:*
+*1. Features:*
 ---------------
 - *Google. - translate_api is a python3 library that uses the translation functionality of the Google interface.*
 - *Switch the server. - The default server is Google-China server, the user can switch to (google.com) server.*
