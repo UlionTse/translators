@@ -2,7 +2,7 @@
 
 ### *1. Features:*
 
-- *Google & NetEase. translate_api(translate) is a python library that uses the translation functionality of the Google and Youdao interface.*
+- *Google & NetEase. A free & easy Translate API for Python with Google & NetEase(Youdao).*
 - *All languages can be translated(**translate.google()**).*
 - ***translate.youdao()** is very friendly to Chinese translation, which is why I add it. (available in 11 foreign languages)*
 
