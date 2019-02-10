@@ -6,7 +6,7 @@ from setuptools import find_packages
 
 PACKAGE = "translate"
 NAME = "translate_api"
-DESCRIPTION = "Translate API for Python with Google & NetEase."
+DESCRIPTION = "A free & easy Translate API for Python with Google & NetEase."
 AUTHOR = "UlionTse"
 AUTHOR_EMAIL = "shinalone@outlook.com"
 URL = "https://github.com/shinalone/translate"
@@ -36,8 +36,8 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7"
     ],
-    keywords=['translate','fanyi','google','youdao','api','google translate','youdao translate','translate api',
-              'translate','netease','google fanyi','youdao fanyi','google_translate','youdao_translate'],
+    keywords=['translate','fanyi','Google','Youdao','api','google translate','youdao translate','translate api',
+              'translate','NetEase','google fanyi','youdao fanyi','google_translate','youdao_translate'],
     install_requires=[
         'requests>=2.9.1',
         'PyExecJS>=1.2.0'
