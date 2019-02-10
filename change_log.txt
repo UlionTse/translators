@@ -3,3 +3,6 @@ add `proxy`.
 
 2.4.0
 add `youdao`.
+
+2.4.2
+#translate.google()
