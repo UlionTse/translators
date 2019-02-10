@@ -18,7 +18,7 @@
 ```
 ### *3. Tips:*
 
-- *pip install **[translate_api]()***
+- *pip install **[translate_api](https://pypi.org/project/translate-api/)***
 - *translate.google(text=r'',from_language='en',to_language='zh-CN',host='https://translate.google.cn', proxy=None)*
 - *translate.youdao(text=r'',from_language='en',to_language='zh-CHS',proxy=None)*
 
