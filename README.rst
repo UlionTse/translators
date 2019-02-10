@@ -2,24 +2,28 @@
 =================
 *1. Features:*
 ---------------
-- *Google. - translate_api is a python3 library that uses the translation functionality of the Google interface.*
-- *Switch the server. - The default server is Google-China server, the user can switch to (google.com) server.*
-- *All languages can be translated.*
+- *Google&NetEase. - translate_api is a python library that uses the translation functionality of the Google and Youdao interface.*
+- *All languages can be translated(**google_translate**).*
+- ***youdao_translate** is very friendly to Chinese translation, which is why I add it. (available in 11 foreign languages)*
+
 
 *2. Usage:*
 -----------
->>>from translate_api.translate_api import api
+>>>from translate_api import google_translate,youdao_translate
 
->>>api('Hello,World!')
+>>>google_translate('Hello,World!')
 
 '你好，世界！'
 
->>>api('こんにちは！','ja','ko')
+>>>youdao_translate('再见，世界！','zh-CN','ko')
 
-'안녕하세요!'
+'안녕, 세계야!'
+
+
 
 
 *3. Tips:*
 ----------
 - *pip install translate_api*
-- *api(text=r'',from_language='en',to_language='zh-CN',host='https://translate.google.cn', proxy=None)*
+- *google_translate(text=r'',from_language='en',to_language='zh-CN',host='https://translate.google.cn', proxy=None)*
+- *youdao_translate(text=r'',from_language='en',to_language='zh-CHS',proxy=None)*

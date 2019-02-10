@@ -1,26 +1,5 @@
-#coding:utf-8
-
-
-# License: MIT
-# Author: UlionTse
-#
-# Usage:
-#
-# >>>from translate_api.translate_api import api
-#
-# >>>api(‘Hello,World!’)
-#
-# ‘你好，世界！’
-#
-# >>>api(‘こんにちは！’,’ja’,’ko’)
-#
-# ‘안녕하세요!’
-#
-# Tips:
-#
-# pip install translate_api
-# api(text=r”,from_language=’en’,to_language=’zh-CN’,host=’https://translate.google.cn’,proxy=None)
-
+# coding=utf-8
+# author=UlionTse
 
 
 import re
@@ -144,7 +123,7 @@ class SizeInputError(Exception):
         print('SizeInputError: The size[{}] of `text` you inputted is over `GOOGLE TRANSLATE LIMIT 5000`!'.format(self.size))
 
 
-def api(text=r'', from_language='en',to_language='zh-CN',host='https://translate.google.cn',proxy=None):
+def google_api(text=r'', from_language='en',to_language='zh-CN',host='https://translate.google.cn',proxy=None):
     if len(text) < 5000:
         api = Google()
         tkk = api.get_tkk(host,proxy)

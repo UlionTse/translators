@@ -1,2 +1,5 @@
 2.2.2
 add `proxy`.
+
+2.4.0
+add `youdao`.

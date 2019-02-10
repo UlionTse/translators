@@ -5,5 +5,6 @@ requirements.txt
 setup.cfg
 setup.py
 translate_api/__init__.py
-translate_api/translate_api.py
+translate_api/google.py
+translate_api/youdao.py
 translate_api/config.py

@@ -6,13 +6,13 @@ from setuptools import find_packages
 
 PACKAGE = "translate_api"
 NAME = "translate_api"
-DESCRIPTION = "Translate API for Python3 used Google.The default Google server for China, you can switch to use."
+DESCRIPTION = "Translate API for Python with Google & NetEase."
 AUTHOR = "UlionTse"
 AUTHOR_EMAIL = "shinalone@outlook.com"
 URL = "https://github.com/shinalone/translate_api"
 VERSION = __import__(PACKAGE).__version__
 
-with open('README.rst','r',encoding='utf-8') as file:
+with open('README.md','r',encoding='utf-8') as file:
     long_description = file.read()
 
 setup(
