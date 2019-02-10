@@ -6,3 +6,7 @@ add `youdao`.
 
 2.4.2
 #translate.google()
+
+2.4.4
+simple README.rst
+add github homepage
