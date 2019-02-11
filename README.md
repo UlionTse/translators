@@ -1,4 +1,4 @@
-## *The document of [translate_api](https://github.com/shinalone/translate_api/blob/master/README.md)*
+## *The documentation of [translate_api](https://github.com/shinalone/translate_api/blob/master/README.md)*
 
 ### *1. Features:*
 
