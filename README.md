@@ -12,7 +12,7 @@
 - *translate.google(text=r'',from_language='en',to_language='zh-CN',host='https://translate.google.cn', proxy=None)*
 - *translate.youdao(text=r'',from_language='en',to_language='zh-CHS',proxy=None)*
 
-*For example:*
+*Examples:*
 
 ```python
 >>> import translate
