@@ -23,7 +23,11 @@
 '안녕, 세계야!'
 ```
 
-### *3. Dictionary of `LANGUAGES`:*
+### *3. Warning:*
+
+- *Limit the frequency of your requests.*
+
+### *4. Dictionary of `LANGUAGES`:*
 
 ```python
 LANGUAGES = {
