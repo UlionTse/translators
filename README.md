@@ -1,12 +1,18 @@
-## *The documentation of [translate_api](https://github.com/shinalone/translate_api/blob/master/README.md)*
+## *[TRANSLATE_API](https://github.com/shinalone/translate_api/blob/master/README.md) DOCUMENTATION*
 
 ### *1. Features:*
 
-- *Google & NetEase. A free & easy Translate API for Python with Google & NetEase(Youdao).*
+- *A free & easy Translate API for Python with Google & NetEase(Youdao).*
 - *All languages can be translated(**translate.google()**).*
-- ***translate.youdao()** is very friendly to Chinese translation, which is why I add it. (available in 11 foreign languages)*
+- ***Youdao** is very friendly to Chinese translation, which is why I add it. (available in 11 foreign languages)*
 
-### *2. Usage:*
+### *2. Installation & Tutorials:*
+
+- *pip install **[translate_api](https://pypi.org/project/translate-api/)***
+- *translate.google(text=r'',from_language='en',to_language='zh-CN',host='https://translate.google.cn', proxy=None)*
+- *translate.youdao(text=r'',from_language='en',to_language='zh-CHS',proxy=None)*
+
+*for example:*
 
 ```python
 >>> import translate
@@ -16,13 +22,8 @@
 >>> translate.youdao('再见，世界！','zh-CN','ko')
 '안녕, 세계야!'
 ```
-### *3. Tips:*
 
-- *pip install **[translate_api](https://pypi.org/project/translate-api/)***
-- *translate.google(text=r'',from_language='en',to_language='zh-CN',host='https://translate.google.cn', proxy=None)*
-- *translate.youdao(text=r'',from_language='en',to_language='zh-CHS',proxy=None)*
-
-### *4. Dictionary of `LANGUAGES`:*
+### *3. Dictionary of `LANGUAGES`:*
 
 ```python
 LANGUAGES = {

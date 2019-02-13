@@ -14,8 +14,3 @@
 
 
 
-
-*2. Homepage:*
-----------
-[Github](https://github.com/shinalone/translate_api)
-
