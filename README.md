@@ -24,6 +24,7 @@
 ### *3. Warning:*
 
 *Prohibited for commercial!*
+
 This module is designed to help students and individuals with translation services, 
 Commercial please purchase the API service of the translation vendor.
 
