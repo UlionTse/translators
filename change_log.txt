@@ -21,3 +21,6 @@ so upgrading the module name is something I have been exploring and thinking abo
 Now the name `translators` is more in line with the meaning of the module itself,
 and now I have no hesitation to upgrade, although the code upgrade and optimization is limited.
 
+4.0.1
+fixed "translators.google.cn"
+

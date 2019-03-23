@@ -136,7 +136,7 @@ class SizeInputError(Exception):
         print('SizeInputError: The size[{}] of `text` is over `GOOGLE TRANSLATE LIMIT 5000`!'.format(self.size))
 
 
-def google_api(text=r'', from_language='en',to_language='zh-CN',host='https://translators.google.cn',proxy=None):
+def google_api(text=r'', from_language='en',to_language='zh-CN',host='https://translate.google.cn',proxy=None):
     if len(text) < 5000:
         api = Google()
         tkk = api.get_tkk(host,proxy)

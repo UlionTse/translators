@@ -1,10 +1,10 @@
 *1.Description:*
--------------
+--------------------
 
 Free & Easy translators for Python, such as Google, NetEase(Youdao), etc.
 
 *2.Usage:*
-----------
+--------------
 
 $ pip install translators
 
@@ -20,7 +20,7 @@ $ pip install translators
 
 
 *3. Warning:*
--------------
+-------------------
 
 Prohibition of Commercial Use !
 This module is designed to help students and individuals with translation services.
