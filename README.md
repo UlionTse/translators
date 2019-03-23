@@ -23,10 +23,10 @@
 
 ### *3. Warning:*
 
-***[Prohibited For Commercial !]()***
+***[Prohibition of Commercial Use !]()***
 
-*This module is designed to help students and individuals with translation services,    
-Commercial please purchase the API service of the translation vendor.*
+*This module is designed to help students and individuals with translation services.   
+For commercial use, please purchase API services from translation suppliers.*
 
 ### *4. Dictionary of `LANGUAGES`:*
 
