@@ -21,9 +21,9 @@
 '안녕, 세계야!'
 ```
 
-### *3. Warning: :warning:*
+### *3. Warning:*
 
-:exclamation: **Prohibited for commercial !**
+**[Prohibited for commercial !]()**
 
 This module is designed to help students and individuals with translation services, 
 Commercial please purchase the API service of the translation vendor.
