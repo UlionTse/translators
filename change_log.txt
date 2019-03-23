@@ -5,12 +5,19 @@ add `proxy`.
 add `youdao`.
 
 2.4.2
-#translate.google()
+translate.google()
 
 2.4.4
 simple README.rst
 add github homepage
 
 3.0.0
-Due to incompatible API changes made in version 2.4.2, I should not upgrade the minor version number,
+Due to incompatible code changes made in version 2.4.2, I should not upgrade the minor version number,
 but the major version number. This is a modification. Thanks for Sabrina's reminding.
+
+4.0.0
+Implementing multiple translators is my pursuit, and the existing module name is ambiguous,
+so upgrading the module name is something I have been exploring and thinking about.
+Now the name `translators` is more in line with the meaning of the module itself,
+and now I have no hesitation to upgrade, although the code upgrade and optimization is limited.
+

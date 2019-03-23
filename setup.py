@@ -4,12 +4,12 @@ from distutils.core import setup
 from setuptools import find_packages
 
 
-PACKAGE = "translate"
-NAME = "translate_api"
-DESCRIPTION = "A free & easy Translate API for Python with Google & NetEase."
+PACKAGE = "translators"
+NAME = "translators"
+DESCRIPTION = "Free & Easy translators for Python, such as Google, NetEase(Youdao), etc."
 AUTHOR = "UlionTse"
 AUTHOR_EMAIL = "shinalone@outlook.com"
-URL = "https://github.com/shinalone/translate_api"
+URL = "https://github.com/shinalone/translators"
 VERSION = __import__(PACKAGE).__version__
 
 with open('README.rst','r',encoding='utf-8') as file:
@@ -36,8 +36,7 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7"
     ],
-    keywords=['translate','translate_api','fanyi','Google','Youdao','api','google translate','youdao translate',
-              'translate api','translate','NetEase','google fanyi','youdao fanyi','google_translate','youdao_translate'],
+    keywords=['translate','translators','translator','fanyi','Google','Youdao','NetEase'],
     install_requires=[
         'requests>=2.9.1',
         'PyExecJS>=1.2.0'

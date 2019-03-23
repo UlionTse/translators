@@ -1,7 +1,6 @@
 # coding=utf-8
 # author=UlionTse
 
-
 import re
 import requests
 from urllib.parse import quote
@@ -11,7 +10,8 @@ from .config import *
 
 class Google:
     def __init__(self):
-        self.default_ua = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'
+        self.default_ua = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko' \
+                          ') Chrome/55.0.2883.87 Safari/537.36'
 
     def get_tkk(self,host,proxy):
         self.headers = {'User-Agent': self.default_ua}
@@ -22,6 +22,11 @@ class Google:
         # code = RE_TKK.search(res.text).group(0).encode().decode('unicode-escape')
         # runjs = execjs.get()
         # tkk = runjs.eval(code[10:-3])
+
+        # play a joke:
+        runjs = execjs.get() # Avoid missing dependencies during installation.
+        _ = runjs.eval('7+8')
+        # joke done.
 
         # version 2.2.0
         tkk = re.findall("tkk:'(.*?)'",res.text)[0]
@@ -93,12 +98,20 @@ class Google:
         QQ = quote(eng_txt)
         if (from_language not in LANGUAGES.keys()) or (to_language not in LANGUAGES.keys()):
             raise LanguageInputError(from_language, to_language)
-        url = (host + '/translate_a/single?client=t&sl={0}&tl={1}&hl=zh-CN&dt=at&dt=bd&dt=ex&dt=ld&dt=md'
+        url1 = (host + '/translate_a/single?client={0}&sl={1}&tl={2}&hl=zh-CN&dt=at&dt=bd&dt=ex&dt=ld&dt=md'
                 + '&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&source=bh&ssel=0&tsel=0&kc=1&tk='
-                + str(TK) + '&q=' + QQ).format(from_language,to_language)
+                + str(TK) + '&q=' + QQ).format('t',from_language,to_language)
+        url2 = (host + '/translate_a/single?client={0}&sl={1}&tl={2}&hl=zh-CN&dt=at&dt=bd&dt=ex&dt=ld&dt=md'
+                + '&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&source=bh&ssel=0&tsel=0&kc=1&tk='
+                + str(TK) + '&q=' + QQ).format('webapp',from_language,to_language)
+
         session = requests.Session()
-        res = session.get(url, headers={'User-Agent': self.default_ua}, proxies=proxy)
-        data = res.json()
+        try:
+            res = session.get(url1, headers={'User-Agent': self.default_ua}, proxies=proxy) #client=t
+            data = res.json()
+        except:
+            res = session.get(url2, headers={'User-Agent': self.default_ua}, proxies=proxy) #client=webapp
+            data = res.json()
         result = ''
         for dt in data[0]:
             if dt[0]:
@@ -112,18 +125,18 @@ class LanguageInputError(Exception):
         Exception.__init__(self)
         self.from_language = from_language
         self.to_language = to_language
-        print('LanguageInputError:  from_language[`{0}`] or to_language[`{1}`] is error, Please check dictionary of `LANGUAGES`!\n' \
-            .format(self.from_language, self.to_language))
+        print('LanguageInputError:  from_language[`{0}`] or to_language[`{1}`] is error, '
+              'Please check dictionary of `LANGUAGES`!\n'.format(self.from_language, self.to_language))
 
 
 class SizeInputError(Exception):
     def __init__(self,text):
         Exception.__init__(self)
         self.size = len(text)
-        print('SizeInputError: The size[{}] of `text` you inputted is over `GOOGLE TRANSLATE LIMIT 5000`!'.format(self.size))
+        print('SizeInputError: The size[{}] of `text` is over `GOOGLE TRANSLATE LIMIT 5000`!'.format(self.size))
 
 
-def google_api(text=r'', from_language='en',to_language='zh-CN',host='https://translate.google.cn',proxy=None):
+def google_api(text=r'', from_language='en',to_language='zh-CN',host='https://translators.google.cn',proxy=None):
     if len(text) < 5000:
         api = Google()
         tkk = api.get_tkk(host,proxy)

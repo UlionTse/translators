@@ -2,4 +2,4 @@ include *.md
 include *.txt
 include LICENSE
 include MANIFEST
-recursive-include translate *.py
+recursive-include translators *.py

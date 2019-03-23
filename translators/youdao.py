@@ -25,7 +25,8 @@ class Youdao:
         }
         self.host = 'http://fanyi.youdao.com'
         self.api_url = 'http://fanyi.youdao.com/translate_o?smartresult=dict&smartresult=rule?'
-        self.ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36'
+        self.ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko' \
+                  ') Chrome/69.0.3497.100 Safari/537.36'
         self.cookies = {
             'OUTFOX_SEARCH_USER_ID': '{0}@10.168.8.{1}'.format(randrange(int(1e9),int(1e10)),randrange(1,100)),
             # 'OUTFOX_SEARCH_USER_ID_NCOO': '1234.1234',
@@ -81,7 +82,10 @@ class Youdao:
             r = ss.post(self.api_url, data=form, headers=self.headers,proxies=proxy)
         else:
             r = ss.post(self.api_url, data=form, headers=self.headers, cookies=self.cookies,proxies=proxy)
-        result = r.json()
+        try:
+            result = r.json()
+        except:
+            result = {'errorCode': 'serviceError'}
         ss.close()
         if result['errorCode'] == 0:
             return result['translateResult'][0][0]['tgt']
@@ -94,10 +98,10 @@ class LanguageInputError(Exception):
         Exception.__init__(self)
         self.from_language = from_language
         self.to_language = to_language
-        print('YoudaoTranslateApi supports between [english,russian,arabic,japanese,korean,vietnamese,indonesian,french,'
-              + 'german,spanish,portuguese] and [chinese] only.\n')
-        print('LanguageInputError:  from_language[`{0}`] or to_language[`{1}`] is error, Please check dictionary of `LANGUAGES`!\n' \
-            .format(self.from_language, self.to_language))
+        print('YoudaoTranslateApi supports between [english,russian,arabic,japanese,korean,vietnamese,indonesian,'
+              'french,german,spanish,portuguese] and [chinese] only.\n')
+        print('LanguageInputError:  from_language[`{0}`] or to_language[`{1}`] is error, '
+              'Please check dictionary of `LANGUAGES`!\n'.format(self.from_language, self.to_language))
 
 
 class YoudaoApiError(Exception):
@@ -109,11 +113,11 @@ class YoudaoApiError(Exception):
             "30": "Sorry, I've racked my brain. No effective translation is possible!",
             "40": "Sorry, I'm still learning the language. Unsupported language type!",
             "50": "Sorry, please do not request service frequently!",
-            "transRequestError": "Translation error, please check the network and try again!"
+            "transRequestError": "Translation error, please check the network and try again!",
+            "serviceError": "ServiceError!"
         }
         self.errorNum = str(errorNum)
         print('YoudaoApiError: {}\n'.format(self.errorMsg[self.errorNum]))
-
 
 
 yd = Youdao()

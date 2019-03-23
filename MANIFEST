@@ -4,7 +4,7 @@ README.md
 requirements.txt
 setup.cfg
 setup.py
-translate/__init__.py
-translate/google.py
-translate/youdao.py
-translate/config.py
+translators/__init__.py
+translators/google.py
+translators/youdao.py
+translators/config.py
