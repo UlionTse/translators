@@ -7,17 +7,17 @@
 ### *2. Installation & Tutorials:*
 
 - *pip install **[translators](https://pypi.org/project/translators/)***
-- *translators.google(text=r'',from_language='en',to_language='zh-CN',host='https://translate.google.cn', proxy=None)*
-- *translators.youdao(text=r'',from_language='en',to_language='zh-CHS',proxy=None)*
+- *translators.google(text='',from_language='en',to_language='zh-CN',host='https://translate.google.cn', proxy=None)*
+- *translators.youdao(text='',from_language='en',to_language='zh-CHS',proxy=None)*
 
 *Examples:*
 
 ```python
->>> import translators
->>> translators.google('Hello,World!')
+>>> import translators as ts
+>>> ts.google('Hello,World!')
 '你好，世界！'
 
->>> translators.youdao('再见，世界！','zh-CN','ko')
+>>> ts.youdao('再见，世界！','zh-CN','ko')
 '안녕, 세계야!'
 ```
 

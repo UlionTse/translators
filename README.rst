@@ -8,13 +8,13 @@ Free & Easy translators for Python, such as Google, NetEase(Youdao), etc.
 
 $ pip install translators
 
->>> import translators
+>>> import translators as ts
 
->>> translators.google('Hello,World!')
+>>> ts.google('Hello,World!')
 
 '你好，世界！'
 
->>> translators.youdao('再见，世界！','zh-CN','ko')
+>>> ts.youdao('再见，世界！','zh-CN','ko')
 
 '안녕, 세계야!'
 

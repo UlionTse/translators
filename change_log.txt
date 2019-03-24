@@ -16,10 +16,13 @@ Due to incompatible code changes made in version 2.4.2, I should not upgrade the
 but the major version number. This is a modification. Thanks for Sabrina's reminding.
 
 4.0.0
+`translate_api` --> 'translators'
 Implementing multiple translators is my pursuit, and the existing module name is ambiguous,
 so upgrading the module name is something I have been exploring and thinking about.
 Now the name `translators` is more in line with the meaning of the module itself,
 and now I have no hesitation to upgrade, although the code upgrade and optimization is limited.
+
+upgraded `Warning`.
 
 4.0.1
 fixed "translators.google.cn"
