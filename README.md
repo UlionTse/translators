@@ -7,8 +7,8 @@
 ### *2. Installation & Tutorials:*
 
 - *pip install **[translators](https://pypi.org/project/translators/)***
-- *translators.google(text='',from_language='en',to_language='zh-CN',host='https://translate.google.cn', proxy=None)*
-- *translators.youdao(text='',from_language='en',to_language='zh-CHS',proxy=None)*
+- *translators.google(text='', from_language='en', to_language='zh-CN', host='https://translate.google.cn', proxy=None)*
+- *translators.youdao(text='', from_language='en', to_language='zh-CHS', proxy=None)*
 
 *Examples:*
 
