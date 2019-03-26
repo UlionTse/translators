@@ -25,5 +25,7 @@ and now I have no hesitation to upgrade, although the code upgrade and optimizat
 upgraded `Warning`.
 
 4.0.1
-fixed "translators.google.cn"
+fix "translators.google.cn"
 
+4.0.2
+On PYPI, rst --> md.
