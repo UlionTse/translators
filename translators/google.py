@@ -125,7 +125,7 @@ class LanguageInputError(Exception):
         Exception.__init__(self)
         self.from_language = from_language
         self.to_language = to_language
-        print('LanguageInputError:  from_language[`{0}`] or to_language[`{1}`] is error, '
+        raise('LanguageInputError:  from_language[`{0}`] or to_language[`{1}`] is error, '
               'Please check dictionary of `LANGUAGES`!\n'.format(self.from_language, self.to_language))
 
 
@@ -133,7 +133,7 @@ class SizeInputError(Exception):
     def __init__(self,text):
         Exception.__init__(self)
         self.size = len(text)
-        print('SizeInputError: The size[{}] of `text` is over `GOOGLE TRANSLATE LIMIT 5000`!'.format(self.size))
+        raise('SizeInputError: The size[{}] of `text` is over `GOOGLE TRANSLATE LIMIT 5000`!'.format(self.size))
 
 
 def google_api(text=r'', from_language='en',to_language='zh-CN',host='https://translate.google.cn',proxy=None):

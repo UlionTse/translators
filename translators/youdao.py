@@ -3,6 +3,7 @@
 
 import time
 import requests
+import warnings
 from hashlib import md5
 from random import randrange
 
@@ -47,8 +48,8 @@ class Youdao:
         }
 
     def get_form(self,text,from_language,to_language):
-        from_language = 'zh-CHS' if from_language in ('zh-CN','zh-TW','zh-HK') else from_language
-        to_language = 'zh-CHS' if to_language in ('zh-CN','zh-TW','zh-HK') else to_language
+        from_language = 'zh-CHS' if from_language in ('zh-cn','zh-CN','zh-TW','zh-HK') else from_language
+        to_language = 'zh-CHS' if to_language in ('zh-cn','zh-CN','zh-TW','zh-HK') else to_language
         if from_language not in self.Languages or to_language not in self.Languages:
             raise(LanguageInputError(from_language,to_language))
         ts = str(int(time.time()))
@@ -98,9 +99,9 @@ class LanguageInputError(Exception):
         Exception.__init__(self)
         self.from_language = from_language
         self.to_language = to_language
-        print('YoudaoTranslateApi supports between [english,russian,arabic,japanese,korean,vietnamese,indonesian,'
-              'french,german,spanish,portuguese] and [chinese] only.\n')
-        print('LanguageInputError:  from_language[`{0}`] or to_language[`{1}`] is error, '
+        warnings.warn('YoudaoTranslateApi supports between [english,russian,arabic,japanese,korean,vietnamese,'
+                      'indonesian,french,german,spanish,portuguese] and [chinese] only.\n')
+        raise('LanguageInputError:  from_language[`{0}`] or to_language[`{1}`] is error, '
               'Please check dictionary of `LANGUAGES`!\n'.format(self.from_language, self.to_language))
 
 
@@ -117,7 +118,7 @@ class YoudaoApiError(Exception):
             "serviceError": "ServiceError!"
         }
         self.errorNum = str(errorNum)
-        print('YoudaoApiError: {}\n'.format(self.errorMsg[self.errorNum]))
+        raise('YoudaoApiError: {}\n'.format(self.errorMsg[self.errorNum]))
 
 
 yd = Youdao()
