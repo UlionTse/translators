@@ -98,20 +98,26 @@ class Google:
         QQ = quote(eng_txt)
         if (from_language not in LANGUAGES.keys()) or (to_language not in LANGUAGES.keys()):
             raise LanguageInputError(from_language, to_language)
-        url1 = (host + '/translate_a/single?client={0}&sl={1}&tl={2}&hl=zh-CN&dt=at&dt=bd&dt=ex&dt=ld&dt=md'
-                + '&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&source=bh&ssel=0&tsel=0&kc=1&tk='
-                + str(TK) + '&q=' + QQ).format('t',from_language,to_language)
+
+        # url1 = (host + '/translate_a/single?client={0}&sl={1}&tl={2}&hl=zh-CN&dt=at&dt=bd&dt=ex&dt=ld&dt=md'
+        #         + '&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&source=bh&ssel=0&tsel=0&kc=1&tk='
+        #         + str(TK) + '&q=' + QQ).format('t',from_language,to_language)
+
         url2 = (host + '/translate_a/single?client={0}&sl={1}&tl={2}&hl=zh-CN&dt=at&dt=bd&dt=ex&dt=ld&dt=md'
                 + '&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&source=bh&ssel=0&tsel=0&kc=1&tk='
                 + str(TK) + '&q=' + QQ).format('webapp',from_language,to_language)
 
         session = requests.Session()
-        try:
-            res = session.get(url1, headers={'User-Agent': self.default_ua}, proxies=proxy) #client=t
+
+        # res = session.get(url1, headers={'User-Agent': self.default_ua}, proxies=proxy) #client=t
+        # data = res.json()
+
+        res = session.get(url2, headers={'User-Agent': self.default_ua}, proxies=proxy) #client=webapp
+        if res.status_code == 200:
             data = res.json()
-        except:
-            res = session.get(url2, headers={'User-Agent': self.default_ua}, proxies=proxy) #client=webapp
-            data = res.json()
+        else:
+            raise('RequestsError: Response <{}>'.format(res.status_code))
+
         result = ''
         for dt in data[0]:
             if dt[0]:
@@ -145,6 +151,7 @@ def google_api(text=r'', from_language='en',to_language='zh-CN',host='https://tr
         return result
     else:
         raise SizeInputError(text)
+
 
 
 
