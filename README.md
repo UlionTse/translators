@@ -1,4 +1,4 @@
-*[Translators](https://github.com/shinalone/translators/blob/master/README.md)*
+*[translators](https://github.com/shinalone/translators/blob/master/README.md)*
 ================================================================================
 
 [![PyPI - Version](https://img.shields.io/badge/pypi-v4.0.3-blue.svg)](https://pypi.org/project/translators/)
