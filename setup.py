@@ -2,6 +2,7 @@
 # author=uliontse
 
 from setuptools import setup,find_packages
+import os
 
 
 PACKAGE = "translators"
@@ -10,7 +11,11 @@ DESCRIPTION = "Free & Easy translators for Python, such as Google, NetEase(Youda
 AUTHOR = "UlionTse"
 AUTHOR_EMAIL = "shinalone@outlook.com"
 URL = "https://github.com/shinalone/translators"
-VERSION = __import__(PACKAGE).__version__
+with open(os.path.join(PACKAGE, "__init__.py")) as f:
+    for line in f:
+        if "__version__" in line.strip():
+            VERSION = line.split("=", 1)[1].strip().strip('"')
+            break
 
 with open('README.md','r',encoding='utf-8') as file:
     long_description = file.read()
