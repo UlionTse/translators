@@ -10,7 +10,8 @@ DESCRIPTION = "Free & Easy translators for Python, such as Google, NetEase(Youda
 AUTHOR = "UlionTse"
 AUTHOR_EMAIL = "shinalone@outlook.com"
 URL = "https://github.com/shinalone/translators"
-VERSION = __import__(PACKAGE).__version__
+#VERSION = __import__(PACKAGE).__version__
+VERSION = "4.0.6"
 
 with open('README.md','r',encoding='utf-8') as file:
     long_description = file.read()

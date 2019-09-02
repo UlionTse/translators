@@ -1,9 +1,35 @@
 # coding=utf-8
 # author=UlionTse
 
+'''MIT License
+
+Copyright (c) 2019 UlionTse
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software. You may obtain a copy of the
+License at
+
+    https://github.com/shinalone/translators/blob/master/LICENSE
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+'''
+
 import time
-import requests
 import warnings
+import requests
 from hashlib import md5
 from random import randrange
 
@@ -51,7 +77,7 @@ class Youdao:
         from_language = 'zh-CHS' if from_language in ('zh-cn','zh-CN','zh-TW','zh-HK') else from_language
         to_language = 'zh-CHS' if to_language in ('zh-cn','zh-CN','zh-TW','zh-HK') else to_language
         if from_language not in self.Languages or to_language not in self.Languages:
-            raise(LanguageInputError(from_language,to_language))
+            raise LanguageInputError(from_language,to_language)
         ts = str(int(time.time()))
         salt = str(ts) + str(randrange(0,10))
         sign_text = ''.join(['fanyideskweb',text,salt,'p09@Bn{h02_BIEe]$P^nG'])
@@ -83,15 +109,16 @@ class Youdao:
             r = ss.post(self.api_url, data=form, headers=self.headers,proxies=proxy)
         else:
             r = ss.post(self.api_url, data=form, headers=self.headers, cookies=self.cookies,proxies=proxy)
-        try:
+        if r.status_code == 200:
             result = r.json()
-        except:
-            result = {'errorCode': 'serviceError'}
+        else:
+            raise Exception('NetworkRequestError: response <{}>'.format(r.status_code))
         ss.close()
+
         if result['errorCode'] == 0:
             return result['translateResult'][0][0]['tgt']
         else:
-            raise(YoudaoApiError(result['errorCode']))
+            raise YoudaoApiError(result['errorCode'])
 
 
 class LanguageInputError(Exception):
@@ -101,7 +128,7 @@ class LanguageInputError(Exception):
         self.to_language = to_language
         warnings.warn('YoudaoTranslateApi supports between [english,russian,arabic,japanese,korean,vietnamese,'
                       'indonesian,french,german,spanish,portuguese] and [chinese] only.\n')
-        raise('LanguageInputError:  from_language[`{0}`] or to_language[`{1}`] is error, '
+        print('LanguageInputError:  from_language[`{0}`] or to_language[`{1}`] is error, '
               'Please check dictionary of `LANGUAGES`!\n'.format(self.from_language, self.to_language))
 
 
@@ -118,7 +145,7 @@ class YoudaoApiError(Exception):
             "serviceError": "ServiceError!"
         }
         self.errorNum = str(errorNum)
-        raise('YoudaoApiError: {}\n'.format(self.errorMsg[self.errorNum]))
+        print('YoudaoApiError: {}\n'.format(self.errorMsg[self.errorNum]))
 
 
 yd = Youdao()

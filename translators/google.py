@@ -1,10 +1,36 @@
 # coding=utf-8
 # author=UlionTse
 
+'''MIT License
+
+Copyright (c) 2019 UlionTse
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software. You may obtain a copy of the
+License at
+
+    https://github.com/shinalone/translators/blob/master/LICENSE
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+'''
+
 import re
 import requests
-from urllib.parse import quote
 import execjs
+from urllib.parse import quote
 from .config import *
 
 
@@ -116,7 +142,7 @@ class Google:
         if res.status_code == 200:
             data = res.json()
         else:
-            raise('RequestsError: Response <{}>'.format(res.status_code))
+            raise Exception('NetworkRequestError: Response <{}>'.format(res.status_code))
 
         result = ''
         for dt in data[0]:
@@ -131,7 +157,7 @@ class LanguageInputError(Exception):
         Exception.__init__(self)
         self.from_language = from_language
         self.to_language = to_language
-        raise('LanguageInputError:  from_language[`{0}`] or to_language[`{1}`] is error, '
+        print('LanguageInputError:  from_language[`{0}`] or to_language[`{1}`] is error, '
               'Please check dictionary of `LANGUAGES`!\n'.format(self.from_language, self.to_language))
 
 
@@ -139,7 +165,7 @@ class SizeInputError(Exception):
     def __init__(self,text):
         Exception.__init__(self)
         self.size = len(text)
-        raise('SizeInputError: The size[{}] of `text` is over `GOOGLE TRANSLATE LIMIT 5000`!'.format(self.size))
+        print('SizeInputError: The size[{}] of `text` is over `GOOGLE TRANSLATE LIMIT 5000`!'.format(self.size))
 
 
 def google_api(text=r'', from_language='en',to_language='zh-CN',host='https://translate.google.cn',proxy=None):
