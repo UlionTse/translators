@@ -30,7 +30,7 @@
 >>> ts.youdao('再见，世界！','zh-CN','ko')
 '안녕, 세계야!'
 
->>>ts.tencent('Am happy','en','ar')
+>>> ts.tencent('Am happy','en','ar')
 'أنا سعيد'
 ```
 
