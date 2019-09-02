@@ -74,8 +74,8 @@ class Youdao:
         }
 
     def get_form(self,text,from_language,to_language):
-        from_language = 'zh-CHS' if from_language in ('zh-cn','zh-CN','zh-TW','zh-HK') else from_language
-        to_language = 'zh-CHS' if to_language in ('zh-cn','zh-CN','zh-TW','zh-HK') else to_language
+        from_language = 'zh-CHS' if from_language in ('zh','zh-cn','zh-CN','zh-TW','zh-HK') else from_language
+        to_language = 'zh-CHS' if to_language in ('zh','zh-cn','zh-CN','zh-TW','zh-HK') else to_language
         if from_language not in self.Languages or to_language not in self.Languages:
             raise LanguageInputError(from_language,to_language)
         ts = str(int(time.time()))
@@ -103,7 +103,7 @@ class Youdao:
 
 
 
-    def youdao_api(self,text=r'',from_language='en', to_language='zh-CHS', proxy=None):
+    def youdao_api(self,text=r'',from_language='en', to_language='zh-CHS',is_detail=False, proxy=None):
         form = self.get_form(text, from_language, to_language)
         ss = requests.Session()
         r0 = ss.get(self.host, headers=self.headers,proxies=proxy)
@@ -118,7 +118,7 @@ class Youdao:
         ss.close()
 
         if result['errorCode'] == 0:
-            return result['translateResult'][0][0]['tgt']
+            return result if is_detail else result['translateResult'][0][0]['tgt']
         else:
             raise YoudaoApiError(result['errorCode'])
 

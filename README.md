@@ -1,7 +1,7 @@
 *[translators](https://github.com/shinalone/translators/blob/master/README.md)*
 ================================================================================
 
-[![PyPI - Version](https://img.shields.io/badge/pypi-v4.0.8-blue.svg)](https://pypi.org/project/translators/)
+[![PyPI - Version](https://img.shields.io/badge/pypi-v4.1.0-blue.svg)](https://pypi.org/project/translators/)
 [![PyPI - License](https://img.shields.io/pypi/l/translators.svg)](https://github.com/shinalone/translators/blob/master/LICENSE)
 [![PyPI - Python](https://img.shields.io/badge/python-3.5%20%7C%203.6%20%7C%203.7-blue.svg)](https://docs.python.org/3/)
 [![PyPi - Coverage](https://img.shields.io/badge/coverage-90%25-green.svg)]()
@@ -11,13 +11,14 @@
 
 ### *1. Description:*
 
-- *Free & Easy translators for Python, such as Google, NetEase(Youdao), etc.*
+- *Free & Easy translators for Python, such as Google, Tencent, NetEase(Youdao), etc.*
 
 ### *2. Installation & Tutorials:*
 
 - *pip install **[translators](https://pypi.org/project/translators/)***
-- *translators.google(text='', from_language='en', to_language='zh-CN', host='https://translate.google.cn', proxy=None)*
-- *translators.youdao(text='', from_language='en', to_language='zh-CHS', proxy=None)*
+- *translators.google(text='', from_language='en', to_language='zh-CN', host='https://translate.google.cn', is_detail=False, proxy=None)*
+- *translators.youdao(text='', from_language='en', to_language='zh-CHS', is_detail=False, proxy=None)*
+- *translators.tencent(text='',from_language='en', to_language='zh', is_detail=False, proxy=None)*
 
 *Examples:*
 
@@ -28,7 +29,11 @@
 
 >>> ts.youdao('再见，世界！','zh-CN','ko')
 '안녕, 세계야!'
+
+>>>ts.tencent('Am happy','en','ar')
+'أنا سعيد'
 ```
+
 
 ### *3. Warning:*
 

@@ -120,11 +120,13 @@ class Google:
         return '{}.{}'.format(a, a ^ b)
 
 
-    def translate(self, eng_txt, TK, from_language,to_language,host,proxy):
-        QQ = quote(eng_txt)
+    def translate(self, eng_txt, TK, from_language,to_language,host,is_detail,proxy):
+        from_language = 'zh-CN' if from_language in ('zh','zh-cn','zh-TW','zh-HK','zh-CHS') else from_language
+        to_language = 'zh-CN' if to_language in ('zh','zh-cn','zh-TW','zh-HK','zh-CHS') else to_language
         if (from_language not in LANGUAGES.keys()) or (to_language not in LANGUAGES.keys()):
             raise LanguageInputError(from_language, to_language)
 
+        QQ = quote(eng_txt)
         # url1 = (host + '/translate_a/single?client={0}&sl={1}&tl={2}&hl=zh-CN&dt=at&dt=bd&dt=ex&dt=ld&dt=md'
         #         + '&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&source=bh&ssel=0&tsel=0&kc=1&tk='
         #         + str(TK) + '&q=' + QQ).format('t',from_language,to_language)
@@ -149,7 +151,7 @@ class Google:
             if dt[0]:
                 result += dt[0]
         session.close()
-        return result
+        return data if is_detail else result
 
 
 class LanguageInputError(Exception):
@@ -168,12 +170,12 @@ class SizeInputError(Exception):
         print('SizeInputError: The size[{}] of `text` is over `GOOGLE TRANSLATE LIMIT 5000`!'.format(self.size))
 
 
-def google_api(text=r'', from_language='en',to_language='zh-CN',host='https://translate.google.cn',proxy=None):
+def google_api(text=r'', from_language='en',to_language='zh-CN',host='https://translate.google.cn',is_detail=False,proxy=None):
     if len(text) < 5000:
         api = Google()
         tkk = api.get_tkk(host,proxy)
         TK = api.acquire(text, tkk)
-        result = api.translate(text, TK, from_language,to_language,host,proxy)
+        result = api.translate(text, TK, from_language,to_language,host,is_detail,proxy)
         return result
     else:
         raise SizeInputError(text)

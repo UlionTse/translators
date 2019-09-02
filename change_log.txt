@@ -41,3 +41,6 @@ add license in code
 
 4.0.8
 recover youdao()
+
+4.1.0
+add tencent()
