@@ -80,7 +80,7 @@ class Youdao:
             raise LanguageInputError(from_language,to_language)
         ts = str(int(time.time()))
         salt = str(ts) + str(randrange(0,10))
-        sign_text = ''.join(['fanyideskweb',text,salt,'p09@Bn{h02_BIEe]$P^nG'])
+        sign_text = ''.join(['fanyideskweb',text,salt,'n%A-rKaT5fb[Gy?;N5@Tj']) # before 20190902: p09@Bn{h02_BIEe]$P^nG
         sign = md5(sign_text.encode()).hexdigest()
         bv = md5(self.headers['User-Agent'][8:].encode()).hexdigest()
         form = {
@@ -91,15 +91,17 @@ class Youdao:
             'client': 'fanyideskweb',
             'ts': ts,                     # r = "" + (new Date).getTime()
             'salt': salt,                 # i = r + parseInt(10 * Math.random(), 10)
-            'sign': sign,                 # n.md5("fanyideskweb" + e + i + "p09@Bn{h02_BIEe]$P^nG"),e=text
+            'sign': sign,                 # n.md5("fanyideskweb" + e + i + "n%A-rKaT5fb[Gy?;N5@Tj"),e=text
             'bv': bv,                     # n.md5(navigator.appVersion)
             'doctype': 'json',
             'version': '2.1',
             'keyfrom': 'fanyi.web',
-            'action': 'FY_BY_DEFAULT',
-            'typoResult': 'false'
+            'action': 'FY_BY_REALTlME', #not time.
+            #'typoResult': 'false'
         }
         return form
+
+
 
     def youdao_api(self,text=r'',from_language='en', to_language='zh-CHS', proxy=None):
         form = self.get_form(text, from_language, to_language)

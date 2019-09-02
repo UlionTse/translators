@@ -38,3 +38,6 @@ del client=t
 4.0.6
 raise fixed
 add license in code
+
+4.0.8
+recover youdao()

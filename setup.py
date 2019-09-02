@@ -11,7 +11,7 @@ AUTHOR = "UlionTse"
 AUTHOR_EMAIL = "shinalone@outlook.com"
 URL = "https://github.com/shinalone/translators"
 #VERSION = __import__(PACKAGE).__version__
-VERSION = "4.0.6"
+VERSION = "4.0.8"
 
 with open('README.md','r',encoding='utf-8') as file:
     long_description = file.read()
