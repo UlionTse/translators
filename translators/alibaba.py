@@ -5,6 +5,10 @@
 
 Copyright (c) 2019 UlionTse
 
+Warning: Prohibition of Commercial Use!
+This module is designed to help students and individuals with translation services.
+For commercial use, please purchase API services from translation suppliers.
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -33,11 +37,11 @@ import random
 import requests
 
 
-
 class Alibaba:
     def __init__(self):
         self.origin_url = 'https://translate.alibaba.com'
         self.api_url = 'https://translate.alibaba.com/translationopenseviceapp/trans/TranslateTextAddAlignment.do'
+        self.check_url = 'https://translate.alibaba.com/trans/acquireSupportLanguage.do'
         self.origin_headers = {
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
             "accept-encoding": "gzip, deflate, sdch, br",
@@ -60,9 +64,8 @@ class Alibaba:
             "x-requested-with": "XMLHttpRequest",
         }
         
-        
+
     def get_dmtrack_pageid(self,origin_res):
-        # https://u.alicdn.com/js/beacon_en.js
         try:
             e = re.findall("dmtrack_pageid='(\w+)';", origin_res.text)[0]
         except:
@@ -81,24 +84,51 @@ class Alibaba:
             a = hex(int(random.random() * 1e10))[2:] # int->string: 16, '0x'
             o += a
         return o[:42]
-    
-    
-    def ali_api(self,text='',from_language='en', to_language='zh', biz_type='general', is_detail=False, proxy=None):
+
+
+    def check_language(self,from_language,to_language,session,biz_type,dmtrack_pageid,proxies=None):
+        params = {'dmtrack_pageid': dmtrack_pageid, 'biz_type': biz_type}
+        language_dict = session.get(self.check_url,params=params,headers=self.api_headers,proxies=proxies).json()
+
+        if from_language in language_dict['sourceLanguage'] and to_language in language_dict['targetLanguage']:
+            for lang_dict in language_dict['languageMap']:
+                if from_language == lang_dict['sourceLuange'] and to_language in lang_dict['targetLanguages']: #sourceLuange
+                    return True
+            print('LanguageMap:',language_dict,sep='\n')
+            return False
+        else:
+            print('LanguageMap:',language_dict,sep='\n')
+            return False
+            
+
+    def alibaba_api(self,text,from_language='en', to_language='zh', **kwargs):
+        biz_type = kwargs.get('biz_type', 'message') #("general","message","offer")
+        if_check_language = kwargs.get('if_check_language', True)
+        is_detail = kwargs.get('is_detail', False)
+        proxies = kwargs.get('proxies', None)
+        
+        from_language = 'zh' if from_language in ('zh','zh-cn','zh-CN','zh-TW','zh-HK','zh-CHS') else from_language
+        to_language = 'zh' if to_language in ('zh','zh-cn','zh-CN','zh-TW','zh-HK','zh-CHS') else to_language
         form_data = {
             "srcLanguage": from_language,
             "tgtLanguage": to_language,
-            "srcText": text,
+            "srcText": str(text),
             "viewType": "",
             "source": "",
             "bizType": biz_type #("general","message","offer")
         }
         ss = requests.Session()
-        origin_res = ss.get(self.origin_url, headers=self.origin_headers, proxies=proxy)
-        params = {"dmtrack_pageid": self.get_dmtrack_pageid(origin_res)}
-
+        origin_res = ss.get(self.origin_url, headers=self.origin_headers, proxies=proxies)
+        dmtrack_pageid = self.get_dmtrack_pageid(origin_res)
+        
+        if if_check_language:
+            check_result = self.check_language(from_language,to_language,ss,biz_type,dmtrack_pageid,proxies)
+            if not check_result:
+                raise ValueError('from_language[{}] or to_language[{}] is not supported!'.format(from_language,to_language))
+        
         i,data,ts_result = 0,{},[]
         while not ts_result and i<3:
-            res = ss.post(self.api_url, data=form_data, params=params, proxies=proxy)
+            res = ss.post(self.api_url, data=form_data, params={"dmtrack_pageid": dmtrack_pageid}, proxies=proxies)
             data = res.json()
             ts_result = data.get('listTargetText')
             i += 1
@@ -106,8 +136,6 @@ class Alibaba:
         return data if is_detail else ts_result[0]
         
 
-
-
 ali = Alibaba()
-ali_api = ali.ali_api
-
+alibaba_api = ali.alibaba_api
+    

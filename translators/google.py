@@ -5,6 +5,10 @@
 
 Copyright (c) 2019 UlionTse
 
+Warning: Prohibition of Commercial Use!
+This module is designed to help students and individuals with translation services.
+For commercial use, please purchase API services from translation suppliers.
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -39,9 +43,9 @@ class Google:
         self.default_ua = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko' \
                           ') Chrome/55.0.2883.87 Safari/537.36'
 
-    def get_tkk(self,host,proxy):
+    def get_tkk(self,host,proxies):
         self.headers = {'User-Agent': self.default_ua}
-        res = requests.get(host, headers=self.headers, proxies=proxy)
+        res = requests.get(host, headers=self.headers, proxies=proxies)
 
         # version 2.1.0
         # RE_TKK = re.compile(r'''TKK=eval\(\'\(\(function\(\)\{(.+?)\}\)\(\)\)\'\);''')
@@ -120,9 +124,9 @@ class Google:
         return '{}.{}'.format(a, a ^ b)
 
 
-    def translate(self, eng_txt, TK, from_language,to_language,host,is_detail,proxy):
-        from_language = 'zh-CN' if from_language in ('zh','zh-cn','zh-TW','zh-HK','zh-CHS') else from_language
-        to_language = 'zh-CN' if to_language in ('zh','zh-cn','zh-TW','zh-HK','zh-CHS') else to_language
+    def translate(self, eng_txt, TK, from_language,to_language,host,is_detail,proxies):
+        from_language = 'zh-CN' if from_language in ('zh','zh-cn','zh-CN','zh-TW','zh-HK','zh-CHS') else from_language
+        to_language = 'zh-CN' if to_language in ('zh','zh-cn','zh-CN','zh-TW','zh-HK','zh-CHS') else to_language
         if (from_language not in LANGUAGES.keys()) or (to_language not in LANGUAGES.keys()):
             raise LanguageInputError(from_language, to_language)
 
@@ -137,10 +141,10 @@ class Google:
 
         session = requests.Session()
 
-        # res = session.get(url1, headers={'User-Agent': self.default_ua}, proxies=proxy) #client=t
+        # res = session.get(url1, headers={'User-Agent': self.default_ua}, proxies=proxies) #client=t
         # data = res.json()
 
-        res = session.get(url2, headers={'User-Agent': self.default_ua}, proxies=proxy) #client=webapp
+        res = session.get(url2, headers={'User-Agent': self.default_ua}, proxies=proxies) #client=webapp
         if res.status_code == 200:
             data = res.json()
         else:
@@ -170,17 +174,19 @@ class SizeInputError(Exception):
         print('SizeInputError: The size[{}] of `text` is over `GOOGLE TRANSLATE LIMIT 5000`!'.format(self.size))
 
 
-def google_api(text=r'', from_language='en',to_language='zh-CN',host='https://translate.google.cn',is_detail=False,proxy=None):
+def google_api(text, from_language='en',to_language='zh-CN',host='https://translate.google.cn',**kwargs):
+    is_detail = kwargs.get('is_detail', False)
+    proxies = kwargs.get('proxies', None)
+    
+    text = str(text)
     if len(text) < 5000:
         api = Google()
-        tkk = api.get_tkk(host,proxy)
+        tkk = api.get_tkk(host,proxies)
         TK = api.acquire(text, tkk)
-        result = api.translate(text, TK, from_language,to_language,host,is_detail,proxy)
+        result = api.translate(text, TK, from_language,to_language,host,is_detail,proxies)
         return result
     else:
         raise SizeInputError(text)
-
-
 
 
 ########################################################################################################################

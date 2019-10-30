@@ -5,6 +5,10 @@
 
 Copyright (c) 2019 UlionTse
 
+Warning: Prohibition of Commercial Use!
+This module is designed to help students and individuals with translation services.
+For commercial use, please purchase API services from translation suppliers.
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -74,8 +78,8 @@ class Youdao:
         }
 
     def get_form(self,text,from_language,to_language):
-        from_language = 'zh-CHS' if from_language in ('zh','zh-cn','zh-CN','zh-TW','zh-HK') else from_language
-        to_language = 'zh-CHS' if to_language in ('zh','zh-cn','zh-CN','zh-TW','zh-HK') else to_language
+        from_language = 'zh-CHS' if from_language in ('zh','zh-cn','zh-CN','zh-TW','zh-HK','zh-CHS') else from_language
+        to_language = 'zh-CHS' if to_language in ('zh','zh-cn','zh-CN','zh-TW','zh-HK','zh-CHS') else to_language
         if from_language not in self.Languages or to_language not in self.Languages:
             raise LanguageInputError(from_language,to_language)
         ts = str(int(time.time()))
@@ -84,7 +88,7 @@ class Youdao:
         sign = md5(sign_text.encode()).hexdigest()
         bv = md5(self.headers['User-Agent'][8:].encode()).hexdigest()
         form = {
-            'i':text,
+            'i': str(text),
             'from': from_language,
             'to': to_language,
             'smartresult': 'dict',
@@ -102,15 +106,17 @@ class Youdao:
         return form
 
 
-
-    def youdao_api(self,text=r'',from_language='en', to_language='zh-CHS',is_detail=False, proxy=None):
+    def youdao_api(self,text,from_language='en', to_language='zh-CHS', **kwargs):
+        is_detail = kwargs.get('is_detail', False)
+        proxies = kwargs.get('proxies', None)
+        
         form = self.get_form(text, from_language, to_language)
         ss = requests.Session()
-        r0 = ss.get(self.host, headers=self.headers,proxies=proxy)
+        r0 = ss.get(self.host, headers=self.headers,proxies=proxies)
         if r0.status_code == 200 and len(r0.cookies)>0:
-            r = ss.post(self.api_url, data=form, headers=self.headers,proxies=proxy)
+            r = ss.post(self.api_url, data=form, headers=self.headers,proxies=proxies)
         else:
-            r = ss.post(self.api_url, data=form, headers=self.headers, cookies=self.cookies,proxies=proxy)
+            r = ss.post(self.api_url, data=form, headers=self.headers, cookies=self.cookies,proxies=proxies)
         if r.status_code == 200:
             result = r.json()
         else:

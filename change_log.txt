@@ -1,3 +1,5 @@
+...(history)
+
 2.2.2
 add `proxy`.
 
@@ -32,7 +34,7 @@ On PYPI, rst --> md.
 
 4.0.4
 print --> raise,warn
-add 'ch-zn'
+add 'zh-cn'
 del client=t
 
 4.0.6
@@ -44,3 +46,9 @@ recover youdao()
 
 4.1.0
 add tencent()
+
+4.2.0
+add alibaba()
+use **kwargs
+proxy --> proxies
+make the license more formal

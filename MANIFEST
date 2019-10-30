@@ -5,6 +5,8 @@ requirements.txt
 setup.cfg
 setup.py
 translators/__init__.py
+translators/config.py
 translators/google.py
 translators/youdao.py
-translators/config.py
+translators/tencent.py
+translators/alibaba.py

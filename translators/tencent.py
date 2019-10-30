@@ -5,6 +5,10 @@
 
 Copyright (c) 2019 UlionTse
 
+Warning: Prohibition of Commercial Use!
+This module is designed to help students and individuals with translation services.
+For commercial use, please purchase API services from translation suppliers.
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -101,13 +105,16 @@ class Tencent:
             pass
 
 
-    def tencent_api(self,text='',from_language='en', to_language='zh', is_detail=False, proxy=None):
-        from_language = 'zh' if from_language in ('zh-cn','zh-CN','zh-TW','zh-HK','zh-CHS') else from_language
-        to_language = 'zh' if to_language in ('zh-cn','zh-CN','zh-TW','zh-HK','zh-CHS') else to_language
+    def tencent_api(self,text='',from_language='en', to_language='zh', **kwargs):
+        is_detail = kwargs.get('is_detail', False)
+        proxies = kwargs.get('proxies', None)
+        
+        from_language = 'zh' if from_language in ('zh','zh-cn','zh-CN','zh-TW','zh-HK','zh-CHS') else from_language
+        to_language = 'zh' if to_language in ('zh','zh-cn','zh-CN','zh-TW','zh-HK','zh-CHS') else to_language
         self.judgeLangError(from_language,to_language)
 
         ss = requests.Session()
-        r0 = ss.get(self.headers['Origin'], headers=self.headers,proxies=proxy)
+        r0 = ss.get(self.headers['Origin'], headers=self.headers,proxies=proxies)
         qtv = re.findall('var qtv = "(.*?)"', r0.text)[0]
         qtk = re.findall('var qtk = "(.*?)"', r0.text)[0]
         form_data = {
@@ -118,7 +125,7 @@ class Tencent:
             'qtk': qtk,
             'sessionUuid': 'translate_uuid' + str(int(time.time()*1000))
         }
-        r1 = ss.post(self.api_url, headers=self.headers, data=form_data,proxies=proxy)
+        r1 = ss.post(self.api_url, headers=self.headers, data=form_data,proxies=proxies)
         reseult = r1.json()
         r = reseult['translate']['records'][0]['targetText']
         ss.close()
