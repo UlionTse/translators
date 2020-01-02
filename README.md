@@ -17,7 +17,7 @@
 
 - *pip install **[translators](https://pypi.org/project/translators/)***
 - *translators.google(text, from_language, to_language, host='https://translate.google.cn',@@kwargs)*
-- detail to help(translators.google).
+- *detail to help(translators.google)*
 
 *Examples:*
 
