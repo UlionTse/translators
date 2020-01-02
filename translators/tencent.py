@@ -94,7 +94,8 @@ class Tencent:
         }
 
 
-    def judgeLangError(self,from_language, to_language):
+    def check_language(self,from_language, to_language):
+        # check_from_language = 'en' if from_language == 'auto' else from_language
         if from_language not in self.translate_service.keys():
             raise KeyError('[from_language] is not in {}'.format(self.language))
         elif to_language not in self.translate_service.keys():
@@ -102,16 +103,30 @@ class Tencent:
         elif to_language not in self.translate_service[from_language]:
             raise Exception('No Service about [{0} --> {1}] !'.format(from_language,to_language))
         else:
-            pass
+            return True
 
 
-    def tencent_api(self,text='',from_language='en', to_language='zh', **kwargs):
+    def tencent_api(self,text='',from_language='auto', to_language='zh', **kwargs):
+        '''
+        https://fanyi.qq.com/
+        :param text: string
+        :param from_language: string, default 'auto'.
+        :param to_language: string, default 'zh'
+        :param host: string,
+        :param **kwargs:
+            :param if_check_language: boolean, True.
+            :param is_detail: boolean, default False.
+            :param proxies: dict, default None.
+        :return:
+        '''
+        if_check_language = kwargs.get('if_check_language', True)
         is_detail = kwargs.get('is_detail', False)
         proxies = kwargs.get('proxies', None)
         
         from_language = 'zh' if from_language in ('zh','zh-cn','zh-CN','zh-TW','zh-HK','zh-CHS') else from_language
         to_language = 'zh' if to_language in ('zh','zh-cn','zh-CN','zh-TW','zh-HK','zh-CHS') else to_language
-        self.judgeLangError(from_language,to_language)
+        if if_check_language:
+            self.check_language(from_language,to_language)
 
         ss = requests.Session()
         r0 = ss.get(self.headers['Origin'], headers=self.headers,proxies=proxies)

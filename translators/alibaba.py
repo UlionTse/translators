@@ -90,6 +90,7 @@ class Alibaba:
         params = {'dmtrack_pageid': dmtrack_pageid, 'biz_type': biz_type}
         language_dict = session.get(self.check_url,params=params,headers=self.api_headers,proxies=proxies).json()
 
+        from_language = 'en' if from_language == 'auto' else from_language
         if from_language in language_dict['sourceLanguage'] and to_language in language_dict['targetLanguage']:
             for lang_dict in language_dict['languageMap']:
                 if from_language == lang_dict['sourceLuange'] and to_language in lang_dict['targetLanguages']: #sourceLuange
@@ -101,7 +102,19 @@ class Alibaba:
             return False
             
 
-    def alibaba_api(self,text,from_language='en', to_language='zh', **kwargs):
+    def alibaba_api(self,text,from_language='auto', to_language='zh', **kwargs):
+        '''
+        https://translate.alibaba.com/
+        :param text: string
+        :param from_language: string, default 'auto'.
+        :param to_language: string, default 'zh'
+        :param **kwargs:
+            :param biz_type: string, default 'message', choose from ("general","message","offer")
+            :param if_check_language: boolean, default True.
+            :param is_detail: boolean, default False.
+            :param proxies: dict, default None.
+        :return:
+        '''
         biz_type = kwargs.get('biz_type', 'message') #("general","message","offer")
         if_check_language = kwargs.get('if_check_language', True)
         is_detail = kwargs.get('is_detail', False)

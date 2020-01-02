@@ -1,7 +1,7 @@
 *[translators](https://github.com/uliontse/translators/blob/master/README.md)*
 ================================================================================
 
-[![PyPI - Version](https://img.shields.io/badge/pypi-v4.2.0-blue.svg)](https://pypi.org/project/translators/)
+[![PyPI - Version](https://img.shields.io/badge/pypi-v4.2.2-blue.svg)](https://pypi.org/project/translators/)
 [![PyPI - License](https://img.shields.io/pypi/l/translators.svg)](https://github.com/shinalone/translators/blob/master/LICENSE)
 [![PyPI - Python](https://img.shields.io/badge/python-3.5%20%7C%203.6%20%7C%203.7%20%7C%203.8-blue.svg)](https://docs.python.org/3/)
 [![PyPi - Coverage](https://img.shields.io/badge/coverage-90%25-green.svg)]()
@@ -16,15 +16,15 @@
 ### *2. Installation & Tutorials:*
 
 - *pip install **[translators](https://pypi.org/project/translators/)***
-- *translators.google(text, from_language, to_language, host='https://translate.google.cn', is_detail=False, proxies=None)*
-- Similar as above.
+- *translators.google(text, from_language, to_language, host='https://translate.google.cn',@@kwargs)*
+- detail to help(translators.google).
 
 *Examples:*
 
 ```python
 >>>import translators as ts
 
->>> ts.google('Hello,World!', 'en', 'zh')
+>>> ts.google('Hello,World!', 'auto', 'zh')
 '你好，世界！'
 
 >>>ts.youdao('再见，世界！', 'zh', 'ko')

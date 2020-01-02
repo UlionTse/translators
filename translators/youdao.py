@@ -77,11 +77,13 @@ class Youdao:
             'Connection': 'keep-alive'
         }
 
-    def get_form(self,text,from_language,to_language):
+    def get_form(self,text,from_language,to_language,if_check_language):
         from_language = 'zh-CHS' if from_language in ('zh','zh-cn','zh-CN','zh-TW','zh-HK','zh-CHS') else from_language
         to_language = 'zh-CHS' if to_language in ('zh','zh-cn','zh-CN','zh-TW','zh-HK','zh-CHS') else to_language
-        if from_language not in self.Languages or to_language not in self.Languages:
-            raise LanguageInputError(from_language,to_language)
+        if if_check_language:
+            check_from_language = 'en' if from_language == 'auto' else from_language
+            if check_from_language not in self.Languages or to_language not in self.Languages:
+                raise LanguageInputError(from_language,to_language)
         ts = str(int(time.time()))
         salt = str(ts) + str(randrange(0,10))
         sign_text = ''.join(['fanyideskweb',text,salt,'n%A-rKaT5fb[Gy?;N5@Tj']) # before 20190902: p09@Bn{h02_BIEe]$P^nG
@@ -106,11 +108,24 @@ class Youdao:
         return form
 
 
-    def youdao_api(self,text,from_language='en', to_language='zh-CHS', **kwargs):
+    def youdao_api(self,text,from_language='auto', to_language='zh', **kwargs):
+        '''
+        http://fanyi.youdao.com/
+        :param text: string
+        :param from_language: string, default 'auto'.
+        :param to_language: string, default 'zh'
+        :param host: string,
+        :param **kwargs:
+            :param if_check_language: boolean, True.
+            :param is_detail: boolean, default False.
+            :param proxies: dict, default None.
+        :return:
+        '''
+        if_check_language = kwargs.get('if_check_language', True)
         is_detail = kwargs.get('is_detail', False)
         proxies = kwargs.get('proxies', None)
         
-        form = self.get_form(text, from_language, to_language)
+        form = self.get_form(text, from_language, to_language,if_check_language)
         ss = requests.Session()
         r0 = ss.get(self.host, headers=self.headers,proxies=proxies)
         if r0.status_code == 200 and len(r0.cookies)>0:
