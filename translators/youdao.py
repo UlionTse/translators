@@ -116,7 +116,7 @@ class Youdao:
         :param to_language: string, default 'zh'
         :param host: string,
         :param **kwargs:
-            :param if_check_language: boolean, True.
+            :param if_check_language: boolean, default True.
             :param is_detail: boolean, default False.
             :param proxies: dict, default None.
         :return:
@@ -126,23 +126,16 @@ class Youdao:
         proxies = kwargs.get('proxies', None)
         
         form = self.get_form(text, from_language, to_language,if_check_language)
-        ss = requests.Session()
-        r0 = ss.get(self.host, headers=self.headers,proxies=proxies)
-        if r0.status_code == 200 and len(r0.cookies)>0:
-            r = ss.post(self.api_url, data=form, headers=self.headers,proxies=proxies)
-        else:
-            r = ss.post(self.api_url, data=form, headers=self.headers, cookies=self.cookies,proxies=proxies)
-        if r.status_code == 200:
-            result = r.json()
-        else:
-            raise Exception('NetworkRequestError: response <{}>'.format(r.status_code))
-        ss.close()
+        with requests.Session() as ss:
+            r0 = ss.get(self.host, headers=self.headers,proxies=proxies)
+            if r0.status_code == 200 and len(r0.cookies)>0:
+                r = ss.post(self.api_url, data=form, headers=self.headers,proxies=proxies)
+            else:
+                r = ss.post(self.api_url, data=form, headers=self.headers, cookies=self.cookies,proxies=proxies)
 
-        if result['errorCode'] == 0:
-            return result if is_detail else result['translateResult'][0][0]['tgt']
-        else:
-            raise YoudaoApiError(result['errorCode'])
-
+        result = r.json()
+        return result if is_detail else result['translateResult'][0][0]['tgt']
+ 
 
 class LanguageInputError(Exception):
     def __init__(self,from_language,to_language):

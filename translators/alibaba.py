@@ -57,8 +57,8 @@ class Alibaba:
             "accept-language": "zh-CN,zh;q=0.8,en;q=0.6",
             "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
             "dnt": "1",
-            "origin": "https//translate.alibaba.com",
-            "referer": "https//translate.alibaba.com/",
+            "origin": "https://translate.alibaba.com",
+            "referer": "https://translate.alibaba.com",
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) "
                           "Chrome/55.0.2883.87 Safari/537.36",
             "x-requested-with": "XMLHttpRequest",

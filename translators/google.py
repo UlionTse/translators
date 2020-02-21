@@ -137,18 +137,15 @@ class Google:
                 + '&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&source=bh&ssel=0&tsel=0&kc=1&tk='
                 + str(TK) + '&q=' + QQ).format('webapp',from_language,to_language)
 
-        session = requests.Session()
-        res = session.get(url, headers={'User-Agent': self.default_ua}, proxies=proxies) #client in (t,webapp)
-        if res.status_code == 200:
-            data = res.json()
-        else:
-            raise Exception('NetworkRequestError: Response <{}>'.format(res.status_code))
+        with requests.Session() as ss:
+            r = ss.get(url, headers={'User-Agent': self.default_ua}, proxies=proxies) #client in (t,webapp)
+            data = r.json()
 
         result = ''
         for dt in data[0]:
             if dt[0]:
                 result += dt[0]
-        session.close()
+
         return data if is_detail else result
 
 
@@ -176,7 +173,7 @@ def google_api(text, from_language='auto',to_language='zh-CN',host='https://tran
     :param to_language: string, default 'zh'
     :param host: string,
     :param **kwargs:
-            :param if_check_language: boolean, True.
+            :param if_check_language: boolean, default True.
             :param is_detail: boolean, default False.
             :param proxies: dict, default None.
     :return:

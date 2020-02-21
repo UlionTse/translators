@@ -1,7 +1,7 @@
 *[translators](https://github.com/uliontse/translators/blob/master/README.md)*
 ================================================================================
 
-[![PyPI - Version](https://img.shields.io/badge/pypi-v4.2.2-blue.svg)](https://pypi.org/project/translators/)
+[![PyPI - Version](https://img.shields.io/badge/pypi-v4.3.0-blue.svg)](https://pypi.org/project/translators/)
 [![PyPI - License](https://img.shields.io/pypi/l/translators.svg)](https://github.com/shinalone/translators/blob/master/LICENSE)
 [![PyPI - Python](https://img.shields.io/badge/python-3.5%20%7C%203.6%20%7C%203.7%20%7C%203.8-blue.svg)](https://docs.python.org/3/)
 [![PyPi - Coverage](https://img.shields.io/badge/coverage-90%25-green.svg)]()
@@ -11,21 +11,24 @@
 
 ### *1. Description:*
 
-- *Free & Easy translators for Python, such as Google, Alibaba, Tencent, NetEase(Youdao), etc.*
+- *Free & Easy translators for Python, such as Google, Baidu, Alibaba, Tencent, NetEase(Youdao), etc.*
 
 ### *2. Installation & Tutorials:*
 
 - *pip install **[translators](https://pypi.org/project/translators/)***
-- *translators.google(text, from_language, to_language, host='https://translate.google.cn',@@kwargs)*
-- *detail to help(translators.google)*
+- *translators.google(text, from_language, to_language)*
+- *detail to [help]()(translators.google)*
 
 *Examples:*
 
 ```python
 >>>import translators as ts
 
->>> ts.google('Hello,World!', 'auto', 'zh')
+>>>ts.google('Hello,World!', 'auto', 'zh')
 '你好，世界！'
+
+>>>ts.baidu('Li Bai will go by boat.', 'en', 'wyw')
+'李将泛舟往。' #李白乘舟将欲行。
 
 >>>ts.youdao('再见，世界！', 'zh', 'ko')
 '안녕, 세계야!'

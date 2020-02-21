@@ -55,3 +55,6 @@ make the license more formal
 
 4.2.2
 from_language default 'auto'
+
+4.3.0
+add baidu()

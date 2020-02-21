@@ -114,7 +114,7 @@ class Tencent:
         :param to_language: string, default 'zh'
         :param host: string,
         :param **kwargs:
-            :param if_check_language: boolean, True.
+            :param if_check_language: boolean, default True.
             :param is_detail: boolean, default False.
             :param proxies: dict, default None.
         :return:

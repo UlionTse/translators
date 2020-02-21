@@ -10,3 +10,4 @@ translators/google.py
 translators/youdao.py
 translators/tencent.py
 translators/alibaba.py
+translators/baidu.py
