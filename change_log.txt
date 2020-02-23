@@ -58,3 +58,6 @@ from_language default 'auto'
 
 4.3.0
 add baidu()
+
+4.3.2
+apis.py (Framing)

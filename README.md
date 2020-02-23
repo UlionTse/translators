@@ -1,7 +1,7 @@
 *[translators](https://github.com/uliontse/translators/blob/master/README.md)*
 ================================================================================
 
-[![PyPI - Version](https://img.shields.io/badge/pypi-v4.3.0-blue.svg)](https://pypi.org/project/translators/)
+[![PyPI - Version](https://img.shields.io/badge/pypi-v4.3.2-blue.svg)](https://pypi.org/project/translators/)
 [![PyPI - License](https://img.shields.io/pypi/l/translators.svg)](https://github.com/shinalone/translators/blob/master/LICENSE)
 [![PyPI - Python](https://img.shields.io/badge/python-3.5%20%7C%203.6%20%7C%203.7%20%7C%203.8-blue.svg)](https://docs.python.org/3/)
 [![PyPi - Coverage](https://img.shields.io/badge/coverage-90%25-green.svg)]()
