@@ -99,17 +99,11 @@ class Google(Tse):
         self.api_url = None
         self.query_count = 0
         self.output_zh = 'zh-CN'
-
-
-    # def timeStat(self, func):
-    #     return self.timeStat(func)
-    
-    
+ 
     # def rshift(self,val, n):
     #     """python port for '>>>'(right shift with padding)
     #     """
     #     return (val % 0x100000000) >> n
-    
     
     def _xr(self, a, b):
         size_b = len(b)
@@ -542,7 +536,7 @@ class Bing(Tse):
         self.en_host_url = 'https://bing.com/Translator'
         self.api_url = None
         self.host_headers = None
-        self.api_headers = self.get_headers(self.cn_host_url, if_use_api=True)
+        self.api_headers = None
         self.host_info = None
         self.language_map = None
         self.query_count = 0
