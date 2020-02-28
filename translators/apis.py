@@ -41,9 +41,6 @@ from hashlib import md5
 from urllib.parse import quote, urlencode, urlparse
 
 
-
-
-
 class Tse:
     def __init__(self):
         self.author = 'Ulion.Tse'
@@ -58,7 +55,6 @@ class Tse:
             print('UseTimeSeconds(fn: {}): {}'.format(func.__name__, round((t2 - t1), 2)))
             return r
         return wrapper
-        
 
     def get_headers(self, host_url, if_use_api=False):
         url_path = urlparse(host_url).path
@@ -77,7 +73,6 @@ class Tse:
         }
         return host_headers if not if_use_api else api_headers
 
-
     def check_language(self, from_language, to_language, language_map, output_zh=None, output_auto='auto'):
         from_language = output_auto if from_language in ('auto', 'auto-detect') else from_language
         from_language = output_zh if output_zh and from_language in ('zh','zh-CN','zh-CHS','zh-Hans') else from_language
@@ -90,9 +85,7 @@ class Tse:
         elif from_language != output_auto and to_language not in language_map[from_language]:
             print('language_map:', language_map)
             raise Exception('Unsupported translation: from [{0}] to [{1}]!'.format(from_language,to_language))
-        
         return from_language,to_language
-
 
 
 class Google(Tse):
@@ -129,7 +122,6 @@ class Google(Tse):
             a = a + d & 4294967295 if '+' == b[c] else a ^ d
             c += 3
         return a
-    
     
     def acquire(self, text, tkk):
         # tkk = google.get_tkk(self)
@@ -173,13 +165,11 @@ class Google(Tse):
         a %= 1000000  # int(1E6)
         return '{}.{}'.format(a, a ^ b)
 
-
     def get_language_map(self,host_html):
         lang_list_str = re.findall("source_code_name:\[(.*?)\],", host_html)[0]
         lang_list_str = ('['+ lang_list_str + ']').replace('code','"code"').replace('name','"name"')
         lang_list = [x['code'] for x in eval(lang_list_str) if x['code'] != 'auto']
         return {}.fromkeys(lang_list,lang_list)
-
 
     @Tse.timeStat
     def google_api(self, query_text, from_language='auto', to_language='zh', **kwargs):
@@ -243,7 +233,6 @@ class Baidu(Tse):
         self.query_count = 0
         self.output_zh = 'zh'
 
-
     def get_sign_html(self, ss, host_html, proxies):
         try:
             r = ss.get(self.get_sign_url, headers=self.host_headers, proxies=proxies)
@@ -253,14 +242,12 @@ class Baidu(Tse):
             r = ss.get(self.get_sign_url, headers=self.host_headers, proxies=proxies)
         return r.text
 
-
     def get_sign(self, sign_html, ts_text, gtk):
         begin_label = 'define("translation:widget/translate/input/pGrab",function(r,o,t){'
         end_label = 'var i=null;t.exports=e});'
         sign_js = sign_html[sign_html.find(begin_label) + len(begin_label):sign_html.find(end_label)]
         sign_js = sign_js.replace('function e(r)', 'function e(r,i)')
         return execjs.compile(sign_js).call('e', ts_text, gtk)
-
 
     def get_host_info(self, host_html, sign_html, ts_text):
         gtk = re.findall("window.gtk = '(.*?)';", host_html)[0]
@@ -272,7 +259,6 @@ class Baidu(Tse):
         js_data = run_js.eval(js_txt)
         js_data.update({'gtk': gtk, 'sign': sign})
         return js_data
-
 
     @Tse.timeStat
     def baidu_api(self, query_text, from_language='auto', to_language='zh', **kwargs):
@@ -336,7 +322,6 @@ class Youdao(Tse):
         self.query_count = 0
         self.output_zh = 'zh-CHS'
     
-
     def get_language_map(self, host_html):
         et = etree.HTML(host_html)
         lang_list = et.xpath('//*[@id="languageSelect"]/li/@data-value')
@@ -346,7 +331,6 @@ class Youdao(Tse):
         lang_map.update({'zh-CHS': list(lang_map.keys())})
         return lang_map
 
-
     def get_sign_key(self, ss, host_html, proxies):
         try:
             r = ss.get(self.get_sign_url, headers=self.host_headers, proxies=proxies)
@@ -354,10 +338,8 @@ class Youdao(Tse):
         except:
             self.get_sign_url = re.search(self.get_sign_pattern, host_html).group(0)
             r = ss.get(self.get_sign_url, headers=self.host_headers, proxies=proxies)
-    
         sign = re.findall('n.md5\("fanyideskweb"\+e\+i\+"(.*?)"\)', r.text)
         return sign[0] if sign and sign != [''] else 'Nw(nmmbP%A-r6U3EUn]Aj'
-
 
     def get_form(self, query_text, from_language, to_language, sign_key):
         ts = str(int(time.time()))
@@ -382,7 +364,6 @@ class Youdao(Tse):
             # 'typoResult': 'false'
         }
         return form
-
 
     @Tse.timeStat
     def youdao_api(self, query_text, from_language='auto', to_language='zh', **kwargs):
@@ -415,7 +396,6 @@ class Youdao(Tse):
         return data if is_detail_result else ''.join(item['tgt'] for item in data['translateResult'][0])
 
 
-
 class Tencent(Tse):
     def __init__(self):
         super().__init__()
@@ -428,13 +408,11 @@ class Tencent(Tse):
         self.query_count = 0
         self.output_zh = 'zh'
  
-    
     def get_language_map(self, ss, language_url, proxies):
         r = ss.get(language_url,headers=self.host_headers,proxies=proxies)
         r.raise_for_status()
         lang_map_str = re.search('C={(.*?)}', r.text).group(0)
         return execjs.get().eval(lang_map_str)
-        
 
     @Tse.timeStat
     def tencent_api(self, query_text, from_language='auto', to_language='zh', **kwargs):
@@ -457,7 +435,6 @@ class Tencent(Tse):
             host_html = ss.get(self.host_url, headers=self.host_headers,proxies=proxies).text
             self.language_map = self.get_language_map(ss, self.get_language_url, proxies)
             from_language, to_language = self.check_language(from_language, to_language, self.language_map,output_zh=self.output_zh)
-            
             qtv = re.findall('var qtv = "(.*?)"', host_html)[0]
             qtk = re.findall('var qtk = "(.*?)"', host_html)[0]
             form_data = {
@@ -476,7 +453,6 @@ class Tencent(Tse):
         return data if is_detail_result else ''.join(item['targetText'] for item in data['translate']['records'])
 
 
-
 class Alibaba(Tse):
     def __init__(self):
         super().__init__()
@@ -488,7 +464,6 @@ class Alibaba(Tse):
         self.language_map = None
         self.query_count = 0
         self.output_zh = 'zh'
-    
     
     def get_dmtrack_pageid(self, host_response):
         try:
@@ -510,13 +485,11 @@ class Alibaba(Tse):
             o += a
         return o[:42]
 
-
     def get_language_map(self, ss, language_url, biz_type, dmtrack_pageid, proxies):
         params = {'dmtrack_pageid': dmtrack_pageid, 'biz_type': biz_type}
         language_dict = ss.get(language_url, params=params, headers=self.host_headers, proxies=proxies).json()
         language_map = dict(map(lambda x: x, [(x['sourceLuange'], x['targetLanguages']) for x in language_dict['languageMap']]))
         return language_map
-
 
     @Tse.timeStat
     def alibaba_api(self, query_text, from_language='auto', to_language='zh', **kwargs):
@@ -576,17 +549,14 @@ class Bing(Tse):
         self.output_auto = 'auto-detect'
         self.output_zh = 'zh-Hans'
     
-    
     def get_host_info(self, host_html):
         et = etree.HTML(host_html)
         lang_list = et.xpath('//*[@id="tta_srcsl"]/option/@value')
         lang_list.remove(self.output_auto)
         language_map = {}.fromkeys(lang_list,lang_list)
-        
         iid = et.xpath('//*[@id="rich_tta"]/@data-iid')[0] + '.' + str(self.query_count + 1)
         ig = re.findall('IG:"(.*?)"', host_html)[0]
         return {'iid': iid, 'ig': ig, 'language_map': language_map}
-
 
     @Tse.timeStat
     def bing_api(self, query_text, from_language='auto', to_language='zh', **kwargs):
@@ -641,14 +611,12 @@ class Sogou(Tse):
         self.query_count = 0
         self.output_zh = 'zh-CHS'
     
-    
     def get_language_map(self, ss, get_language_url, proxies):
         lang_html = ss.get(get_language_url,headers=self.host_headers,proxies=proxies).text
         lang_list_str = re.findall('"ALL":\[(.*?)\]', lang_html)[0]
         lang_list = execjs.get().eval('[' + lang_list_str + ']')
         lang_list = [x['lang'] for x in lang_list]
         return {}.fromkeys(lang_list,lang_list)
-    
     
     def get_form(self, query_text, from_language, to_language):
         uuid = ''
@@ -673,7 +641,6 @@ class Sogou(Tse):
             "needQc": "1",
         }
         return form
-    
     
     @Tse.timeStat
     def sogou_api(self, query_text, from_language='auto', to_language='zh', **kwargs):
@@ -706,30 +673,17 @@ class Sogou(Tse):
         return data if is_detail_result else data['data']['translate']['dit']
 
 
-
-
 _alibaba = Alibaba()
 alibaba = _alibaba.alibaba_api
-
 _baidu = Baidu()
 baidu = _baidu.baidu_api
-
 _bing = Bing()
 bing = _bing.bing_api
-
 _google = Google()
 google = _google.google_api
-
 _tencent = Tencent()
 tencent = _tencent.tencent_api
-
 _youdao = Youdao()
 youdao = _youdao.youdao_api
-
 _sogou = Sogou()
 sogou = _sogou.sogou_api
-
-
-if __name__ == '__main__':
-    query_text = "Li bai will go by boat. Suddenly he heard the sound of footsteps on the bank."
-    print(sogou(query_text))
