@@ -1,7 +1,7 @@
 *1.Description:*
 --------------------
 
-Free & Easy translators for Python, such as Google, Baidu, Alibaba, Tencent, NetEase(Youdao), etc.
+Free & Easy translators for Python, such as Google, Microsoft(Bing), Baidu, Alibaba, Tencent, NetEase(Youdao), Sogou, etc.
 
 *2.Installation:*
 ------------------

@@ -1,7 +1,7 @@
 *[translators](https://github.com/uliontse/translators/blob/master/README.md)*
 ================================================================================
 
-[![PyPI - Version](https://img.shields.io/badge/pypi-v4.3.2-blue.svg)](https://pypi.org/project/translators/)
+[![PyPI - Version](https://img.shields.io/badge/pypi-v4.4.0-blue.svg)](https://pypi.org/project/translators/)
 [![PyPI - License](https://img.shields.io/pypi/l/translators.svg)](https://github.com/shinalone/translators/blob/master/LICENSE)
 [![PyPI - Python](https://img.shields.io/badge/python-3.5%20%7C%203.6%20%7C%203.7%20%7C%203.8-blue.svg)](https://docs.python.org/3/)
 [![PyPi - Coverage](https://img.shields.io/badge/coverage-90%25-green.svg)]()
@@ -11,12 +11,12 @@
 
 ### *1. Description:*
 
-- *Free & Easy translators for Python, such as Google, Baidu, Alibaba, Tencent, NetEase(Youdao), etc.*
+- *Free & Easy translators for Python, such as Google, Microsoft(Bing), Baidu, Alibaba, Tencent, NetEase(Youdao), Sogou, etc.*
 
 ### *2. Installation & Tutorials:*
 
 - *pip install **[translators](https://pypi.org/project/translators/)***
-- *translators.google(text, from_language, to_language)*
+- *translators.google(query_text, from_language, to_language)*
 - *detail to [help]()(translators.google)*
 
 *Examples:*
@@ -24,20 +24,27 @@
 ```python
 >>>import translators as ts
 
->>>ts.google('Hello,World!', 'auto', 'zh')
-'你好，世界！'
+>>>ts.google('怒发冲冠凭栏处，潇潇雨歇抬望眼。', 'auto', 'en')
+"At the anger rushing to the crown, Xiaoxiao Yuxie looked up."
 
->>>ts.baidu('Li Bai will go by boat.', 'en', 'wyw')
-'李将泛舟往。' #李白乘舟将欲行。
+>>>ts.bing('仰天长啸，壮怀激烈。','auto','en')
+"The sky is long and squealing, strong and fierce."
 
->>>ts.youdao('再见，世界！', 'zh', 'ko')
-'안녕, 세계야!'
+>>>ts.baidu('三十功名尘与土，八千里路云和月。', 'wyw', 'en')
+"""Over the past 30 years, although some fame has been established, it is as insignificant as the dust. After 
+eight thousand miles of war between the north and the south, we have experienced many vicissitudes of life."""
 
->>>ts.tencent('Am happy', 'en', 'ar')
-'أنا سعيد'
+>>>ts.sogou('莫等闲，白了少年头，空悲切。', 'auto', 'en')
+"Don't take it for granted, white head, empty sorrow."
 
->>>ts.alibaba('Estoy muy mal.', 'es', 'en')
-"I'm really bad."
+>>>ts.youdao('靖康耻，犹未雪。臣子恨，何时灭。驾长车踏破贺兰山缺。', 'auto', 'en')
+"Jingkang shame, still not snow. When the courtiers hate, out. Drive a long car through helan mountain."
+
+>>>ts.tencent('壮志饥餐胡虏肉，笑谈渴饮匈奴血。', 'auto', 'en')
+"Ambition to eat hungry Hu captive meat, laugh about thirst for Xiongnu blood."
+
+>>>ts.alibaba('待从头，收拾旧山河，朝天阙。', 'auto', 'en')
+"Stay from the beginning, clean up the old mountains and rivers, and face the sky."
 ```
 
 

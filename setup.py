@@ -6,12 +6,12 @@ from setuptools import setup,find_packages
 
 PACKAGE = "translators"
 NAME = "translators"
-DESCRIPTION = "Free & Easy translators for Python, such as Google, Baidu, Alibaba, Tencent, NetEase(Youdao), etc."
+DESCRIPTION = "Free & Easy translators for Python, such as Google, Microsoft(Bing), Baidu, Alibaba, Tencent, NetEase(Youdao), Sogou, etc."
 AUTHOR = "UlionTse"
 AUTHOR_EMAIL = "shinalone@outlook.com"
 URL = "https://github.com/uliontse/translators"
 #VERSION = __import__(PACKAGE).__version__
-VERSION = "4.3.2"
+VERSION = "4.4.0"
 
 with open('README.md','r',encoding='utf-8') as file:
     long_description = file.read()
@@ -39,7 +39,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8"
     ],
-    keywords=['translate','translator','fanyi','Google','Baidu','Alibaba','Tencent','Youdao','NetEase'],
+    keywords=['translate','translator','fanyi','Google','Baidu','Alibaba','Tencent','Youdao','Bing','Sogou'],
     install_requires=[
         'requests>=2.22.0',
         'PyExecJS>=1.5.1',

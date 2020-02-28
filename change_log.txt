@@ -61,3 +61,7 @@ add baidu()
 
 4.3.2
 apis.py (Framing)
+
+4.4.0
+add bing()
+add sogou()
