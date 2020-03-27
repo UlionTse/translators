@@ -56,10 +56,10 @@ class Tse:
             return r
         return wrapper
 
-    def get_headers(self, host_url, if_use_api=False):
+    def get_headers(self, host_url, if_use_api=False, if_use_referer=True):
         url_path = urlparse(host_url).path
         host_headers = {
-            'Referer': host_url,
+            'Referer' if if_use_referer else 'Host': host_url,
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) "
                           "Chrome/55.0.2883.87 Safari/537.36"
         }
@@ -452,7 +452,8 @@ class Alibaba(Tse):
         super().__init__()
         self.host_url = 'https://translate.alibaba.com'
         self.api_url = 'https://translate.alibaba.com/translationopenseviceapp/trans/TranslateTextAddAlignment.do'
-        self.get_language_url = 'https://translate.alibaba.com/trans/acquireSupportLanguage.do'
+        self.get_language_old_url = 'https://translate.alibaba.com/trans/acquireSupportLanguage.do'
+        self.get_language_new_url = 'https://translate.alibaba.com/translationopenseviceapp/trans/acquire_supportLanguage.do'
         self.host_headers = self.get_headers(self.host_url, if_use_api=False)
         self.api_headers = self.get_headers(self.host_url, if_use_api=True)
         self.language_map = None
@@ -479,11 +480,17 @@ class Alibaba(Tse):
             o += a
         return o[:42]
 
-    def get_language_map(self, ss, language_url, biz_type, dmtrack_pageid, proxies):
+    def get_language_map(self, ss, biz_type, dmtrack_pageid, proxies):
+        def get_lang(language_url, params=None):
+            language_dict = ss.get(language_url, params=params, headers=self.host_headers, proxies=proxies).json()
+            language_map = dict(map(lambda x: x, [(x['sourceLuange'], x['targetLanguages']) for x in language_dict['languageMap']]))
+            return language_map
+
         params = {'dmtrack_pageid': dmtrack_pageid, 'biz_type': biz_type}
-        language_dict = ss.get(language_url, params=params, headers=self.host_headers, proxies=proxies).json()
-        language_map = dict(map(lambda x: x, [(x['sourceLuange'], x['targetLanguages']) for x in language_dict['languageMap']]))
-        return language_map
+        try:
+            return get_lang(self.get_language_new_url, params=None)
+        except:
+            return get_lang(self.get_language_old_url, params=params)
 
     @Tse.timeStat
     def alibaba_api(self, query_text, from_language='auto', to_language='zh', **kwargs):
@@ -507,7 +514,7 @@ class Alibaba(Tse):
         with requests.Session() as ss:
             host_response = ss.get(self.host_url, headers=self.host_headers, proxies=proxies)
             dmtrack_pageid = self.get_dmtrack_pageid(host_response)
-            self.language_map = self.get_language_map(ss, self.get_language_url, biz_type, dmtrack_pageid, proxies)
+            self.language_map = self.get_language_map(ss, biz_type, dmtrack_pageid, proxies)
             from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
             form_data = {
                 "srcLanguage": from_language,
@@ -545,7 +552,7 @@ class Bing(Tse):
     
     def get_host_info(self, host_html):
         et = etree.HTML(host_html)
-        lang_list = et.xpath('//*[@id="tta_srcsl"]/option/@value')
+        lang_list = et.xpath('//*[@id="tta_srcsl"]/option/@value') or et.xpath('//*[@id="t_srcAllLang"]/option/@value')
         lang_list.remove(self.output_auto)
         language_map = {}.fromkeys(lang_list,lang_list)
         iid = et.xpath('//*[@id="rich_tta"]/@data-iid')[0] + '.' + str(self.query_count + 1)

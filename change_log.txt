@@ -65,3 +65,7 @@ apis.py (Framing)
 4.4.0
 add bing()
 add sogou()
+
+4.4.2
+make 'get_language_url' of alibaba stronger.
+make xpath pattern of bing stronger.
