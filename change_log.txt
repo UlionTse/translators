@@ -1,3 +1,6 @@
+1.0.1
+build translate_api on 10,10,2017.
+
 ...(history)
 
 2.2.2
@@ -69,3 +72,6 @@ add sogou()
 4.4.2
 make 'get_language_url' of alibaba stronger.
 make xpath pattern of bing stronger.
+
+4.4.3
+fix youdao when from_language='auto' and youdao can not recognize which is language of query_text.

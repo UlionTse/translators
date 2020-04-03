@@ -3,7 +3,7 @@
 
 '''MIT License
 
-Copyright (c) 2020 UlionTse
+Copyright (c) 2017 UlionTse
 
 Warning: Prohibition of Commercial Use!
 This module is designed to help students and individuals with translation services.
@@ -367,26 +367,36 @@ class Youdao(Tse):
         :param from_language: string, default 'auto'.
         :param to_language: string, default 'zh'.
         :param **kwargs:
+                :param nonautomatic_recognize_replaced_language: string, default 'en'.
                 :param is_detail_result: boolean, default False.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.05.
         :return: string or dict
         '''
+        nonautomatic_recognize_replaced_language = kwargs.get('nonautomatic_recognize_replaced_language', 'en')
         is_detail_result = kwargs.get('is_detail_result', False)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep', 0.05)
-    
+
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
             self.language_map = self.get_language_map(host_html)
             sign_key = self.get_sign_key(ss, host_html, proxies)
             from_language, to_language = self.check_language(from_language, to_language, self.language_map,output_zh=self.output_zh)
-            form = self.get_form(str(query_text), from_language, to_language, sign_key)
-            r = ss.post(self.api_url, data=form, headers=self.api_headers, proxies=proxies)
-            r.raise_for_status()
-            data = r.json()
+
+            def post_data(from_language):
+                form = self.get_form(str(query_text), from_language, to_language, sign_key)
+                r = ss.post(self.api_url, data=form, headers=self.api_headers, proxies=proxies)
+                r.raise_for_status()
+                return r.json()
+
+            data = post_data(from_language)
+            data = post_data(nonautomatic_recognize_replaced_language) if data.get('errorCode') == 40 else data
         time.sleep(sleep_seconds)
         self.query_count += 1
+        if data['errorCode'] == 40:
+            raise Exception('Unable to automatically recognize the language of `query_text`, '
+                            'please specify parameters of `from_language` or `nonautomatic_recognize_replaced_language`.')
         return data if is_detail_result else ''.join(item['tgt'] for item in data['translateResult'][0])
 
 
