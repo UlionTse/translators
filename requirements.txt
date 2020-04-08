@@ -1,3 +1,4 @@
+testfixtures
 requests
 PyExecJS
 lxml

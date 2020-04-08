@@ -33,6 +33,7 @@ SOFTWARE.
 
 import re
 import time
+import logging
 import random
 import execjs
 import requests
@@ -42,6 +43,8 @@ from urllib.parse import quote, urlencode, urlparse
 
 
 class Tse:
+    logger = logging.getLogger('TSE LOGGER')
+
     def __init__(self):
         self.author = 'Ulion.Tse'
     
@@ -52,7 +55,7 @@ class Tse:
             t1 = time.time()
             r = func(*args, **kwargs)
             t2 = time.time()
-            print('UseTimeSeconds(fn: {}): {}'.format(func.__name__, round((t2 - t1), 2)))
+            self.logger.info('UseTimeSeconds(fn: {}): {}'.format(func.__name__, round((t2 - t1), 2)))
             return r
         return wrapper
 
@@ -83,7 +86,7 @@ class Tse:
         elif to_language not in language_map:
             raise KeyError('Unsupported to_language[{}] in {}.'.format(to_language,list(language_map.keys())))
         elif from_language != output_auto and to_language not in language_map[from_language]:
-            print('language_map:', language_map)
+            self.logger.error('language_map:', language_map)
             raise Exception('Unsupported translation: from [{0}] to [{1}]!'.format(from_language,to_language))
         return from_language,to_language
 
