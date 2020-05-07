@@ -15,7 +15,7 @@ A free translator based on the translation interface of Google, Microsoft(Bing),
     - [Support Language](#support-language)
     - [About Chinese Language](#about-Chinese-language)
 - [Installation](#installation)
-  - [pip](#pip)
+  - [From PyPI](#from-PyPI)
   - [From Source](#from-source)
 - [Getting Started](#getting-started)
 - [License](#License)
@@ -138,7 +138,7 @@ A free translator based on the translation interface of Google, Microsoft(Bing),
 
 ## Installation
 
-### pip
+### From PyPI
 
 ```shell
 pip install translators --upgrade
