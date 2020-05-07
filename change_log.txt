@@ -75,3 +75,8 @@ make xpath pattern of bing stronger.
 
 4.4.3
 fix youdao when from_language='auto' and youdao can not recognize which is language of query_text.
+
+4.5.0
+add deepl()
+add TranslatorError
+use magic `sleep_seconds`

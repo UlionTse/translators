@@ -34,11 +34,15 @@ SOFTWARE.
 import re
 import time
 import random
-import execjs
-import requests
-from lxml import etree
+from functools import wraps
 from hashlib import md5
 from urllib.parse import quote, urlencode, urlparse
+
+import requests
+import execjs
+from lxml import etree
+from loguru import logger
+
 
 
 class Tse:
@@ -47,12 +51,13 @@ class Tse:
     
     @classmethod
     def timeStat(self, func):
+        @wraps(func)
         def wrapper(*args, **kwargs):
             import time
             t1 = time.time()
             r = func(*args, **kwargs)
             t2 = time.time()
-            print('UseTimeSeconds(fn: {}): {}'.format(func.__name__, round((t2 - t1), 2)))
+            logger.info('UseTimeSeconds(fn: {}): {}'.format(func.__name__, round((t2 - t1), 2)))
             return r
         return wrapper
 
@@ -82,13 +87,17 @@ class Tse:
         to_language = output_zh if output_zh and to_language in ('zh','zh-CN','zh-CHS','zh-Hans') else to_language
         
         if from_language != output_auto and from_language not in language_map:
-            raise KeyError('Unsupported from_language[{}] in {}.'.format(from_language,list(language_map.keys())))
+            raise TranslatorError('Unsupported from_language[{}] in {}.'.format(from_language,list(language_map.keys())))
         elif to_language not in language_map:
-            raise KeyError('Unsupported to_language[{}] in {}.'.format(to_language,list(language_map.keys())))
+            raise TranslatorError('Unsupported to_language[{}] in {}.'.format(to_language,list(language_map.keys())))
         elif from_language != output_auto and to_language not in language_map[from_language]:
-            print('language_map:', language_map)
-            raise Exception('Unsupported translation: from [{0}] to [{1}]!'.format(from_language,to_language))
+            logger.exception('language_map:', language_map)
+            raise TranslatorError('Unsupported translation: from [{0}] to [{1}]!'.format(from_language,to_language))
         return from_language,to_language
+    
+    
+class TranslatorError(Exception):
+    pass
 
 
 class Google(Tse):
@@ -789,7 +798,7 @@ baidu = _baidu.baidu_api
 _bing = Bing()
 bing = _bing.bing_api
 _deepl = Deepl()
-deepl = _deepl.deepl_api()
+deepl = _deepl.deepl_api
 _google = Google()
 google = _google.google_api
 _sogou = Sogou()
@@ -802,4 +811,18 @@ youdao = _youdao.youdao_api
 
 def test():
     query_text = '人之初，性本善。性相近，习相远。'
-    print(alibaba(query_text))
+    # print(alibaba(query_text, to_language='aaa')) #['en', 'zh', 'zh-TW', 'ms', 'ru', 'es', 'fr', 'tr', 'pt', 'it', 'ja', 'ar', 'de', 'ko', 'vi', 'pl', 'he', 'id', 'hi', 'nl', 'th']
+    print(baidu(query_text, to_language='aaa')) #['zh', 'en', 'ara', 'est', 'bul', 'pl', 'dan', 'de', 'ru', 'fra', 'fin', 'kor', 'nl', 'cs', 'rom', 'pt', 'jp', 'swe', 'slo', 'th', 'wyw', 'spa', 'el', 'hu', 'it', 'yue', 'cht', 'vie']
+    # print(bing(query_text))
+    # print(deepl(query_text, to_language='aaa')) #['en', 'de', 'fr', 'es', 'pt', 'it', 'nl', 'pl', 'ru', 'ja', 'zh']
+    # print(google(query_text))
+    # print(sogou(query_text, to_language='aaa'))
+    # print(tencent(query_text, to_language='aaa')) #['auto', 'en', 'zh', 'fr', 'es', 'it', 'de', 'tr', 'ru', 'pt', 'vi', 'id', 'ms', 'th', 'jp', 'kr', 'ar', 'hi']
+    # print(youdao(query_text, to_language='aaa')) #['en', 'de', 'fr', 'es', 'pt', 'it', 'nl', 'pl', 'ru', 'ja', 'zh']
+
+# test()
+
+'''
+sogou:
+['ar', 'et', 'bg', 'pl', 'bs-Latn', 'fa', 'mww', 'da', 'de', 'ru', 'fr', 'fi', 'fj', 'fil', 'ko', 'ht', 'nl', 'ca', 'cs', 'tlh', 'tlh-Qaak', 'hr', 'otq', 'ro', 'lv', 'lt', 'ms', 'mt', 'mg', 'bn', 'af', 'no', 'pt', 'ja', 'sv', 'sl', 'sr-Latn', 'sr-Cyrl', 'sk', 'sw', 'sm', 'th', 'tr', 'to', 'ty', 'yua', 'cy', 'uk', 'ur', 'es', 'el', 'hu', 'he', 'en', 'it', 'hi', 'id', 'vi', 'yue', 'zh-CHS', 'zh-CHT']
+'''

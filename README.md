@@ -1,61 +1,179 @@
-*[translators](https://github.com/uliontse/translators/blob/master/README.md)*
+[translators](https://github.com/uliontse/translators/blob/master/README.md)
 ================================================================================
 
-[![PyPI - Version](https://img.shields.io/badge/pypi-v4.4.3-blue.svg)](https://pypi.org/project/translators/)
+[![PyPI - Version](https://img.shields.io/badge/pypi-v4.5.0-blue.svg)](https://pypi.org/project/translators/)
 [![PyPI - License](https://img.shields.io/pypi/l/translators.svg)](https://github.com/shinalone/translators/blob/master/LICENSE)
-[![PyPI - Python](https://img.shields.io/badge/python-3.5%20%7C%203.6%20%7C%203.7%20%7C%203.8-blue.svg)](https://docs.python.org/3/)
-[![PyPi - Coverage](https://img.shields.io/badge/coverage-90%25-green.svg)]()
+[![PyPI - Python](https://img.shields.io/badge/python-3.5+-blue.svg)](https://docs.python.org/3/)
 [![PyPI - Status](https://img.shields.io/pypi/status/translators.svg)](https://pypi.org/project/translators/)
-[![PyPI - Wheel](https://img.shields.io/badge/wheel-yes-brightgreen.svg)](https://pypi.org/project/translators/)
 
 
-### *1. Description:*
 
-- *Free & Easy translators for Python, such as Google, Microsoft(Bing), Baidu, Alibaba, Tencent, NetEase(Youdao), Sogou, etc.*
+A free translator based on the translation interface of Google, Microsoft(Bing), Deepl, Baidu, Alibaba, Tencent, NetEase(Youdao), Sogou, etc.
 
-### *2. Installation & Tutorials:*
+- [More about translators](#more-about-translators)
+    - [Features](#features)
+    - [Support Language](#support language)
+    - [About Chinese Language](#about Chinese language)
+- [Installation](#installation)
+  - [pip](#pip)
+  - [From Source](#from-source)
+- [Getting Started](#getting-started)
+- [License](#License)
 
-- *pip install **[translators](https://pypi.org/project/translators/)***
-- *translators.google(query_text, from_language, to_language)*
-- *detail to [help]()(translators.google)*
 
-*Examples:*
+
+## More About Translators
+
+### Features
+
+-   Google:
+-   Bing:
+
+### Support Language
+
+#TODO
+
+| support language \ translator | Google | Bing | Baidu | Alibaba | Tencent | Youdao | Sogou | Deepl |
+| ----------------------------- | ------ | ---- | ----- | ------- | ------- | ------ | ----- | ----- |
+| en                            | Y      |      |       |         | Y       | Y      |       | Y     |
+| zh                            | Y      |      |       |         | Y       | Y      |       | Y     |
+| de                            | Y      |      |       |         | Y       | Y      |       | Y     |
+| fr                            | Y      |      |       |         | Y       | Y      |       | Y     |
+| es                            | Y      |      |       |         | Y       | Y      |       | Y     |
+| pt                            | Y      |      |       |         | Y       | Y      |       | Y     |
+| it                            | Y      |      |       |         | Y       | Y      |       | Y     |
+| nl                            | Y      |      |       |         | Y       | Y      |       | Y     |
+| pl                            | Y      |      |       |         | Y       | Y      |       | Y     |
+| ru                            | Y      |      |       |         | Y       | Y      |       | Y     |
+| ja(jp)                        | Y      |      |       |         | Y       | Y      |       | Y     |
+| kr(ko)                        |        |      |       |         | Y       |        |       |       |
+| ar                            |        |      |       |         | Y       |        |       |       |
+| hi                            |        |      |       |         | Y       |        |       |       |
+| id                            |        |      |       |         | Y       |        |       |       |
+| ms                            |        |      |       |         | Y       |        |       |       |
+| th                            |        |      |       |         | Y       |        |       |       |
+| tr                            |        |      |       |         | Y       |        |       |       |
+| vi                            |        |      |       |         | Y       |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+|                               |        |      |       |         |         |        |       |       |
+
+
+
+## Installation
+
+### pip
+
+```shell
+pip install translators --upgrade
+```
+
+### From Source
+
+```bash
+git clone https://github.com/UlionTse/translators.git
+cd translators
+python setup.py install
+```
+
+## Getting Started
 
 ```python
 >>>import translators as ts
 
->>>ts.google('怒发冲冠凭栏处，潇潇雨歇抬望眼。', 'auto', 'en')
-"At the anger rushing to the crown, Xiaoxiao Yuxie looked up."
-
->>>ts.bing('仰天长啸，壮怀激烈。','auto','en')
-"The sky is long and squealing, strong and fierce."
-
 >>>ts.baidu('三十功名尘与土，八千里路云和月。', 'wyw', 'en')
 """Over the past 30 years, although some fame has been established, it is as insignificant as the dust. After 
 eight thousand miles of war between the north and the south, we have experienced many vicissitudes of life."""
-
->>>ts.sogou('莫等闲，白了少年头，空悲切。', 'auto', 'en')
-"Don't take it for granted, white head, empty sorrow."
-
->>>ts.youdao('靖康耻，犹未雪。臣子恨，何时灭。驾长车踏破贺兰山缺。', 'auto', 'en')
-"Jingkang shame, still not snow. When the courtiers hate, out. Drive a long car through helan mountain."
-
->>>ts.tencent('壮志饥餐胡虏肉，笑谈渴饮匈奴血。', 'auto', 'en')
-"Ambition to eat hungry Hu captive meat, laugh about thirst for Xiongnu blood."
-
->>>ts.alibaba('待从头，收拾旧山河，朝天阙。', 'auto', 'en')
-"Stay from the beginning, clean up the old mountains and rivers, and face the sky."
 ```
 
+## License
 
-### *3. License*
+Prohibition of Commercial Use !
 
-***[Warning: Prohibition of Commercial Use !](https://github.com/uliontse/translators/blob/master/LICENSE)***
+This module is designed to help students and individuals with translation services.   
+For commercial use, please purchase API services from translation suppliers.
 
-*This module is designed to help students and individuals with translation services.   
-For commercial use, please purchase API services from translation suppliers.*
+[click the detail license.]((https://github.com/uliontse/translators/blob/master/LICENSE))
 
-### *4. Dictionary of `LANGUAGES`:*
+
+
+#TODO
 
 ```python
 LANGUAGES = {
