@@ -56,7 +56,7 @@ class Tse:
             return r
         return wrapper
 
-    def get_headers(self, host_url, if_use_api=False, if_use_referer=True):
+    def get_headers(self, host_url, if_use_api=False, if_use_referer=True, if_ajax=True):
         url_path = urlparse(host_url).path
         host_headers = {
             'Referer' if if_use_referer else 'Host': host_url,
@@ -71,6 +71,9 @@ class Tse:
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) "
                           "Chrome/55.0.2883.87 Safari/537.36"
         }
+        if not if_ajax:
+            api_headers.pop('X-Requested-With')
+            api_headers.update({'Content-Type': 'text/plain'})
         return host_headers if not if_use_api else api_headers
 
     def check_language(self, from_language, to_language, language_map, output_zh=None, output_auto='auto'):
@@ -166,24 +169,24 @@ class Google(Tse):
         return {}.fromkeys(lang_list,lang_list)
 
     @Tse.timeStat
-    def google_api(self, query_text, from_language='auto', to_language='zh', **kwargs):
+    def google_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
         https://translate.google.com, https://translate.google.cn.
         :param query_text: string, must.
         :param from_language: string, default 'auto'.
-        :param to_language: string, default 'zh'.
+        :param to_language: string, default 'en'.
         :param **kwargs:
                 :param if_use_cn_host: boolean, default True.
                 :param is_detail_result: boolean, default False.
                 :param proxies: dict, default None.
-                :param sleep_seconds: float, default 0.05.
+                :param sleep_seconds: float, >0.05. Best to set it yourself, otherwise there will be surprises.
         :return: string or list
         '''
         self.host_url = self.cn_host_url if kwargs.get('if_use_cn_host', True) else self.en_host_url
         self.host_headers = self.get_headers(self.cn_host_url, if_use_api=False)
         is_detail_result = kwargs.get('is_detail_result', False)
         proxies = kwargs.get('proxies', None)
-        sleep_seconds = kwargs.get('sleep', 0.05)
+        sleep_seconds = kwargs.get('sleep_seconds', 0.05 + random.random()/2 + 1e-100*2**self.query_count)
     
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
@@ -249,27 +252,26 @@ class Baidu(Tse):
     
         et = etree.HTML(host_html)
         js_txt = et.xpath("/html/body/script[2]/text()")[0][20:-3]
-        run_js = execjs.get()
-        js_data = run_js.eval(js_txt)
+        js_data = execjs.get().eval(js_txt)
         js_data.update({'gtk': gtk, 'sign': sign})
         return js_data
 
     @Tse.timeStat
-    def baidu_api(self, query_text, from_language='auto', to_language='zh', **kwargs):
+    def baidu_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
         https://fanyi.baidu.com
         :param query_text: string, must.
         :param from_language: string, default 'auto'.
-        :param to_language: string, default 'zh'.
+        :param to_language: string, default 'en'.
         :param **kwargs:
                 :param is_detail_result: boolean, default False.
                 :param proxies: dict, default None.
-                :param sleep_seconds: float, default 0.05.
+                :param sleep_seconds: float, >0.05. Best to set it yourself, otherwise there will be surprises.
         :return: string or dict
         '''
         is_detail_result = kwargs.get('is_detail_result', False)
         proxies = kwargs.get('proxies', None)
-        sleep_seconds = kwargs.get('sleep', 0.05)
+        sleep_seconds = kwargs.get('sleep_seconds', 0.05 + random.random()/2 + 1e-100*2**self.query_count)
     
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
@@ -360,23 +362,23 @@ class Youdao(Tse):
         return form
 
     @Tse.timeStat
-    def youdao_api(self, query_text, from_language='auto', to_language='zh', **kwargs):
+    def youdao_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
         http://fanyi.youdao.com
         :param query_text: string, must.
         :param from_language: string, default 'auto'.
-        :param to_language: string, default 'zh'.
+        :param to_language: string, default 'en'.
         :param **kwargs:
                 :param nonautomatic_recognize_replaced_language: string, default 'en'.
                 :param is_detail_result: boolean, default False.
                 :param proxies: dict, default None.
-                :param sleep_seconds: float, default 0.05.
+                :param sleep_seconds: float, >0.05. Best to set it yourself, otherwise there will be surprises.
         :return: string or dict
         '''
         nonautomatic_recognize_replaced_language = kwargs.get('nonautomatic_recognize_replaced_language', 'en')
         is_detail_result = kwargs.get('is_detail_result', False)
         proxies = kwargs.get('proxies', None)
-        sleep_seconds = kwargs.get('sleep', 0.05)
+        sleep_seconds = kwargs.get('sleep_seconds', 0.05 + random.random()/2 + 1e-100*2**self.query_count)
 
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
@@ -392,11 +394,11 @@ class Youdao(Tse):
 
             data = post_data(from_language)
             data = post_data(nonautomatic_recognize_replaced_language) if data.get('errorCode') == 40 else data
-        time.sleep(sleep_seconds)
-        self.query_count += 1
         if data['errorCode'] == 40:
             raise Exception('Unable to automatically recognize the language of `query_text`, '
                             'please specify parameters of `from_language` or `nonautomatic_recognize_replaced_language`.')
+        time.sleep(sleep_seconds)
+        self.query_count += 1
         return data if is_detail_result else ''.join(item['tgt'] for item in data['translateResult'][0])
 
 
@@ -419,21 +421,21 @@ class Tencent(Tse):
         return execjs.get().eval(lang_map_str)
 
     @Tse.timeStat
-    def tencent_api(self, query_text, from_language='auto', to_language='zh', **kwargs):
+    def tencent_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
         http://fanyi.qq.com
         :param query_text: string, must.
         :param from_language: string, default 'auto'.
-        :param to_language: string, default 'zh'.
+        :param to_language: string, default 'en'.
         :param **kwargs:
                 :param is_detail_result: boolean, default False.
                 :param proxies: dict, default None.
-                :param sleep_seconds: float, default 0.05.
+                :param sleep_seconds: float, >0.05. Best to set it yourself, otherwise there will be surprises.
         :return: string or dict
         '''
         is_detail_result = kwargs.get('is_detail_result', False)
         proxies = kwargs.get('proxies', None)
-        sleep_seconds = kwargs.get('sleep', 0.05)
+        sleep_seconds = kwargs.get('sleep_seconds', 0.05 + random.random()/2 + 1e-100*2**self.query_count)
 
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers,proxies=proxies).text
@@ -503,23 +505,23 @@ class Alibaba(Tse):
             return get_lang(self.get_language_old_url, params=params)
 
     @Tse.timeStat
-    def alibaba_api(self, query_text, from_language='auto', to_language='zh', **kwargs):
+    def alibaba_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
         https://translate.alibaba.com
         :param query_text: string, must.
         :param from_language: string, default 'auto'.
-        :param to_language: string, default 'zh'.
+        :param to_language: string, default 'en'.
         :param **kwargs:
                 :param biz_type: string, default 'message', choose from ("general","message","offer")
                 :param is_detail_result: boolean, default False.
                 :param proxies: dict, default None.
-                :param sleep_seconds: float, default 0.05.
+                :param sleep_seconds: float, >0.05. Best to set it yourself, otherwise there will be surprises.
         :return: string or dict
         '''
         biz_type = kwargs.get('biz_type', 'message')
         is_detail_result = kwargs.get('is_detail_result', False)
         proxies = kwargs.get('proxies', None)
-        sleep_seconds = kwargs.get('sleep', 0.05)
+        sleep_seconds = kwargs.get('sleep_seconds', 0.05 + random.random()/2 + 1e-100*2**self.query_count)
         
         with requests.Session() as ss:
             host_response = ss.get(self.host_url, headers=self.host_headers, proxies=proxies)
@@ -570,17 +572,17 @@ class Bing(Tse):
         return {'iid': iid, 'ig': ig, 'language_map': language_map}
 
     @Tse.timeStat
-    def bing_api(self, query_text, from_language='auto', to_language='zh', **kwargs):
+    def bing_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
         http://bing.com/Translator, http://cn.bing.com/Translator.
         :param query_text: string, must.
         :param from_language: string, default 'auto'.
-        :param to_language: string, default 'zh'.
+        :param to_language: string, default 'en'.
         :param **kwargs:
                 :param if_use_cn_host: boolean, default True.
                 :param is_detail_result: boolean, default False.
                 :param proxies: dict, default None.
-                :param sleep_seconds: float, default 0.05.
+                :param sleep_seconds: float, >0.05. Best to set it yourself, otherwise there will be surprises.
         :return: string or list
         '''
         self.host_url = self.cn_host_url if kwargs.get('if_use_cn_host', True) else self.en_host_url
@@ -589,7 +591,7 @@ class Bing(Tse):
         self.api_headers = self.get_headers(self.host_url, if_use_api=True)
         is_detail_result = kwargs.get('is_detail_result', False)
         proxies = kwargs.get('proxies', None)
-        sleep_seconds = kwargs.get('sleep', 0.05)
+        sleep_seconds = kwargs.get('sleep_seconds', 0.05 + random.random()/2 + 1e-100*2**self.query_count)
     
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
@@ -654,21 +656,21 @@ class Sogou(Tse):
         return form
     
     @Tse.timeStat
-    def sogou_api(self, query_text, from_language='auto', to_language='zh', **kwargs):
+    def sogou_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
         https://fanyi.sogou.com
         :param query_text: string, must.
         :param from_language: string, default 'auto'.
-        :param to_language: string, default 'zh'.
+        :param to_language: string, default 'en'.
         :param **kwargs:
                 :param is_detail_result: boolean, default False.
                 :param proxies: dict, default None.
-                :param sleep_seconds: float, default 0.05.
+                :param sleep_seconds: float, >0.05. Best to set it yourself, otherwise there will be surprises.
         :return: string or dict
         '''
         is_detail_result = kwargs.get('is_detail_result', False)
         proxies = kwargs.get('proxies', None)
-        sleep_seconds = kwargs.get('sleep', 0.05)
+        sleep_seconds = kwargs.get('sleep_seconds', 0.05 + random.random()/2 + 1e-100*2**self.query_count)
         
         with requests.Session() as ss:
             _ = ss.get(self.host_url, headers=self.host_headers, proxies=proxies)
@@ -684,17 +686,120 @@ class Sogou(Tse):
         return data if is_detail_result else data['data']['translate']['dit']
 
 
+class Deepl(Tse):
+    def __init__(self):
+        super().__init__()
+        self.host_url = 'https://www.deepl.com/translator'
+        self.api_url = 'https://www2.deepl.com/jsonrpc'
+        self.host_headers = self.get_headers(self.host_url, if_use_api=False)
+        self.api_headers = self.get_headers(self.host_url, if_use_api=True, if_ajax=False)
+        self.request_id = random.randrange(100,10000) * 10000 + 5
+        self.language_map = None
+        self.query_count = 0
+        self.output_zh = 'zh'
+
+    def get_language_map(self, host_html):
+        lang_list = etree.HTML(host_html).xpath('//*[@dl-test="translator-target-lang-list"]//@dl-lang')
+        lang_list = list(map(lambda x: x.lower(), lang_list))
+        return {}.fromkeys(lang_list, lang_list)
+
+    def split_sentences(self, ss, query_text, from_language, to_language, proxies):
+        params = {
+            'method': 'LMT_split_into_sentences',
+            'id': self.request_id + 2 * self.query_count,
+            'jsonrpc': '2.0',
+            'params': {
+                'texts': [query_text],
+                'lang': {
+                    'lang_user_selected': from_language,
+                    'user_preferred_langs': [to_language, from_language],
+                },
+            },
+        }
+        r = ss.post(self.api_url, json=params, headers=self.api_headers, proxies=proxies)
+        r.raise_for_status()
+        data = r.json()
+        return ss, data['result']['splitted_texts'][0]
+
+    def context_sentences_param(self, sentences, from_language, to_language):
+        sentences = [''] + sentences + ['']
+        param = {
+            'method': 'LMT_handle_jobs',
+            'id': self.request_id + 2 * self.query_count + 1,
+            'jsonrpc':' 2.0',
+            'params': {
+                'priority': 1,
+                'commonJobParams': {},
+                'timestamp': int(time.time()*1000),
+                'jobs': [
+                    {
+                        'kind': 'default',
+                        'raw_en_sentence': sentences[i],
+                        'raw_en_context_before': [sentences[i-1]] if sentences[i-1] else [],
+                        'raw_en_context_after': [sentences[i+1]] if sentences[i+1] else [],
+                        'preferred_num_beams': 1 if len(sentences)>3 else 4,
+                    } for i in range(1,len(sentences)-1)
+                ],
+                'lang': {
+                    'user_preferred_langs': [to_language, from_language],
+                    'source_lang_computed': from_language,
+                    'target_lang': to_language,
+                },
+            },
+        }
+        return param
+
+    @Tse.timeStat
+    def deepl_api(self, query_text, from_language='auto', to_language='en', **kwargs):
+        '''
+        https://www.deepl.com
+        :param query_text: string, must.
+        :param from_language: string, default 'auto'.
+        :param to_language: string, default 'en'.
+        :param **kwargs:
+                :param is_detail_result: boolean, default False.
+                :param proxies: dict, default None.
+                :param sleep_seconds: float, >0.05. Best to set it yourself, otherwise there will be surprises.
+        :return: string or dict
+        '''
+        is_detail_result = kwargs.get('is_detail_result', False)
+        proxies = kwargs.get('proxies', None)
+        sleep_seconds = kwargs.get('sleep_seconds', 0.05 + random.random()/2 + 1e-100*2**self.query_count)
+
+        with requests.Session() as ss:
+            host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
+            self.language_map = self.get_language_map(host_html)
+            from_language, to_language = self.check_language(from_language, to_language, language_map=self.language_map,
+                                                             output_zh=self.output_zh, output_auto='auto')
+            from_language, to_language = from_language.upper() if from_language != 'auto' else from_language, to_language.upper()
+            ss, sentences = self.split_sentences(ss, query_text, from_language, to_language, proxies)
+            params = self.context_sentences_param(sentences, from_language, to_language)
+            r = ss.post(self.api_url, json=params, headers=self.api_headers, proxies=proxies)
+            r.raise_for_status()
+            data = r.json()
+        time.sleep(sleep_seconds)
+        self.query_count += 1
+        return data if is_detail_result else ''.join(item['beams'][0]['postprocessed_sentence'] for item in data['result']['translations'])
+
+
 _alibaba = Alibaba()
 alibaba = _alibaba.alibaba_api
 _baidu = Baidu()
 baidu = _baidu.baidu_api
 _bing = Bing()
 bing = _bing.bing_api
+_deepl = Deepl()
+deepl = _deepl.deepl_api()
 _google = Google()
 google = _google.google_api
+_sogou = Sogou()
+sogou = _sogou.sogou_api
 _tencent = Tencent()
 tencent = _tencent.tencent_api
 _youdao = Youdao()
 youdao = _youdao.youdao_api
-_sogou = Sogou()
-sogou = _sogou.sogou_api
+
+
+def test():
+    query_text = '人之初，性本善。性相近，习相远。'
+    print(alibaba(query_text))
