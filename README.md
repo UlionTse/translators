@@ -12,8 +12,8 @@ A free translator based on the translation interface of Google, Microsoft(Bing),
 
 - [More about translators](#more-about-translators)
     - [Features](#features)
-    - [Support Language](#support language)
-    - [About Chinese Language](#about Chinese language)
+    - [Support Language](#support-language)
+    - [About Chinese Language](#about-Chinese-language)
 - [Installation](#installation)
   - [pip](#pip)
   - [From Source](#from-source)
@@ -166,10 +166,10 @@ eight thousand miles of war between the north and the south, we have experienced
 
 Prohibition of Commercial Use !
 
-This module is designed to help students and individuals with translation services.   
-For commercial use, please purchase API services from translation suppliers.
+*This module is designed to help students and individuals with translation services.* 
+*For commercial use, please purchase API services from translation suppliers.*
 
-[click the detail license.]((https://github.com/uliontse/translators/blob/master/LICENSE))
+[click the detail license.](https://github.com/uliontse/translators/blob/master/LICENSE)
 
 
 
