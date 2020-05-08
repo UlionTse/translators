@@ -80,3 +80,4 @@ fix youdao when from_language='auto' and youdao can not recognize which is langu
 add deepl()
 add TranslatorError
 use magic `sleep_seconds`
+upgrade README.md

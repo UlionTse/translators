@@ -44,7 +44,6 @@ from lxml import etree
 from loguru import logger
 
 
-
 class Tse:
     def __init__(self):
         self.author = 'Ulion.Tse'
@@ -273,11 +272,13 @@ class Baidu(Tse):
         :param from_language: string, default 'auto'.
         :param to_language: string, default 'en'.
         :param **kwargs:
+                :param use_domain: string, default 'common'. Choose from ('common', 'medicine', 'electronics', 'mechanics')
                 :param is_detail_result: boolean, default False.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, >0.05. Best to set it yourself, otherwise there will be surprises.
         :return: string or dict
         '''
+        use_domain = kwargs.get('use_domain', 'common')
         is_detail_result = kwargs.get('is_detail_result', False)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0.05 + random.random()/2 + 1e-100*2**self.query_count)
@@ -303,7 +304,7 @@ class Baidu(Tse):
                 "simple_means_flag": "3",
                 "sign": self.host_info.get('sign'),
                 "token": self.bdtk['token'],  # self.host_info.get('token'),
-                # "domain": "common",
+                "domain": use_domain,
             }
             r = ss.post(self.api_url, headers=self.api_headers, data=urlencode(form_data).encode('utf-8'),proxies=proxies)
             r.raise_for_status()
@@ -521,13 +522,13 @@ class Alibaba(Tse):
         :param from_language: string, default 'auto'.
         :param to_language: string, default 'en'.
         :param **kwargs:
-                :param biz_type: string, default 'message', choose from ("general","message","offer")
+                :param use_domain: string, default 'message', choose from ("general","message","offer")
                 :param is_detail_result: boolean, default False.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, >0.05. Best to set it yourself, otherwise there will be surprises.
         :return: string or dict
         '''
-        biz_type = kwargs.get('biz_type', 'message')
+        use_domain = kwargs.get('use_domain', 'message')
         is_detail_result = kwargs.get('is_detail_result', False)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0.05 + random.random()/2 + 1e-100*2**self.query_count)
@@ -535,7 +536,7 @@ class Alibaba(Tse):
         with requests.Session() as ss:
             host_response = ss.get(self.host_url, headers=self.host_headers, proxies=proxies)
             dmtrack_pageid = self.get_dmtrack_pageid(host_response)
-            self.language_map = self.get_language_map(ss, biz_type, dmtrack_pageid, proxies)
+            self.language_map = self.get_language_map(ss, use_domain, dmtrack_pageid, proxies)
             from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
             form_data = {
                 "srcLanguage": from_language,
@@ -543,7 +544,7 @@ class Alibaba(Tse):
                 "srcText": str(query_text),
                 "viewType": "",
                 "source": "",
-                "bizType": biz_type,
+                "bizType": use_domain,
             }
             i, data, ts_result, params = 0, {}, [], {"dmtrack_pageid":dmtrack_pageid}
             while not ts_result and i < 3:
@@ -811,18 +812,13 @@ youdao = _youdao.youdao_api
 
 def test():
     query_text = '人之初，性本善。性相近，习相远。'
-    # print(alibaba(query_text, to_language='aaa')) #['en', 'zh', 'zh-TW', 'ms', 'ru', 'es', 'fr', 'tr', 'pt', 'it', 'ja', 'ar', 'de', 'ko', 'vi', 'pl', 'he', 'id', 'hi', 'nl', 'th']
-    print(baidu(query_text, to_language='aaa')) #['zh', 'en', 'ara', 'est', 'bul', 'pl', 'dan', 'de', 'ru', 'fra', 'fin', 'kor', 'nl', 'cs', 'rom', 'pt', 'jp', 'swe', 'slo', 'th', 'wyw', 'spa', 'el', 'hu', 'it', 'yue', 'cht', 'vie']
-    # print(bing(query_text))
-    # print(deepl(query_text, to_language='aaa')) #['en', 'de', 'fr', 'es', 'pt', 'it', 'nl', 'pl', 'ru', 'ja', 'zh']
-    # print(google(query_text))
-    # print(sogou(query_text, to_language='aaa'))
-    # print(tencent(query_text, to_language='aaa')) #['auto', 'en', 'zh', 'fr', 'es', 'it', 'de', 'tr', 'ru', 'pt', 'vi', 'id', 'ms', 'th', 'jp', 'kr', 'ar', 'hi']
-    # print(youdao(query_text, to_language='aaa')) #['en', 'de', 'fr', 'es', 'pt', 'it', 'nl', 'pl', 'ru', 'ja', 'zh']
+    print(alibaba(query_text))
+    print(baidu(query_text))
+    print(bing(query_text))
+    print(deepl(query_text))
+    print(google(query_text))
+    print(sogou(query_text))
+    print(tencent(query_text))
+    print(youdao(query_text))
 
 # test()
-
-'''
-sogou:
-['ar', 'et', 'bg', 'pl', 'bs-Latn', 'fa', 'mww', 'da', 'de', 'ru', 'fr', 'fi', 'fj', 'fil', 'ko', 'ht', 'nl', 'ca', 'cs', 'tlh', 'tlh-Qaak', 'hr', 'otq', 'ro', 'lv', 'lt', 'ms', 'mt', 'mg', 'bn', 'af', 'no', 'pt', 'ja', 'sv', 'sl', 'sr-Latn', 'sr-Cyrl', 'sk', 'sw', 'sm', 'th', 'tr', 'to', 'ty', 'yua', 'cy', 'uk', 'ur', 'es', 'el', 'hu', 'he', 'en', 'it', 'hi', 'id', 'vi', 'yue', 'zh-CHS', 'zh-CHT']
-'''

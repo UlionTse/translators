@@ -6,8 +6,9 @@ from setuptools import setup,find_packages
 
 PACKAGE = "translators"
 NAME = "translators"
-DESCRIPTION = "A free translator based on the translation interface of Google, Microsoft(Bing), Deepl, Baidu, Alibaba, " \
-              "Tencent, NetEase(Youdao), Sogou, etc."
+DESCRIPTION = "Translators is a library which aims to bring free, multiple, enjoyable translation to individuals " \
+              "and students in Python. It based on the translation interface of Google, Microsoft(Bing), Baidu, " \
+              "Alibaba, Tencent, NetEase(Youdao), Sogou, Deepl, etc."
 AUTHOR = "UlionTse"
 AUTHOR_EMAIL = "shinalone@outlook.com"
 URL = "https://github.com/uliontse/translators"
@@ -40,7 +41,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
     ],
-    keywords=['translate','translator','fanyi','Google','Baidu','Alibaba','Tencent','Youdao','Bing','Sogou','deepl'],
+    keywords=['translate','translator','fanyi','Google','Baidu','Alibaba','Tencent','Youdao','Bing','Sogou','Deepl'],
     install_requires=[
         'requests>=2.23.0',
         'PyExecJS>=1.5.1',
