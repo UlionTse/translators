@@ -1,16 +1,13 @@
 [translators](https://github.com/uliontse/translators/blob/master/README.md)
 ================================================================================
 
-[![PyPI - Version](https://img.shields.io/badge/pypi-v4.5.3-blue.svg)](https://pypi.org/project/translators/)
+[![PyPI - Version](https://img.shields.io/badge/pypi-v4.5.4-blue.svg)](https://pypi.org/project/translators/)
 [![PyPI - License](https://img.shields.io/pypi/l/translators.svg)](https://github.com/shinalone/translators/blob/master/LICENSE)
 [![PyPI - Python](https://img.shields.io/badge/python-3.5+-blue.svg)](https://docs.python.org/3/)
 [![PyPI - Status](https://img.shields.io/pypi/status/translators.svg)](https://pypi.org/project/translators/)
-
 [![PyPI - Wheel](https://img.shields.io/badge/wheel-yes-brightgreen.svg)](https://pypi.org/project/translators/)
 
-**Translators** is a library which aims to bring **free, multiple, enjoyable** translation to individuals and students in Python.
-
- It based on the translation interface of Google, Microsoft(Bing), Baidu, Alibaba, Tencent, NetEase(Youdao), Sogou, Deepl,  etc.
+**Translators** is a library which aims to bring **free, multiple, enjoyable** translation to individuals and students in Python. It based on the translation interface of Google, Microsoft(Bing), Baidu, Alibaba, Tencent, NetEase(Youdao), Sogou, Deepl, etc.
 
 - [More about translators](#more-about-translators)
     - [Features](#features)
@@ -166,9 +163,7 @@ help(ts.google)
 
 - Prohibition of commercial use !
 
-  This library is designed to help students and individuals with translation services.
-
-   For commercial use, please purchase API services from translation suppliers.
+  This library is designed to help students and individuals with translation services. For commercial use, please purchase API services from translation suppliers.
 
 - Don't make high frequency requests !
 
