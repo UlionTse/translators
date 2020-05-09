@@ -5,9 +5,12 @@
 
 Copyright (c) 2017 UlionTse
 
-Warning: Prohibition of Commercial Use!
+Warning: Prohibition of commercial use!
 This module is designed to help students and individuals with translation services.
 For commercial use, please purchase API services from translation suppliers.
+
+Don't make high frequency requests!
+Enterprises provide free services, we should remain grateful, not cause trouble.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

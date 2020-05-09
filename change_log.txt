@@ -81,3 +81,7 @@ add deepl()
 add TranslatorError
 use magic `sleep_seconds`
 upgrade README.md
+
+4.5.2
+update README.md
+update License

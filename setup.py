@@ -7,13 +7,12 @@ from setuptools import setup,find_packages
 PACKAGE = "translators"
 NAME = "translators"
 DESCRIPTION = "Translators is a library which aims to bring free, multiple, enjoyable translation to individuals " \
-              "and students in Python. It based on the translation interface of Google, Microsoft(Bing), Baidu, " \
-              "Alibaba, Tencent, NetEase(Youdao), Sogou, Deepl, etc."
+              "and students in Python."
 AUTHOR = "UlionTse"
 AUTHOR_EMAIL = "shinalone@outlook.com"
 URL = "https://github.com/uliontse/translators"
 VERSION = __import__(PACKAGE).__version__
-# VERSION = "4.5.0"
+# VERSION = "4.5.2"
 
 with open('README.md','r',encoding='utf-8') as file:
     long_description = file.read()
