@@ -31,13 +31,13 @@
 | Translator\Feature | Supported Language Count | Advantage                                                    |
 | ------------------ | ------------------------ | ------------------------------------------------------------ |
 | Google             | 104                      | support the most languages in the world                      |
-| Bing               | 71                       | support the second most languages in the world               |
-| Baidu              | 28                       | support the most Europe & Asia language; support professional domain |
-| Alibaba            | 21                       | support the most Europe & Asia language;support professional domain |
-| Tencent            | 17                       | support the most Europe & Asia language                      |
-| Youdao             | 13                       | support the most Europe & Asia language                      |
+| Bing               | 71                       | support more languages in the world                          |
 | Sogou              | 61                       | support more languages in the world                          |
-| Deepl              | 11                       | hign quality to Europe language                              |
+| Baidu              | 28                       | support more Europe & Asia language; support professional domain |
+| Alibaba            | 21                       | support more Europe & Asia language; support professional domain |
+| Tencent            | 17                       | support more Europe & Asia language                          |
+| Youdao             | 13                       | support more Europe & Asia language                          |
+| Deepl              | 11                       | high quality to Europe language but response slowly          |
 
 
 
@@ -112,7 +112,7 @@ More supported language:
 ```python
 import translators as ts
 
-result = ts.google(query_text)
+result = ts.google(query_text='...')
 print(ts._google.language_map)
 ```
 
