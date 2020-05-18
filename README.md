@@ -9,15 +9,76 @@
 
 **Translators** is a library which aims to bring **free, multiple, enjoyable** translation to individuals and students in Python. It based on the translation interface of Google, Microsoft(Bing), Baidu, Alibaba, Tencent, NetEase(Youdao), Sogou, Deepl, etc.
 
-- [More about translators](#more-about-translators)
-    - [Features](#features)
-    - [Support Language](#support-language)
-    - [About Chinese Language](#about-Chinese-language)
 - [Installation](#installation)
   - [From PyPI](#from-PyPI)
   - [From Source](#from-source)
 - [Getting Started](#getting-started)
+    - [Import library](#Import-library)
+    - [Language](#Language)
+    - [Professional Field](#Professional-Field)
+    - [Property](#Property)
+    - [Requests](#Requests)
+    - [Host](#Host)
+    - [Detail Result](#Detail-Result)
+    - [Help](#Help)
+- [More about translators](#more-about-translators)
+    - [Features](#features)
+    - [Support Language](#support-language)
+    - [About Chinese Language](#about-Chinese-language)
 - [License](#License)
+
+
+
+## Installation
+
+### From PyPI
+
+```shell
+pip install translators --upgrade
+```
+
+### From Source
+
+```bash
+git clone https://github.com/UlionTse/translators.git
+cd translators
+python setup.py install
+```
+
+## Getting Started
+
+```python
+# import library
+import translators as ts
+
+wyw_text = '季姬寂，集鸡，鸡即棘鸡。棘鸡饥叽，季姬及箕稷济鸡。'
+chs_text = '季姬感到寂寞，罗集了一些鸡来养，鸡是那种出自荆棘丛中的野鸡。野鸡饿了唧唧叫，季姬就拿竹箕中的谷物喂它们。'
+
+# languages
+print(ts.deepl(wyw_text)) # default: from_language='auto', to_language='en'
+
+## language_map
+print(ts._deepl.language_map)
+
+# professional field
+print(ts.alibaba(wyw_text, use_domain='general')) # ("general","message","offer")
+print(ts.baidu(wyw_text, use_domain='common')) # ('common','medicine','electronics','mechanics')
+
+# property
+print(ts._deepl.query_count)
+
+# requests
+print(ts.deepl(wyw_text, sleep_seconds=5, proxies={}))
+
+# host
+print(ts.bing(wyw_text, if_use_cn_host=False))
+
+# detail result
+print(ts.deepl(wyw_text, is_detail_result=True)
+      
+# help
+help(ts.deepl)
+```
 
 
 
@@ -30,11 +91,11 @@
 | Google             | 104                      | support the most languages in the world                      |
 | Bing               | 71                       | support more languages in the world                          |
 | Sogou              | 61                       | support more languages in the world                          |
-| Baidu              | 28                       | support more Europe & Asia language; support professional domain |
-| Alibaba            | 21                       | support more Europe & Asia language; support professional domain |
-| Tencent            | 17                       | support more Europe & Asia language                          |
-| Youdao             | 13                       | support more Europe & Asia language                          |
-| Deepl              | 11                       | high quality to Europe language but response slowly          |
+| Baidu              | 28                       | support more Europe & Asia languages; support more professional field |
+| Alibaba            | 21                       | support more Europe & Asia languages; support more professional field |
+| Tencent            | 17                       | support more Europe & Asia languages                         |
+| Youdao             | 13                       | support more Europe & Asia languages                         |
+| Deepl              | 11                       | high quality to translate but response slowly                |
 
 
 
@@ -107,9 +168,6 @@
 More supported language:
 
 ```python
-import translators as ts
-
-result = ts.google(query_text='...')
 print(ts._google.language_map)
 ```
 
@@ -127,39 +185,7 @@ print(ts._google.language_map)
 
 
 
-## Installation
-
-### From PyPI
-
-```shell
-pip install translators --upgrade
-```
-
-### From Source
-
-```bash
-git clone https://github.com/UlionTse/translators.git
-cd translators
-python setup.py install
-```
-
-## Getting Started
-
-```python
-import translators as ts
-
-result = ts.baidu(query_text='三十功名尘与土，八千里路云和月。', from_language='wyw', to_language='en')
-print(result)
-
-## output:
-"""Over the past 30 years, although some fame has been established, it is as insignificant as the dust. After 
-eight thousand miles of war between the north and the south, we have experienced many vicissitudes of life."""
-
-## help:
-help(ts.google)
-```
-
-## License
+License
 
 - Prohibition of commercial use !
 
