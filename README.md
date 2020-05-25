@@ -112,84 +112,84 @@ help(ts.deepl)
 
 ### Features
 
-| Translator\Feature | Supported Language Count | Advantage                                                    |
-| ------------------ | ------------------------ | ------------------------------------------------------------ |
-| Google             | 104                      | support the most languages in the world                      |
-| Bing               | 71                       | support more languages in the world                          |
-| Sogou              | 61                       | support more languages in the world                          |
-| Baidu              | 28                       | support more Europe & Asia languages; support professional field |
-| Alibaba            | 21                       | support more Europe & Asia languages; support professional field |
-| Tencent            | 17                       | support more Europe & Asia languages                         |
-| Youdao             | 13                       | support more Europe & Asia languages                         |
-| Deepl              | 11                       | high quality to translate but response slowly                |
+| Translator | Supported Language Count | Advantage                                                    |
+| ---------- | ------------------------ | ------------------------------------------------------------ |
+| Google     | 104                      | support the most languages in the world                      |
+| Bing       | 71                       | support more languages in the world                          |
+| Sogou      | 61                       | support more languages in the world                          |
+| Baidu      | 28                       | support more Europe & Asia languages; support professional field |
+| Alibaba    | 21                       | support more Europe & Asia languages; support professional field |
+| Tencent    | 17                       | support more Europe & Asia languages                         |
+| Youdao     | 13                       | support more Europe & Asia languages                         |
+| Deepl      | 11                       | high quality to translate but response slowly                |
 
 
 
 ### Support Language
 
-| Language             | Supported Language of Translator | Google | Bing               | Baidu  | Alibaba | Tencent | Youdao | Sogou              | Deepl |
-| -------------------- | -------------------------------- | ------ | ------------------ | ------ | ------- | ------- | ------ | ------------------ | ----- |
-| english              | en                               | Y      | Y                  | Y      | Y       | Y       | Y      | Y                  | Y     |
-| chinese              | zh                               | Y      | Y                  | Y      | Y       | Y       | Y      | Y                  | Y     |
-| arabic               | ar                               | Y      | Y                  | Y(ara) | Y       | Y       | Y      | Y                  |       |
-| russian              | ru                               | Y      | Y                  | Y      | Y       | Y       | Y      | Y                  | Y     |
-| french               | fr                               | Y      | Y                  | Y(fra) | Y       | Y       | Y      | Y                  | Y     |
-| german               | de                               | Y      | Y                  | Y      | Y       | Y       | Y      | Y                  | Y     |
-| spanish              | es                               | Y      | Y                  | Y(spa) | Y       | Y       | Y      | Y                  | Y     |
-| portuguese           | pt                               | Y      | Y(pt/pt-pt)        | Y      | Y       | Y       | Y      | Y                  | Y     |
-| italian              | it                               | Y      | Y                  | Y      | Y       | Y       | Y      | Y                  | Y     |
-| japanese             | ja                               | Y      | Y                  | Y(jp)  | Y       | Y       | Y      | Y                  | Y     |
-| korean               | ko                               | Y      | Y                  | Y(kor) | Y       | Y       | Y      | Y                  |       |
-| greek                | el                               | Y      | Y                  | Y      |         |         |        | Y                  |       |
-| dutch                | nl                               | Y      | Y                  | Y      | Y       |         |        | Y                  | Y     |
-| hindi                | hi                               | Y      | Y                  |        | Y       | Y       |        | Y                  |       |
-| turkish              | tr                               | Y      | Y                  |        | Y       | Y       |        | Y                  |       |
-| malay                | ms                               | Y      | Y                  |        | Y       | Y       |        | Y                  |       |
-| thai                 | th                               | Y      | Y                  | Y      | Y       | Y       |        | Y                  |       |
-| vietnamese           | vi                               | Y      | Y                  | Y(vie) | Y       | Y       | Y      | Y                  |       |
-| indonesian           | id                               | Y      | Y                  |        | Y       | Y       | Y      | Y                  |       |
-| hebrew               | he                               | Y(iw)  | Y                  |        | Y       |         |        | Y                  |       |
-| polish               | pl                               | Y      | Y                  | Y      | Y       |         |        | Y                  | Y     |
-| mongolian            | mn                               | Y      |                    |        |         |         |        |                    |       |
-| czech                | cs                               | Y      | Y                  | Y      |         |         |        | Y                  |       |
-| hungarian            | hu                               | Y      | Y                  | Y      |         |         |        | Y                  |       |
-| estonian             | et                               | Y      | Y                  | Y(est) |         |         |        | Y                  |       |
-| bulgarian            | bg                               | Y      | Y                  | Y(bul) |         |         |        | Y                  |       |
-| danish               | da                               | Y      | Y                  | Y(dan) |         |         |        | Y                  |       |
-| finnish              | fi                               | Y      | Y                  | Y(fin) |         |         |        | Y                  |       |
-| romanian             | ro                               | Y      | Y                  | Y(rom) |         |         |        | Y                  |       |
-| swedish              | sv                               | Y      | Y                  | Y(swe) |         |         |        | Y                  |       |
-| slovenian            | sl                               | Y      | Y                  | Y(slo) |         |         |        | Y                  |       |
-| persian/farsi        | fa                               | Y      | Y                  |        |         |         |        | Y                  |       |
-| bosnian              | bs                               | Y      | Y(bs-Latn)         |        |         |         |        | Y(bs-Latn)         |       |
-| serbian              | sr                               | Y      | Y(sr-Latn/sr-Cyrl) |        |         |         |        | Y(sr-Latn/sr-Cyrl) |       |
-| fijian               | fj                               |        | Y                  |        |         |         |        | Y                  |       |
-| filipino             | tl                               | Y      | Y(fil)             |        |         |         |        | Y(fil)             |       |
-| haitiancreole        | ht                               | Y      | Y                  |        |         |         |        | Y                  |       |
-| catalan              | ca                               | Y      | Y                  |        |         |         |        | Y                  |       |
-| croatian             | hr                               | Y      | Y                  |        |         |         |        | Y                  |       |
-| latvian              | lv                               | Y      | Y                  |        |         |         |        | Y                  |       |
-| lithuanian           | lt                               | Y      | Y                  |        |         |         |        | Y                  |       |
-| urdu                 | ur                               | Y      | Y                  |        |         |         |        | Y                  |       |
-| ukrainian            | uk                               | Y      | Y                  |        |         |         |        | Y                  |       |
-| welsh                | cy                               | Y      | Y                  |        |         |         |        | Y                  |       |
-| tahiti               | ty                               |        | Y                  |        |         |         |        | Y                  |       |
-| tongan               | to                               |        | Y                  |        |         |         |        | Y                  |       |
-| swahili              | sw                               | Y      | Y                  |        |         |         |        | Y                  |       |
-| samoan               | sm                               | Y      | Y                  |        |         |         |        | Y                  |       |
-| slovak               | sk                               | Y      | Y                  |        |         |         |        | Y                  |       |
-| afrikaans            | af                               | Y      | Y                  |        |         |         |        | Y                  |       |
-| norwegian            | no                               | Y      | Y                  |        |         |         |        | Y                  |       |
-| bengali              | bn                               | Y      | Y(bn-BD)           |        |         |         |        | Y                  |       |
-| malagasy             | mg                               | Y      | Y                  |        |         |         |        | Y                  |       |
-| maltese              | mt                               | Y      | Y                  |        |         |         |        | Y                  |       |
-| queretaro otomi      | otq                              |        | Y                  |        |         |         |        | Y                  |       |
-| klingon/tlhingan hol | tlh                              |        | Y                  |        |         |         |        | Y                  |       |
-| gujarati             | gu                               | Y      | Y                  |        |         |         |        |                    |       |
-| tamil                | ta                               | Y      | Y                  |        |         |         |        |                    |       |
-| telugu               | te                               | Y      | Y                  |        |         |         |        |                    |       |
-| punjabi              | pa                               | Y      | Y                  |        |         |         |        |                    |       |
-| ...                  | ...                              |        |                    |        |         |         |        |                    |       |
+| Language             | Language of Translator | Google | Bing               | Baidu  | Alibaba | Tencent | Youdao | Sogou              | Deepl |
+| -------------------- | ---------------------- | ------ | ------------------ | ------ | ------- | ------- | ------ | ------------------ | ----- |
+| english              | en                     | Y      | Y                  | Y      | Y       | Y       | Y      | Y                  | Y     |
+| chinese              | zh                     | Y      | Y                  | Y      | Y       | Y       | Y      | Y                  | Y     |
+| arabic               | ar                     | Y      | Y                  | Y(ara) | Y       | Y       | Y      | Y                  |       |
+| russian              | ru                     | Y      | Y                  | Y      | Y       | Y       | Y      | Y                  | Y     |
+| french               | fr                     | Y      | Y                  | Y(fra) | Y       | Y       | Y      | Y                  | Y     |
+| german               | de                     | Y      | Y                  | Y      | Y       | Y       | Y      | Y                  | Y     |
+| spanish              | es                     | Y      | Y                  | Y(spa) | Y       | Y       | Y      | Y                  | Y     |
+| portuguese           | pt                     | Y      | Y(pt/pt-pt)        | Y      | Y       | Y       | Y      | Y                  | Y     |
+| italian              | it                     | Y      | Y                  | Y      | Y       | Y       | Y      | Y                  | Y     |
+| japanese             | ja                     | Y      | Y                  | Y(jp)  | Y       | Y       | Y      | Y                  | Y     |
+| korean               | ko                     | Y      | Y                  | Y(kor) | Y       | Y       | Y      | Y                  |       |
+| greek                | el                     | Y      | Y                  | Y      |         |         |        | Y                  |       |
+| dutch                | nl                     | Y      | Y                  | Y      | Y       |         |        | Y                  | Y     |
+| hindi                | hi                     | Y      | Y                  |        | Y       | Y       |        | Y                  |       |
+| turkish              | tr                     | Y      | Y                  |        | Y       | Y       |        | Y                  |       |
+| malay                | ms                     | Y      | Y                  |        | Y       | Y       |        | Y                  |       |
+| thai                 | th                     | Y      | Y                  | Y      | Y       | Y       |        | Y                  |       |
+| vietnamese           | vi                     | Y      | Y                  | Y(vie) | Y       | Y       | Y      | Y                  |       |
+| indonesian           | id                     | Y      | Y                  |        | Y       | Y       | Y      | Y                  |       |
+| hebrew               | he                     | Y(iw)  | Y                  |        | Y       |         |        | Y                  |       |
+| polish               | pl                     | Y      | Y                  | Y      | Y       |         |        | Y                  | Y     |
+| mongolian            | mn                     | Y      |                    |        |         |         |        |                    |       |
+| czech                | cs                     | Y      | Y                  | Y      |         |         |        | Y                  |       |
+| hungarian            | hu                     | Y      | Y                  | Y      |         |         |        | Y                  |       |
+| estonian             | et                     | Y      | Y                  | Y(est) |         |         |        | Y                  |       |
+| bulgarian            | bg                     | Y      | Y                  | Y(bul) |         |         |        | Y                  |       |
+| danish               | da                     | Y      | Y                  | Y(dan) |         |         |        | Y                  |       |
+| finnish              | fi                     | Y      | Y                  | Y(fin) |         |         |        | Y                  |       |
+| romanian             | ro                     | Y      | Y                  | Y(rom) |         |         |        | Y                  |       |
+| swedish              | sv                     | Y      | Y                  | Y(swe) |         |         |        | Y                  |       |
+| slovenian            | sl                     | Y      | Y                  | Y(slo) |         |         |        | Y                  |       |
+| persian/farsi        | fa                     | Y      | Y                  |        |         |         |        | Y                  |       |
+| bosnian              | bs                     | Y      | Y(bs-Latn)         |        |         |         |        | Y(bs-Latn)         |       |
+| serbian              | sr                     | Y      | Y(sr-Latn/sr-Cyrl) |        |         |         |        | Y(sr-Latn/sr-Cyrl) |       |
+| fijian               | fj                     |        | Y                  |        |         |         |        | Y                  |       |
+| filipino             | tl                     | Y      | Y(fil)             |        |         |         |        | Y(fil)             |       |
+| haitiancreole        | ht                     | Y      | Y                  |        |         |         |        | Y                  |       |
+| catalan              | ca                     | Y      | Y                  |        |         |         |        | Y                  |       |
+| croatian             | hr                     | Y      | Y                  |        |         |         |        | Y                  |       |
+| latvian              | lv                     | Y      | Y                  |        |         |         |        | Y                  |       |
+| lithuanian           | lt                     | Y      | Y                  |        |         |         |        | Y                  |       |
+| urdu                 | ur                     | Y      | Y                  |        |         |         |        | Y                  |       |
+| ukrainian            | uk                     | Y      | Y                  |        |         |         |        | Y                  |       |
+| welsh                | cy                     | Y      | Y                  |        |         |         |        | Y                  |       |
+| tahiti               | ty                     |        | Y                  |        |         |         |        | Y                  |       |
+| tongan               | to                     |        | Y                  |        |         |         |        | Y                  |       |
+| swahili              | sw                     | Y      | Y                  |        |         |         |        | Y                  |       |
+| samoan               | sm                     | Y      | Y                  |        |         |         |        | Y                  |       |
+| slovak               | sk                     | Y      | Y                  |        |         |         |        | Y                  |       |
+| afrikaans            | af                     | Y      | Y                  |        |         |         |        | Y                  |       |
+| norwegian            | no                     | Y      | Y                  |        |         |         |        | Y                  |       |
+| bengali              | bn                     | Y      | Y(bn-BD)           |        |         |         |        | Y                  |       |
+| malagasy             | mg                     | Y      | Y                  |        |         |         |        | Y                  |       |
+| maltese              | mt                     | Y      | Y                  |        |         |         |        | Y                  |       |
+| queretaro otomi      | otq                    |        | Y                  |        |         |         |        | Y                  |       |
+| klingon/tlhingan hol | tlh                    |        | Y                  |        |         |         |        | Y                  |       |
+| gujarati             | gu                     | Y      | Y                  |        |         |         |        |                    |       |
+| tamil                | ta                     | Y      | Y                  |        |         |         |        |                    |       |
+| telugu               | te                     | Y      | Y                  |        |         |         |        |                    |       |
+| punjabi              | pa                     | Y      | Y                  |        |         |         |        |                    |       |
+| ...                  | ...                    |        |                    |        |         |         |        |                    |       |
 
 More supported language:
 
@@ -201,13 +201,13 @@ print(ts._google.language_map)
 
 ### About Chinese Language
 
-| Language        | Language \Translator | Google   | Bing       | Baidu  | Alibaba  | Tencent | Youdao | Sogou | Deepl |
-| --------------- | -------------------- | -------- | ---------- | ------ | -------- | ------- | ------ | ----- | ----- |
-| chinese(简体)   | zh-CHS               | Y(zh-CN) | Y(zh-Hans) | Y(zh)  | Y(zh)    | Y(zh)   | Y      | Y     | Y(zh) |
-| chinese(繁体)   | zh-CHT               | Y(zh-TW) | Y(zh-Hant) | Y(cht) | Y(zh-TW) |         |        | Y     |       |
-| chinese(文言文) | wyw                  |          |            | Y      |          |         |        |       |       |
-| chinese(粤语)   | yue                  |          | Y          | Y      |          |         |        | Y     |       |
-| chinese(白苗文) | mww                  |          | Y          |        |          |         |        | Y     |       |
+| Language        | Language of Translator | Google   | Bing       | Baidu  | Alibaba  | Tencent | Youdao | Sogou | Deepl |
+| --------------- | ---------------------- | -------- | ---------- | ------ | -------- | ------- | ------ | ----- | ----- |
+| chinese(简体)   | zh-CHS                 | Y(zh-CN) | Y(zh-Hans) | Y(zh)  | Y(zh)    | Y(zh)   | Y      | Y     | Y(zh) |
+| chinese(繁体)   | zh-CHT                 | Y(zh-TW) | Y(zh-Hant) | Y(cht) | Y(zh-TW) |         |        | Y     |       |
+| chinese(文言文) | wyw                    |          |            | Y      |          |         |        |       |       |
+| chinese(粤语)   | yue                    |          | Y          | Y      |          |         |        | Y     |       |
+| chinese(白苗文) | mww                    |          | Y          |        |          |         |        | Y     |       |
 
 
 
