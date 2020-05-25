@@ -3,7 +3,7 @@
 
 '''MIT License
 
-Copyright (c) 2017 UlionTse
+Copyright (c) 2017-2020 UlionTse
 
 Warning: Prohibition of commercial use!
 This module is designed to help students and individuals with translation services.
@@ -35,6 +35,7 @@ SOFTWARE.
 '''
 
 import re
+import sys
 import time
 import random
 from functools import wraps
@@ -45,6 +46,11 @@ import requests
 import execjs
 from lxml import etree
 from loguru import logger
+
+
+logger.remove()
+logger.add(sys.stdout, format='[{time:HH:mm:ss}] <lvl>{message}</lvl>', level='INFO')
+logger.opt(colors=True)
 
 
 class Tse:
@@ -59,7 +65,7 @@ class Tse:
             t1 = time.time()
             r = func(*args, **kwargs)
             t2 = time.time()
-            logger.info('UseTimeSeconds(fn: {}): {}'.format(func.__name__, round((t2 - t1), 2)))
+            logger.success('UseTimeSeconds(fn: {}): {}'.format(func.__name__, round((t2 - t1), 2)), style='braces')
             return r
         return wrapper
 
@@ -96,8 +102,17 @@ class Tse:
             logger.exception('language_map:', language_map)
             raise TranslatorError('Unsupported translation: from [{0}] to [{1}]!'.format(from_language,to_language))
         return from_language,to_language
-    
-    
+
+
+class TranslatorSeverRegion:
+    def request_server_region(self):
+        try:
+            ip_address = requests.get('http://httpbin.org/ip').json()['origin']
+            return requests.get(f'http://ip-api.com/json/{ip_address}').json()
+        except:
+            return {}
+
+
 class TranslatorError(Exception):
     pass
 
@@ -108,11 +123,13 @@ class Google(Tse):
         self.host_url = None
         self.cn_host_url = 'https://translate.google.cn'
         self.en_host_url = 'https://translate.google.com'
+        self.service_region_info = SERVICE_REGION_INFO
         self.host_headers = None
         self.language_map = None
         self.api_url = None
         self.query_count = 0
         self.output_zh = 'zh-CN'
+
  
     # def rshift(self,val, n):
     #     """python port for '>>>'(right shift with padding)
@@ -180,6 +197,7 @@ class Google(Tse):
         return {}.fromkeys(lang_list,lang_list)
 
     @Tse.timeStat
+    @logger.catch
     def google_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
         https://translate.google.com, https://translate.google.cn.
@@ -187,13 +205,14 @@ class Google(Tse):
         :param from_language: string, default 'auto'.
         :param to_language: string, default 'en'.
         :param **kwargs:
-                :param if_use_cn_host: boolean, default True.
+                :param if_use_cn_host: boolean, default None.
                 :param is_detail_result: boolean, default False.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, >0.05. Best to set it yourself, otherwise there will be surprises.
         :return: string or list
         '''
-        self.host_url = self.cn_host_url if kwargs.get('if_use_cn_host', True) else self.en_host_url
+        self.host_url = self.cn_host_url if kwargs.get('if_use_cn_host', None) \
+                                            or self.service_region_info.get('countryCode')=='CN' else self.en_host_url
         self.host_headers = self.get_headers(self.cn_host_url, if_use_api=False)
         is_detail_result = kwargs.get('is_detail_result', False)
         proxies = kwargs.get('proxies', None)
@@ -268,6 +287,7 @@ class Baidu(Tse):
         return js_data
 
     @Tse.timeStat
+    @logger.catch
     def baidu_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
         https://fanyi.baidu.com
@@ -375,6 +395,7 @@ class Youdao(Tse):
         return form
 
     @Tse.timeStat
+    @logger.catch
     def youdao_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
         http://fanyi.youdao.com
@@ -434,6 +455,7 @@ class Tencent(Tse):
         return execjs.get().eval(lang_map_str)
 
     @Tse.timeStat
+    @logger.catch
     def tencent_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
         http://fanyi.qq.com
@@ -518,6 +540,7 @@ class Alibaba(Tse):
             return get_lang(self.get_language_old_url, params=params)
 
     @Tse.timeStat
+    @logger.catch
     def alibaba_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
         https://translate.alibaba.com
@@ -565,7 +588,8 @@ class Bing(Tse):
         super().__init__()
         self.host_url = None
         self.cn_host_url = 'https://cn.bing.com/Translator'
-        self.en_host_url = 'https://bing.com/Translator'
+        self.en_host_url = 'https://www.bing.com/Translator'
+        self.service_region_info = SERVICE_REGION_INFO
         self.api_url = None
         self.host_headers = None
         self.api_headers = None
@@ -585,6 +609,7 @@ class Bing(Tse):
         return {'iid': iid, 'ig': ig, 'language_map': language_map}
 
     @Tse.timeStat
+    @logger.catch
     def bing_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
         http://bing.com/Translator, http://cn.bing.com/Translator.
@@ -592,13 +617,14 @@ class Bing(Tse):
         :param from_language: string, default 'auto'.
         :param to_language: string, default 'en'.
         :param **kwargs:
-                :param if_use_cn_host: boolean, default True.
+                :param if_use_cn_host: boolean, default None.
                 :param is_detail_result: boolean, default False.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, >0.05. Best to set it yourself, otherwise there will be surprises.
         :return: string or list
         '''
-        self.host_url = self.cn_host_url if kwargs.get('if_use_cn_host', True) else self.en_host_url
+        self.host_url = self.cn_host_url if kwargs.get('if_use_cn_host', None) \
+                                            or self.service_region_info.get('countryCode')=='CN' else self.en_host_url
         self.api_url = self.host_url.replace('Translator', 'ttranslatev3')
         self.host_headers = self.get_headers(self.host_url, if_use_api=False)
         self.api_headers = self.get_headers(self.host_url, if_use_api=True)
@@ -669,6 +695,7 @@ class Sogou(Tse):
         return form
     
     @Tse.timeStat
+    @logger.catch
     def sogou_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
         https://fanyi.sogou.com
@@ -763,6 +790,7 @@ class Deepl(Tse):
         return param
 
     @Tse.timeStat
+    @logger.catch
     def deepl_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
         https://www.deepl.com
@@ -795,6 +823,10 @@ class Deepl(Tse):
         return data if is_detail_result else ''.join(item['beams'][0]['postprocessed_sentence'] for item in data['result']['translations'])
 
 
+tsr = TranslatorSeverRegion()
+SERVICE_REGION_INFO = tsr.request_server_region()
+sys.stderr.write(f'Using {SERVICE_REGION_INFO.get("country","English")} server backend.\n')
+
 _alibaba = Alibaba()
 alibaba = _alibaba.alibaba_api
 _baidu = Baidu()
@@ -814,7 +846,7 @@ youdao = _youdao.youdao_api
 
 
 def test():
-    query_text = '人之初，性本善。性相近，习相远。'
+    query_text = '季姬寂，集鸡，鸡即棘鸡。棘鸡饥叽，季姬及箕稷济鸡。'
     print(alibaba(query_text))
     print(baidu(query_text))
     print(bing(query_text))
