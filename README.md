@@ -73,7 +73,7 @@ print(ts.alibaba(wyw_text, use_domain='general')) # ("general","message","offer"
 print(ts.baidu(wyw_text, use_domain='common')) # ('common','medicine','electronics','mechanics')
 
 # property
-print(ts._tencent)
+print(dir(ts._tencent))
 print(ts._tencent.query_count)
 
 # requests
