@@ -1,7 +1,7 @@
 [translators](https://github.com/uliontse/translators/blob/master/README.md)
 ================================================================================
 
-[![PyPI - Version](https://img.shields.io/badge/pypi-v4.5.6-blue.svg)](https://pypi.org/project/translators/)
+[![PyPI - Version](https://img.shields.io/badge/pypi-v4.5.8-blue.svg)](https://pypi.org/project/translators/)
 [![PyPI - License](https://img.shields.io/pypi/l/translators.svg)](https://github.com/shinalone/translators/blob/master/LICENSE)
 [![PyPI - Python](https://img.shields.io/badge/python-3.5+-blue.svg)](https://docs.python.org/3/)
 [![PyPI - Status](https://img.shields.io/pypi/status/translators.svg)](https://pypi.org/project/translators/)
@@ -219,6 +219,6 @@ License
 
 - Don't make high frequency requests !
 
-  Enterprises provide free services, we should remain grateful, not cause trouble.
+  Enterprises provide free services, we should keep grateful, not cause trouble.
 
 [click the detail license.](https://github.com/uliontse/translators/blob/master/LICENSE)

@@ -108,9 +108,13 @@ class TranslatorSeverRegion:
     def request_server_region(self):
         try:
             ip_address = requests.get('http://httpbin.org/ip').json()['origin']
-            return requests.get(f'http://ip-api.com/json/{ip_address}').json()
+            data = requests.get(f'http://ip-api.com/json/{ip_address}').json()
+            sys.stderr.write(f'Using {data.get("country")} server backend.\n')
+            return data
+        except requests.exceptions.ConnectionError:
+            raise TranslatorError('Unable to connect the Internet.')
         except:
-            return {}
+            raise TranslatorError('Unable to find server backend.\n')
 
 
 class TranslatorError(Exception):
@@ -825,7 +829,6 @@ class Deepl(Tse):
 
 tsr = TranslatorSeverRegion()
 SERVICE_REGION_INFO = tsr.request_server_region()
-sys.stderr.write(f'Using {SERVICE_REGION_INFO.get("country","English")} server backend.\n')
 
 _alibaba = Alibaba()
 alibaba = _alibaba.alibaba_api
