@@ -100,13 +100,13 @@ help(ts.deepl)
 ### Supported Country and Region Service
 
 1. If you have requests error, please check whether this service is provided in your country or region.
-2. Check the website about `help(ts.your_translator)`.
+2. Check the website about `help(ts.*your_translator*)`.
 
 ### HTTPError 4xx
 
 1. First, ensure whether you made high frequency requests.
 2. Second, check whether this service is provided in your country or region.
-3. Third, detail to solve HTTPError self.
+3. Third, detail to solve HTTPError itself.
 
 ## More About Translators
 
