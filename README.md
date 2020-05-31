@@ -3,7 +3,7 @@
 
 [![PyPI - Version](https://img.shields.io/badge/pypi-v4.5.8-blue.svg)](https://pypi.org/project/translators/)
 [![PyPI - License](https://img.shields.io/pypi/l/translators.svg)](https://github.com/shinalone/translators/blob/master/LICENSE)
-[![PyPI - Python](https://img.shields.io/badge/python-3.5+-blue.svg)](https://docs.python.org/3/)
+[![PyPI - Python](https://img.shields.io/pypi/pyversions/translators.svg)](https://img.shields.io/pypi/pyversions/translators.svg)
 [![PyPI - Status](https://img.shields.io/pypi/status/translators.svg)](https://pypi.org/project/translators/)
 [![PyPI - Wheel](https://img.shields.io/badge/wheel-yes-brightgreen.svg)](https://pypi.org/project/translators/)
 
@@ -104,9 +104,9 @@ help(ts.deepl)
 
 ### HTTPError 4xx
 
-1. First, ensure whether you made high frequency requests.
+1. First, check whether you made high frequency requests.
 2. Second, check whether this service is provided in your country or region.
-3. Third, detail to solve HTTPError itself.
+3. Third, detail to solve [HTTPError](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) itself.
 
 ## More About Translators
 
@@ -194,7 +194,7 @@ help(ts.deepl)
 More supported language:
 
 ```python
-print(ts._google.language_map)
+print(ts._*your_translator*.language_map)
 ```
 
 
