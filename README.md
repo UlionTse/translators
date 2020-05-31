@@ -227,3 +227,4 @@ License
   Enterprises provide free services, we should keep grateful, but not cause trouble.
 
 [click the detail license.](https://github.com/uliontse/translators/blob/master/LICENSE)
+
