@@ -57,11 +57,10 @@ class Tse:
     def __init__(self):
         self.author = 'Ulion.Tse'
     
-    @classmethod
-    def timeStat(self, func):
+    @staticmethod
+    def time_stat(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            import time
             t1 = time.time()
             r = func(*args, **kwargs)
             t2 = time.time()
@@ -69,7 +68,8 @@ class Tse:
             return r
         return wrapper
 
-    def get_headers(self, host_url, if_use_api=False, if_use_referer=True, if_ajax=True):
+    @staticmethod
+    def get_headers(host_url, if_use_api=False, if_use_referer=True, if_ajax=True):
         url_path = urlparse(host_url).path
         host_headers = {
             'Referer' if if_use_referer else 'Host': host_url,
@@ -89,7 +89,8 @@ class Tse:
             api_headers.update({'Content-Type': 'text/plain'})
         return host_headers if not if_use_api else api_headers
 
-    def check_language(self, from_language, to_language, language_map, output_zh=None, output_auto='auto'):
+    @staticmethod
+    def check_language(from_language, to_language, language_map, output_zh=None, output_auto='auto'):
         from_language = output_auto if from_language in ('auto', 'auto-detect') else from_language
         from_language = output_zh if output_zh and from_language in ('zh','zh-CN','zh-CHS','zh-Hans') else from_language
         to_language = output_zh if output_zh and to_language in ('zh','zh-CN','zh-CHS','zh-Hans') else to_language
@@ -105,7 +106,8 @@ class Tse:
 
 
 class TranslatorSeverRegion:
-    def request_server_region(self):
+    @property
+    def request_server_region_info(self):
         try:
             ip_address = requests.get('http://httpbin.org/ip').json()['origin']
             data = requests.get(f'http://ip-api.com/json/{ip_address}').json()
@@ -127,14 +129,13 @@ class Google(Tse):
         self.host_url = None
         self.cn_host_url = 'https://translate.google.cn'
         self.en_host_url = 'https://translate.google.com'
-        self.service_region_info = SERVICE_REGION_INFO
+        self.request_server_region_info = REQUEST_SERVER_REGION_INFO
         self.host_headers = None
         self.language_map = None
         self.api_url = None
         self.query_count = 0
         self.output_zh = 'zh-CN'
 
- 
     # def rshift(self,val, n):
     #     """python port for '>>>'(right shift with padding)
     #     """
@@ -162,7 +163,7 @@ class Google(Tse):
         e = []
         g = 0
         size = len(text)
-        for i, char in enumerate(text):
+        for char in text:
             l = ord(char)
             # just append if l is less than 128(ascii: DEL)
             if l < 128:
@@ -184,7 +185,7 @@ class Google(Tse):
                         e.append(l >> 6 & 63 | 128)
                 e.append(l & 63 | 128)
         a = b
-        for i, value in enumerate(e):
+        for value in e:
             a += value
             a = self._xr(a, '+-a^+6')
         a = self._xr(a, '+-3^+b+-f')
@@ -200,7 +201,7 @@ class Google(Tse):
         lang_list = [x['code'] for x in eval(lang_list_str) if x['code'] != 'auto']
         return {}.fromkeys(lang_list,lang_list)
 
-    @Tse.timeStat
+    @Tse.time_stat
     @logger.catch
     def google_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
@@ -216,7 +217,7 @@ class Google(Tse):
         :return: string or list
         '''
         self.host_url = self.cn_host_url if kwargs.get('if_use_cn_host', None) \
-                                            or self.service_region_info.get('countryCode')=='CN' else self.en_host_url
+                                            or self.request_server_region_info.get('countryCode')=='CN' else self.en_host_url
         self.host_headers = self.get_headers(self.cn_host_url, if_use_api=False)
         is_detail_result = kwargs.get('is_detail_result', False)
         proxies = kwargs.get('proxies', None)
@@ -232,7 +233,6 @@ class Google(Tse):
             self.api_url = (self.host_url + '/translate_a/single?client={0}&sl={1}&tl={2}&hl=zh-CN&dt=at&dt=bd&dt=ex&dt=ld&dt=md'
                             + '&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&source=bh&ssel=0&tsel=0&kc=1&tk='
                             + str(tk) + '&q=' + quote(query_text)).format('webapp', from_language,to_language)  # [t,webapp]
-
             r = ss.get(self.api_url, headers=self.host_headers, proxies=proxies)
             r.raise_for_status()
             data = r.json()
@@ -290,7 +290,7 @@ class Baidu(Tse):
         js_data.update({'gtk': gtk, 'sign': sign})
         return js_data
 
-    @Tse.timeStat
+    @Tse.time_stat
     @logger.catch
     def baidu_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
@@ -398,7 +398,7 @@ class Youdao(Tse):
         }
         return form
 
-    @Tse.timeStat
+    @Tse.time_stat
     @logger.catch
     def youdao_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
@@ -424,14 +424,14 @@ class Youdao(Tse):
             sign_key = self.get_sign_key(ss, host_html, proxies)
             from_language, to_language = self.check_language(from_language, to_language, self.language_map,output_zh=self.output_zh)
 
-            def post_data(from_language):
+            def _post_data(from_language):
                 form = self.get_form(str(query_text), from_language, to_language, sign_key)
                 r = ss.post(self.api_url, data=form, headers=self.api_headers, proxies=proxies)
                 r.raise_for_status()
                 return r.json()
 
-            data = post_data(from_language)
-            data = post_data(nonautomatic_recognize_replaced_language) if data.get('errorCode') == 40 else data
+            data = _post_data(from_language)
+            data = _post_data(nonautomatic_recognize_replaced_language) if data.get('errorCode') == 40 else data
         if data['errorCode'] == 40:
             raise Exception('Unable to automatically recognize the language of `query_text`, '
                             'please specify parameters of `from_language` or `nonautomatic_recognize_replaced_language`.')
@@ -458,7 +458,7 @@ class Tencent(Tse):
         lang_map_str = re.search('C={(.*?)}', r.text).group(0)
         return execjs.get().eval(lang_map_str)
 
-    @Tse.timeStat
+    @Tse.time_stat
     @logger.catch
     def tencent_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
@@ -526,7 +526,7 @@ class Alibaba(Tse):
     
         s = int(time.time() * 1000)
         o = ''.join([e, hex(s)[2:]])
-        for u in range(1, 10):
+        for _ in range(1, 10):
             a = hex(int(random.random() * 1e10))[2:]  # int->string: 16, '0x'
             o += a
         return o[:42]
@@ -543,7 +543,7 @@ class Alibaba(Tse):
         except:
             return get_lang(self.get_language_old_url, params=params)
 
-    @Tse.timeStat
+    @Tse.time_stat
     @logger.catch
     def alibaba_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
@@ -593,7 +593,7 @@ class Bing(Tse):
         self.host_url = None
         self.cn_host_url = 'https://cn.bing.com/Translator'
         self.en_host_url = 'https://www.bing.com/Translator'
-        self.service_region_info = SERVICE_REGION_INFO
+        self.request_server_region_info = REQUEST_SERVER_REGION_INFO
         self.api_url = None
         self.host_headers = None
         self.api_headers = None
@@ -612,7 +612,7 @@ class Bing(Tse):
         ig = re.findall('IG:"(.*?)"', host_html)[0]
         return {'iid': iid, 'ig': ig, 'language_map': language_map}
 
-    @Tse.timeStat
+    @Tse.time_stat
     @logger.catch
     def bing_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
@@ -628,7 +628,7 @@ class Bing(Tse):
         :return: string or list
         '''
         self.host_url = self.cn_host_url if kwargs.get('if_use_cn_host', None) \
-                                            or self.service_region_info.get('countryCode')=='CN' else self.en_host_url
+                                            or self.request_server_region_info.get('countryCode')=='CN' else self.en_host_url
         self.api_url = self.host_url.replace('Translator', 'ttranslatev3')
         self.host_headers = self.get_headers(self.host_url, if_use_api=False)
         self.api_headers = self.get_headers(self.host_url, if_use_api=True)
@@ -698,7 +698,7 @@ class Sogou(Tse):
         }
         return form
     
-    @Tse.timeStat
+    @Tse.time_stat
     @logger.catch
     def sogou_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
@@ -753,7 +753,7 @@ class Deepl(Tse):
             'id': self.request_id + 2 * self.query_count,
             'jsonrpc': '2.0',
             'params': {
-                'texts': [query_text],
+                'texts': [str(query_text)],
                 'lang': {
                     'lang_user_selected': from_language,
                     'user_preferred_langs': [to_language, from_language],
@@ -793,7 +793,7 @@ class Deepl(Tse):
         }
         return param
 
-    @Tse.timeStat
+    @Tse.time_stat
     @logger.catch
     def deepl_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
@@ -827,8 +827,8 @@ class Deepl(Tse):
         return data if is_detail_result else ''.join(item['beams'][0]['postprocessed_sentence'] for item in data['result']['translations'])
 
 
-tsr = TranslatorSeverRegion()
-SERVICE_REGION_INFO = tsr.request_server_region()
+
+REQUEST_SERVER_REGION_INFO = TranslatorSeverRegion().request_server_region_info
 
 _alibaba = Alibaba()
 alibaba = _alibaba.alibaba_api
@@ -860,3 +860,4 @@ def test():
     print(youdao(query_text))
 
 # test()
+
