@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="/translators2.PNG" width="300"/>
+  <img src="/translators2.PNG" width="500"/>
 </p>
 <p align="center">
   <a href="https://pypi.org/project/translators"><img alt="PyPI - Version" src="https://img.shields.io/pypi/v/translators.svg"></a>
