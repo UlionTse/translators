@@ -1,5 +1,4 @@
-# translators
-================================================================================
+# **translators**
 
 [![PyPI - Version](https://img.shields.io/pypi/v/translators.svg)](https://pypi.org/project/translators)
 [![PyPI - License](https://img.shields.io/pypi/l/translators.svg)](https://github.com/shinalone/translators/blob/master/LICENSE)
