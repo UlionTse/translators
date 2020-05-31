@@ -1,11 +1,15 @@
 [translators](https://github.com/uliontse/translators/blob/master/README.md)
 ================================================================================
 
-[![PyPI - Version](https://img.shields.io/badge/pypi-v4.5.8-blue.svg)](https://pypi.org/project/translators/)
+[![PyPI - Version](https://img.shields.io/pypi/v/translators.svg)](https://pypi.org/project/translators)
 [![PyPI - License](https://img.shields.io/pypi/l/translators.svg)](https://github.com/shinalone/translators/blob/master/LICENSE)
-[![PyPI - Python](https://img.shields.io/badge/python-3.5+-blue.svg)](https://docs.python.org/3/)
-[![PyPI - Status](https://img.shields.io/pypi/status/translators.svg)](https://pypi.org/project/translators/)
-[![PyPI - Wheel](https://img.shields.io/badge/wheel-yes-brightgreen.svg)](https://pypi.org/project/translators/)
+[![Downloads](https://pepy.tech/badge/translators)](https://pepy.tech/project/translators)
+[![PyPI - Python](https://img.shields.io/pypi/pyversions/translators.svg)](https://docs.python.org/3/)
+[![PyPI - Status](https://img.shields.io/pypi/status/translators.svg)](https://pypi.org/project/translators)
+[![PyPI - Wheel](https://img.shields.io/badge/wheel-yes-brightgreen.svg)](https://pypi.org/project/translators)
+[![GitHub Issues](https://img.shields.io/github/issues/UlionTse/translators.svg)](https://github.com/UlionTse/translators/issues)
+
+
 
 **Translators** is a library which aims to bring **free, multiple, enjoyable** translation to individuals and students in Python. It based on the translation interface of Google, Microsoft(Bing), Baidu, Alibaba, Tencent, NetEase(Youdao), Sogou, Deepl, etc.
 
