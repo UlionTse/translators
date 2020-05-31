@@ -1,7 +1,6 @@
 <p align="center">
 <img src="/translators2.PNG" width="666"/>
 </p>
-
 * * *
 
 
@@ -118,16 +117,16 @@ help(ts.deepl)
 
 ### Features
 
-| Translator | Supported Language Count | Advantage                                                    |
-| ---------- | ------------------------ | ------------------------------------------------------------ |
-| Google     | 104                      | support the most languages in the world                      |
-| Bing       | 71                       | support more languages in the world                          |
-| Sogou      | 61                       | support more languages in the world                          |
-| Baidu      | 28                       | support more Europe & Asia languages; support professional field |
-| Alibaba    | 21                       | support more Europe & Asia languages; support professional field |
-| Tencent    | 17                       | support more Europe & Asia languages                         |
-| Youdao     | 13                       | support more Europe & Asia languages                         |
-| Deepl      | 11                       | high quality to translate but response slowly                |
+| Translator | Supported Language Count | Advantage                                          |
+| ---------- | ------------------------ | -------------------------------------------------- |
+| Google     | 104                      | support the most languages in the world            |
+| Bing       | 71                       | support more languages in the world                |
+| Sogou      | 61                       | support more languages in the world                |
+| Baidu      | 28                       | support more languages; support professional field |
+| Alibaba    | 21                       | support more languages; support professional field |
+| Tencent    | 17                       | support more languages                             |
+| Youdao     | 13                       | support more languages                             |
+| Deepl      | 11                       | high quality to translate but response slowly      |
 
 
 
@@ -225,6 +224,6 @@ License
 
 - Don't make high frequency requests !
 
-  Enterprises provide free services, we should keep grateful, not cause trouble.
+  Enterprises provide free services, we should keep grateful, but not cause trouble.
 
 [click the detail license.](https://github.com/uliontse/translators/blob/master/LICENSE)
