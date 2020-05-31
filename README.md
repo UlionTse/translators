@@ -1,12 +1,13 @@
 <p align="center">
-<img src="/translators2.PNG" width="666"/>
+<img src="/translators2.PNG" width="600"/>
 </p>
-* * *
 
+* * *
 
 [![PyPI - Version](https://img.shields.io/pypi/v/translators.svg)](https://pypi.org/project/translators)
 [![PyPI - License](https://img.shields.io/pypi/l/translators.svg)](https://github.com/shinalone/translators/blob/master/LICENSE)
 [![PyPI - Python](https://img.shields.io/pypi/pyversions/translators.svg)](https://docs.python.org/3/)
+[![Github - Issues](https://img.shields.io/github/issues/UlionTse/translators.svg)](https://img.shields.io/github/UlionTse/translators/issues)
 [![PyPI - Status](https://img.shields.io/pypi/status/translators.svg)](https://pypi.org/project/translators)
 [![PyPI - Wheel](https://img.shields.io/badge/wheel-yes-brightgreen.svg)](https://pypi.org/project/translators)
 [![Downloads](https://pepy.tech/badge/translators)](https://pepy.tech/project/translators)
