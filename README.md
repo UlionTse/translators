@@ -9,6 +9,7 @@
   <a href="https://pypi.org/project/translators"><img alt="PyPI - Wheel" src="https://img.shields.io/badge/wheel-yes-brightgreen.svg"></a>
   <a href="https://pypi.org/project/translators"><img alt="Downloads" src="https://pepy.tech/badge/translators"></a>
 </p>
+
 * * *
 
 **Translators** is a library which aims to bring **free, multiple, enjoyable** translation to individuals and students in Python. It based on the translation interface of Google, Microsoft(Bing), Baidu, Alibaba, Tencent, NetEase(Youdao), Sogou, Deepl, etc.
