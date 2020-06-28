@@ -110,11 +110,18 @@ class TranslatorSeverRegion:
     def request_server_region_info(self):
         try:
             ip_address = requests.get('http://httpbin.org/ip').json()['origin']
-            data = requests.get(f'http://ip-api.com/json/{ip_address}').json()
-            sys.stderr.write(f'Using {data.get("country")} server backend.\n')
-            return data
+            try:
+                data = requests.get(f'http://ip-api.com/json/{ip_address}', timeout=5).json()
+                sys.stderr.write(f'Using {data.get("country")} server backend.\n')
+                return data
+            except requests.exceptions.Timeout:
+                data = requests.post(url='http://ip.taobao.com/outGetIpInfo',
+                                     data={'ip': ip_address, 'accessKey': 'alibaba-inc'}).json()
+                data.update({'countryCode': data.get('country_id')})
+                return data
+
         except requests.exceptions.ConnectionError:
-            raise TranslatorError('Unable to connect the Internet.')
+            raise TranslatorError('Unable to connect the Internet.\n')
         except:
             raise TranslatorError('Unable to find server backend.\n')
 
@@ -136,10 +143,6 @@ class Google(Tse):
         self.query_count = 0
         self.output_zh = 'zh-CN'
 
-    # def rshift(self,val, n):
-    #     """python port for '>>>'(right shift with padding)
-    #     """
-    #     return (val % 0x100000000) >> n
     
     def _xr(self, a, b):
         size_b = len(b)
@@ -147,52 +150,63 @@ class Google(Tse):
         while c < size_b - 2:
             d = b[c + 2]
             d = ord(d[0]) - 87 if 'a' <= d else int(d)
-            # d = google.rshift(self,a, d) if '+' == b[c + 1] else a << d
-            d = (a % 0x100000000) >> d if '+' == b[c + 1] else a << d
-            a = a + d & 4294967295 if '+' == b[c] else a ^ d
+            d = (a % 2**32) >> d if '+' == b[c + 1] else a << d
+            a = a + d & (2**32-1) if '+' == b[c] else a ^ d
             c += 3
         return a
-    
+
+
+    def _ints(self, text):
+        ints = []
+        for v in text:
+            int_v = ord(v)
+            if int_v < 2**16:
+                ints.append(int_v)
+            else:
+                # unicode, emoji
+                ints.append(int((int_v - 2**16) / 2**10 + 55296))
+                ints.append(int((int_v - 2**16) % 2**10 + 56320))
+        return ints
+
+
     def acquire(self, text, tkk):
-        # tkk = google.get_tkk(self)
-        b = tkk if tkk != '0' else ''
-        d = b.split('.')
-        b = int(d[0]) if len(d) > 1 else 0
-        
-        # assume e means char code array
+        ints = self._ints(text)
+        size = len(ints)
         e = []
         g = 0
-        size = len(text)
-        for char in text:
-            l = ord(char)
-            # just append if l is less than 128(ascii: DEL)
-            if l < 128:
+
+        while g < size:
+            l = ints[g]
+            if l < 2**7: # 128(ascii)
                 e.append(l)
-            # append calculated value if l is less than 2048
             else:
-                if l < 2048:
+                if l < 2**11: # 2048
                     e.append(l >> 6 | 192)
                 else:
-                    # append calculated value if l matches special condition
-                    if (l & 64512) == 55296 and g + 1 < size and \
-                        ord(text[g + 1]) & 64512 == 56320:
+                    if (l & 64512) == 55296 and g + 1 < size and ints[g + 1] & 64512 == 56320:
                         g += 1
-                        l = 65536 + ((l & 1023) << 10) + ord(text[g]) & 1023
+                        l = 65536 + ((l & 1023) << 10) + (ints[g] & 1023)
                         e.append(l >> 18 | 240)
                         e.append(l >> 12 & 63 | 128)
                     else:
                         e.append(l >> 12 | 224)
-                        e.append(l >> 6 & 63 | 128)
+                    e.append(l >> 6 & 63 | 128) ##
                 e.append(l & 63 | 128)
+            g += 1
+
+        b = tkk if tkk != '0' else ''
+        d = b.split('.')
+        b = int(d[0]) if len(d) > 1 else 0
+
         a = b
         for value in e:
             a += value
             a = self._xr(a, '+-a^+6')
         a = self._xr(a, '+-3^+b+-f')
         a ^= int(d[1]) if len(d) > 1 else 0
-        if a < 0:  # pragma: nocover
-            a = (a & 2147483647) + 2147483648
-        a %= 1000000  # int(1E6)
+        if a < 0:
+            a = (a & (2**31-1)) + 2**31
+        a %= int(1E6)
         return '{}.{}'.format(a, a ^ b)
 
     def get_language_map(self,host_html):
@@ -230,6 +244,8 @@ class Google(Tse):
             
             tkk = re.findall("tkk:'(.*?)'", host_html)[0]
             tk = self.acquire(query_text, tkk)
+            #TODO
+            print(tkk,tk)
             self.api_url = (self.host_url + '/translate_a/single?client={0}&sl={1}&tl={2}&hl=zh-CN&dt=at&dt=bd&dt=ex&dt=ld&dt=md'
                             + '&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&source=bh&ssel=0&tsel=0&kc=1&tk='
                             + str(tk) + '&q=' + quote(query_text)).format('webapp', from_language,to_language)  # [t,webapp]
@@ -849,7 +865,7 @@ youdao = _youdao.youdao_api
 
 
 def test():
-    query_text = '季姬寂，集鸡，鸡即棘鸡。棘鸡饥叽，季姬及箕稷济鸡。'
+    query_text = '季姬寂，集鸡，鸡即棘鸡。棘鸡饥叽，季姬及箕稷济鸡。👍👍👍'
     print(alibaba(query_text))
     print(baidu(query_text))
     print(bing(query_text))
@@ -860,4 +876,3 @@ def test():
     print(youdao(query_text))
 
 # test()
-
