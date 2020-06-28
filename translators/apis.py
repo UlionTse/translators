@@ -111,12 +111,12 @@ class TranslatorSeverRegion:
         try:
             ip_address = requests.get('http://httpbin.org/ip').json()['origin']
             try:
-                data = requests.get(f'http://ip-api.com/json/{ip_address}', timeout=5).json()
+                data = requests.get(f'http://ip-api.com/json/{ip_address}', timeout=10).json()
                 sys.stderr.write(f'Using {data.get("country")} server backend.\n')
                 return data
             except requests.exceptions.Timeout:
                 data = requests.post(url='http://ip.taobao.com/outGetIpInfo',
-                                     data={'ip': ip_address, 'accessKey': 'alibaba-inc'}).json()
+                                     data={'ip': ip_address, 'accessKey': 'alibaba-inc'}).json().get('data')
                 data.update({'countryCode': data.get('country_id')})
                 return data
 
@@ -244,8 +244,6 @@ class Google(Tse):
             
             tkk = re.findall("tkk:'(.*?)'", host_html)[0]
             tk = self.acquire(query_text, tkk)
-            #TODO
-            print(tkk,tk)
             self.api_url = (self.host_url + '/translate_a/single?client={0}&sl={1}&tl={2}&hl=zh-CN&dt=at&dt=bd&dt=ex&dt=ld&dt=md'
                             + '&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&source=bh&ssel=0&tsel=0&kc=1&tk='
                             + str(tk) + '&q=' + quote(query_text)).format('webapp', from_language,to_language)  # [t,webapp]

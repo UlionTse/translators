@@ -98,6 +98,6 @@ update README.md
 update README.md
 translator & translate-api upgrade version synchronously.
 
-4.6.4
+4.6.10
 make google('emoji') stronger.
 make requests of server region stronger.
