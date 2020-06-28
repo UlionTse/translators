@@ -103,7 +103,7 @@ help(ts.deepl)
 ### Linux Runtime Environment
 
 1. To support javascript runtime environment, you should `sudo yum -y install nodejs `.
-2. PS, `ts.baidu()` does not work on Linux.
+2. PS, `ts.baidu()` does not work on Linux without desktop.
 
 ### Supported Country and Region Service
 
