@@ -101,3 +101,6 @@ translator & translate-api upgrade version synchronously.
 4.6.10
 make google('emoji') stronger.
 make requests of server region stronger.
+
+4.6.18
+make youdao('sentences length more than 50','errCode40') stronger.

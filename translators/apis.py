@@ -216,7 +216,7 @@ class Google(Tse):
         return {}.fromkeys(lang_list,lang_list)
 
     @Tse.time_stat
-    @logger.catch
+    # @logger.catch
     def google_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
         https://translate.google.com, https://translate.google.cn.
@@ -305,7 +305,7 @@ class Baidu(Tse):
         return js_data
 
     @Tse.time_stat
-    @logger.catch
+    # @logger.catch
     def baidu_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
         https://fanyi.baidu.com
@@ -361,7 +361,8 @@ class Youdao(Tse):
         super().__init__()
         self.host_url = 'http://fanyi.youdao.com'
         self.api_url = 'http://fanyi.youdao.com/translate_o?smartresult=dict&smartresult=rule'
-        self.get_sign_url = 'http://shared.ydstatic.com/fanyi/newweb/v1.0.24/scripts/newweb/fanyi.min.js'
+        self.get_old_sign_url = 'http://shared.ydstatic.com/fanyi/newweb/v1.0.27/scripts/newweb/fanyi.min.js'
+        self.get_new_sign_url = None
         self.get_sign_pattern = 'http://shared.ydstatic.com/fanyi/newweb/(.*?))/scripts/newweb/fanyi.min.js'
         self.host_headers = self.get_headers(self.host_url, if_use_api=False)
         self.api_headers = self.get_headers(self.host_url, if_use_api=True)
@@ -380,13 +381,13 @@ class Youdao(Tse):
 
     def get_sign_key(self, ss, host_html, proxies):
         try:
-            r = ss.get(self.get_sign_url, headers=self.host_headers, proxies=proxies)
+            self.get_new_sign_url = re.search(self.get_sign_pattern, host_html).group(0)
+            r = ss.get(self.get_new_sign_url, headers=self.host_headers, proxies=proxies)
             r.raise_for_status()
         except:
-            self.get_sign_url = re.search(self.get_sign_pattern, host_html).group(0)
-            r = ss.get(self.get_sign_url, headers=self.host_headers, proxies=proxies)
+            r = ss.get(self.get_old_sign_url, headers=self.host_headers, proxies=proxies)
         sign = re.findall('n.md5\("fanyideskweb"\+e\+i\+"(.*?)"\)', r.text)
-        return sign[0] if sign and sign != [''] else 'Nw(nmmbP%A-r6U3EUn]Aj'
+        return sign[0] if sign and sign != [''] else 'mmbP%A-r6U3Nw(n]BjuEU' #v1.0.27
 
     def get_form(self, query_text, from_language, to_language, sign_key):
         ts = str(int(time.time()))
@@ -413,7 +414,7 @@ class Youdao(Tse):
         return form
 
     @Tse.time_stat
-    @logger.catch
+    # @logger.catch
     def youdao_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
         http://fanyi.youdao.com
@@ -421,13 +422,11 @@ class Youdao(Tse):
         :param from_language: string, default 'auto'.
         :param to_language: string, default 'en'.
         :param **kwargs:
-                :param nonautomatic_recognize_replaced_language: string, default 'en'.
                 :param is_detail_result: boolean, default False.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, >0.05. Best to set it yourself, otherwise there will be surprises.
         :return: string or dict
         '''
-        nonautomatic_recognize_replaced_language = kwargs.get('nonautomatic_recognize_replaced_language', 'en')
         is_detail_result = kwargs.get('is_detail_result', False)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0.05 + random.random()/2 + 1e-100*2**self.query_count)
@@ -437,21 +436,18 @@ class Youdao(Tse):
             self.language_map = self.get_language_map(host_html)
             sign_key = self.get_sign_key(ss, host_html, proxies)
             from_language, to_language = self.check_language(from_language, to_language, self.language_map,output_zh=self.output_zh)
+            from_language, to_language = ('auto','auto') if from_language=='auto' else (from_language,to_language)
 
-            def _post_data(from_language):
-                form = self.get_form(str(query_text), from_language, to_language, sign_key)
-                r = ss.post(self.api_url, data=form, headers=self.api_headers, proxies=proxies)
-                r.raise_for_status()
-                return r.json()
-
-            data = _post_data(from_language)
-            data = _post_data(nonautomatic_recognize_replaced_language) if data.get('errorCode') == 40 else data
-        if data['errorCode'] == 40:
-            raise Exception('Unable to automatically recognize the language of `query_text`, '
-                            'please specify parameters of `from_language` or `nonautomatic_recognize_replaced_language`.')
+            form = self.get_form(str(query_text), from_language, to_language, sign_key)
+            r = ss.post(self.api_url, data=form, headers=self.api_headers, proxies=proxies)
+            r.raise_for_status()
+            data = r.json()
+            if data['errorCode'] == 40:
+                raise Exception('Invalid translation of `from_language[auto]`, '
+                                'please specify parameters of `from_language` or `to_language`.')
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return data if is_detail_result else ''.join(item['tgt'] for item in data['translateResult'][0])
+        return data if is_detail_result else ''.join(item['tgt'] for result in data['translateResult'] for item in result)
 
 
 class Tencent(Tse):
@@ -473,7 +469,7 @@ class Tencent(Tse):
         return execjs.get().eval(lang_map_str)
 
     @Tse.time_stat
-    @logger.catch
+    # @logger.catch
     def tencent_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
         http://fanyi.qq.com
@@ -558,7 +554,7 @@ class Alibaba(Tse):
             return get_lang(self.get_language_old_url, params=params)
 
     @Tse.time_stat
-    @logger.catch
+    # @logger.catch
     def alibaba_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
         https://translate.alibaba.com
@@ -627,7 +623,7 @@ class Bing(Tse):
         return {'iid': iid, 'ig': ig, 'language_map': language_map}
 
     @Tse.time_stat
-    @logger.catch
+    # @logger.catch
     def bing_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
         http://bing.com/Translator, http://cn.bing.com/Translator.
@@ -713,7 +709,7 @@ class Sogou(Tse):
         return form
     
     @Tse.time_stat
-    @logger.catch
+    # @logger.catch
     def sogou_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
         https://fanyi.sogou.com
@@ -808,7 +804,7 @@ class Deepl(Tse):
         return param
 
     @Tse.time_stat
-    @logger.catch
+    # @logger.catch
     def deepl_api(self, query_text, from_language='auto', to_language='en', **kwargs):
         '''
         https://www.deepl.com
@@ -862,15 +858,23 @@ _youdao = Youdao()
 youdao = _youdao.youdao_api
 
 
+@logger.catch
 def test():
-    query_text = '季姬寂，集鸡，鸡即棘鸡。棘鸡饥叽，季姬及箕稷济鸡。👍👍👍'
-    print(alibaba(query_text))
-    print(baidu(query_text))
-    print(bing(query_text))
-    print(deepl(query_text))
-    print(google(query_text))
-    print(sogou(query_text))
-    print(tencent(query_text))
-    print(youdao(query_text))
+    query_text1 = '季姬寂，集鸡，鸡即棘鸡。棘鸡饥叽，季姬及箕稷济鸡。👍👍👍'
+    query_text2 = '''北国风光，千里冰封，万里雪飘。望长城内外，惟余莽莽；大河上下，顿失滔滔。山舞银蛇，原驰蜡象，欲与天公试比高。
+    须晴日，看红装素裹，分外妖娆。江山如此多娇，引无数英雄竞折腰。惜秦皇汉武，略输文采；唐宗宋祖，稍逊风骚。一代天骄，成吉思汗，只识弯弓射大雕。
+    俱往矣，数风流人物，还看今朝。
+    '''
+    query_text3 = 'All the past, a number of heroes, but also look at the present.'
+
+    for query_text in [query_text1,query_text2,query_text3]:
+        print(alibaba(query_text))
+        print(baidu(query_text))
+        print(bing(query_text))
+        print(deepl(query_text))
+        print(google(query_text))
+        print(sogou(query_text,))
+        print(tencent(query_text))
+        print(youdao(query_text))
 
 # test()
