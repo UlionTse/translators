@@ -64,7 +64,6 @@ python setup.py install
 ## Getting Started
 
 ```python
-# import library
 import translators as ts
 
 wyw_text = '季姬寂，集鸡，鸡即棘鸡。棘鸡饥叽，季姬及箕稷济鸡。'
@@ -77,15 +76,16 @@ print(ts.deepl(wyw_text)) # default: from_language='auto', to_language='en'
 print(ts._deepl.language_map)
 
 # professional field
-print(ts.alibaba(wyw_text, use_domain='general')) # ("general","message","offer")
-print(ts.baidu(wyw_text, use_domain='common')) # ('common','medicine','electronics','mechanics')
+print(ts.alibaba(wyw_text, professional_field='general')) # ("general","message","offer")
+print(ts.baidu(wyw_text, professional_field='common')) # ('common','medicine','electronics','mechanics')
 
 # property
-print(dir(ts._tencent))
+rs = [ts.tencent(x) for x in [wyw_text, chs_text]]
 print(ts._tencent.query_count)
+print(dir(ts._tencent))
 
 # requests
-print(ts.youdao(wyw_text, sleep_seconds=5, proxies={}))
+print(ts.youdao(wyw_text, sleep_seconds=5, proxies={}, use_cache=True))
 
 # host service
 print(ts.google(wyw_text, if_use_cn_host=True))
@@ -108,13 +108,14 @@ help(ts.deepl)
 ### Supported Country and Region Service
 
 1. If you have requests error, please check whether this service is provided in your country or region.
-2. Check the website about `help(ts.*your_translator*)`.
+2. Check the website about `eg: help(ts.google)`.
 
 ### HTTPError 4xx
 
 1. First, check whether you made high frequency requests.
 2. Second, check whether this service is provided in your country or region.
 3. Third, detail to solve [HTTPError](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) itself.
+4. Four, [issues me](https://github.com/UlionTse/translators/issues).
 
 ## More About Translators
 
@@ -125,8 +126,8 @@ help(ts.deepl)
 | Google     | 104                      | support the most languages in the world            |
 | Bing       | 71                       | support more languages in the world                |
 | Sogou      | 61                       | support more languages in the world                |
-| Baidu      | 28                       | support more languages; support professional field |
-| Alibaba    | 21                       | support more languages; support professional field |
+| Baidu      | 28                       | support more languages, support professional field |
+| Alibaba    | 21                       | support more language, support professional field  |
 | Tencent    | 17                       | support more languages                             |
 | Youdao     | 13                       | support more languages                             |
 | Deepl      | 11                       | high quality to translate but response slowly      |

@@ -104,3 +104,11 @@ make requests of server region stronger.
 
 4.6.18
 make youdao('sentences length more than 50','errCode40') stronger.
+
+4.6.20
+make tencent(),deepl() stronger with language_map.
+make youdao() stronger with `action` and `lts`.
+speed request with `use_cache`.
+add type hints for function.
+`use_domain` --> `professional_field`
+
