@@ -223,13 +223,13 @@ print(ts._google.language_map)
 
 ### About Chinese Language
 
-| Language        | Language of Translator | Google   | Bing       | Baidu  | Alibaba  | Tencent | Youdao | Sogou | Deepl |
-| --------------- | ---------------------- | -------- | ---------- | ------ | -------- | ------- | ------ | ----- | ----- |
-| chinese(简体)   | zh-CHS                 | Y(zh-CN) | Y(zh-Hans) | Y(zh)  | Y(zh)    | Y(zh)   | Y      | Y     | Y(zh) |
-| chinese(繁体)   | zh-CHT                 | Y(zh-TW) | Y(zh-Hant) | Y(cht) | Y(zh-TW) |         |        | Y     |       |
-| chinese(文言文) | wyw                    |          |            | Y      |          |         |        |       |       |
-| chinese(粤语)   | yue                    |          | Y          | Y      |          |         |        | Y     |       |
-| chinese(白苗文) | mww                    |          | Y          |        |          |         |        | Y     |       |
+| Language        | Language of Translator | Google   | Yandex | Bing       | Baidu  | Alibaba  | Tencent | Youdao | Sogou | Deepl |
+| --------------- | ---------------------- | -------- | ------ | ---------- | ------ | -------- | ------- | ------ | ----- | ----- |
+| chinese(简体)   | zh-CHS                 | Y(zh-CN) | Y(zh)  | Y(zh-Hans) | Y(zh)  | Y(zh)    | Y(zh)   | Y      | Y     | Y(zh) |
+| chinese(繁体)   | zh-CHT                 | Y(zh-TW) |        | Y(zh-Hant) | Y(cht) | Y(zh-TW) |         |        | Y     |       |
+| chinese(文言文) | wyw                    |          |        |            | Y      |          |         |        |       |       |
+| chinese(粤语)   | yue                    |          |        | Y          | Y      |          |         |        | Y     |       |
+| chinese(白苗文) | mww                    |          |        | Y          |        |          |         |        | Y     |       |
 
 
 
