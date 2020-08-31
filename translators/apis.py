@@ -880,15 +880,6 @@ class Yandex(Tse):
         return {}.fromkeys(lang_dict.keys(), lang_dict.keys())
 
     def detect_language(self, ss, query_text, sid, proxies):
-        headers = {
-            'Accept': '*/*',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,en-US;q=0.7,en-GB;q=0.6,zh-TW;q=0.5,zh-HK;q=0.4',
-            'Host': 'translate.yandex.net',
-            'Origin': 'https://translate.yandex.com',
-            'Referer': 'https://translate.yandex.com',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
-        }
         params = {'sid': sid, 'srv': 'tr-text', 'text': query_text, 'hint': 'zh,en', 'options': 1,}
         r = ss.get(self.detect_language_url, params=params, headers=self.host_headers, proxies=proxies)
         r.raise_for_status()
@@ -914,16 +905,7 @@ class Yandex(Tse):
         sleep_seconds = kwargs.get('sleep_seconds', 0.05 + random.random()/2 + 1e-100*2**self.query_count)
 
         with requests.Session() as ss:
-            r0 = ss.get(self.host_url, headers=self.host_headers, proxies=proxies)
-            print(ss.cookies)
-            print(ss.headers)
-            print(r0.cookies)
-            print(r0.headers)
-
-            host_html = r0.text
-
-            # print(host_html)
-            print('host ok')
+            host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
             if self.query_count==0 or not use_cache:
                 sid_find = re.findall("SID: '(.*?)',", host_html)
                 self.sid = sid_find[0] if sid_find else '3d58bd71.5f49c293.93b157d0.74722d74657874'
@@ -946,6 +928,7 @@ class Yandex(Tse):
         time.sleep(sleep_seconds)
         self.query_count += 1
         return data if is_detail_result else data['text'][0]
+
 
 
 
