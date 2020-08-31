@@ -39,7 +39,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
     ],
-    keywords=['translate','translator','fanyi','Google','Baidu','Alibaba','Tencent','Youdao','Bing','Sogou','Deepl'],
+    keywords=['translate','translator','fanyi','Google','Yandex','Bing','Baidu','Alibaba','Tencent','Youdao','Sogou','Deepl'],
     install_requires=[
         'requests>=2.23.0',
         'PyExecJS>=1.5.1',

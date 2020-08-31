@@ -112,3 +112,11 @@ speed request with `use_cache`.
 add type hints for function.
 `use_domain` --> `professional_field`
 
+4.7.0
+add yandex()
+`use_cache` deletes if_none(a,b), because b will be computed first, so fix if ... else ...
+update README.md
+
+
+
+
