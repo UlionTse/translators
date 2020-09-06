@@ -767,6 +767,7 @@ class Deepl(Tse):
         self.api_url = 'https://www2.deepl.com/jsonrpc'
         self.host_headers = self.get_headers(self.host_url, if_use_api=False)
         self.api_headers = self.get_headers(self.host_url, if_use_api=True, if_ajax=False)
+        self.api_headers.update({'Content-Type': 'application/json'})
         self.request_id = random.randrange(100,10000) * 10000 + 5
         self.language_map = None
         self.query_count = 0
