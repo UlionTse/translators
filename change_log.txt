@@ -121,3 +121,5 @@ update README.md
 4.7.1
 update README.md
 
+4.7.2
+make deepl() strong with `content-type` of request headers.
