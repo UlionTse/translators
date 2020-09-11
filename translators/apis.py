@@ -273,6 +273,7 @@ class Baidu(Tse):
         self.api_url = 'https://fanyi.baidu.com/v2transapi'
         self.langdetect_url = 'https://fanyi.baidu.com/langdetect'
         self.get_sign_url = 'https://fanyi-cdn.cdn.bcebos.com/static/translation/pkg/index_bd36cef.js'
+        self.get_sign_url2 = None
         self.get_sign_pattern = 'https://fanyi-cdn.cdn.bcebos.com/static/translation/pkg/index_(.*?).js'
         self.host_headers = self.get_headers(self.host_url, if_use_api=False)
         self.api_headers = self.get_headers(self.host_url, if_use_api=True)
@@ -289,12 +290,12 @@ class Baidu(Tse):
         self.query_count = 0
         self.output_zh = 'zh'
 
-    def get_sign_html(self, ss, host_html, proxies):
+    def get_sign_html(self, ss, proxies):
         try:
             r = ss.get(self.get_sign_url, headers=self.host_headers, proxies=proxies)
             r.raise_for_status()
         except:
-            self.get_sign_url = re.search(self.get_sign_pattern,host_html).group(0)
+            self.get_sign_url = self.get_sign_url2
             r = ss.get(self.get_sign_url, headers=self.host_headers, proxies=proxies)
         return r.text
 
@@ -305,14 +306,13 @@ class Baidu(Tse):
         sign_js = sign_js.replace('function e(r)', 'function e(r,i)')
         return execjs.compile(sign_js).call('e', ts_text, gtk)
 
-    def get_host_info(self, host_html, sign_html, ts_text):
+    def get_host_info(self, host_html, ts_text):
         gtk = re.findall("window.gtk = '(.*?)';", host_html)[0]
-        sign = self.get_sign(sign_html, ts_text, gtk)
     
         et = etree.HTML(host_html)
         js_txt = et.xpath("/html/body/script[2]/text()")[0][20:-3]
         js_data = execjs.get().eval(js_txt)
-        js_data.update({'gtk': gtk, 'sign': sign})
+        js_data.update({'gtk': gtk})
         return js_data
 
     @Tse.time_stat
@@ -341,10 +341,15 @@ class Baidu(Tse):
             self.ss = requests.Session()
 
         ss = self.ss
-        host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
-        sign_html = self.get_sign_html(ss, host_html, proxies)
+        if self.host_info is None:
+            host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
+            self.host_info = self.get_host_info(host_html, query_text)
+            self.get_sign_url2 = re.search(self.get_sign_pattern,host_html).group(0)
 
-        self.host_info = self.get_host_info(host_html, sign_html, query_text)
+        sign_html = self.get_sign_html(ss, proxies)
+        sign = self.get_sign(sign_html, query_text, self.host_info["gtk"])
+        self.host_info["sign"] = sign
+
         self.new_bdtk = {"baidu_id": ss.cookies.get("BAIDUID"), "token": self.host_info.get("token")}
         self.language_map = self.host_info['langMap']
         from_language,to_language = self.check_language(from_language,to_language,self.language_map,output_zh=self.output_zh)
