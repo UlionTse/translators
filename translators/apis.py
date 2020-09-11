@@ -354,8 +354,9 @@ class Baidu(Tse):
         self.language_map = self.host_info['langMap']
         from_language,to_language = self.check_language(from_language,to_language,self.language_map,output_zh=self.output_zh)
         self.api_headers.update({"cookie": "BAIDUID={};".format(self.bdtk['baidu_id'])})
-        res = ss.post(self.langdetect_url, headers=self.api_headers, data={"query": query_text}, proxies=proxies)
-        from_language = res.json()['lan'] if from_language == 'auto' else from_language
+        if from_language == "auto":
+            res = ss.post(self.langdetect_url, headers=self.api_headers, data={"query": query_text}, proxies=proxies)
+            from_language = res.json()['lan']
         
         # param_data = {"from": from_language, "to": to_language}
         form_data = {
