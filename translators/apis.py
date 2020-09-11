@@ -57,6 +57,7 @@ logger.opt(colors=True)
 class Tse:
     def __init__(self):
         self.author = 'Ulion.Tse'
+        self.ss = None
     
     @staticmethod
     def time_stat(func):
@@ -336,32 +337,36 @@ class Baidu(Tse):
         # use_cache = kwargs.get('use_cache', False)
         sleep_seconds = kwargs.get('sleep_seconds', 0.05 + random.random()/2 + 1e-100*2**self.query_count)
     
-        with requests.Session() as ss:
-            host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
-            sign_html = self.get_sign_html(ss, host_html, proxies)
+        if self.ss is None:
+            self.ss = requests.Session()
 
-            self.host_info = self.get_host_info(host_html, sign_html, query_text)
-            self.new_bdtk = {"baidu_id": ss.cookies.get("BAIDUID"), "token": self.host_info.get("token")}
-            self.language_map = self.host_info['langMap']
-            from_language,to_language = self.check_language(from_language,to_language,self.language_map,output_zh=self.output_zh)
-            self.api_headers.update({"cookie": "BAIDUID={};".format(self.bdtk['baidu_id'])})
-            res = ss.post(self.langdetect_url, headers=self.api_headers, data={"query": query_text}, proxies=proxies)
-            from_language = res.json()['lan'] if from_language == 'auto' else from_language
-            
-            # param_data = {"from": from_language, "to": to_language}
-            form_data = {
-                "from": from_language,
-                "to": to_language,
-                "query": str(query_text),  # from urllib.parse import quote_plus
-                "transtype": "translang",  # ["translang","realtime"]
-                "simple_means_flag": "3",
-                "sign": self.host_info.get('sign'),
-                "token": self.bdtk['token'],  # self.host_info.get('token'),
-                "domain": use_domain,
-            }
-            r = ss.post(self.api_url, headers=self.api_headers, data=urlencode(form_data).encode('utf-8'),proxies=proxies)
-            r.raise_for_status()
-            data = r.json()
+        ss = self.ss
+        host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
+        sign_html = self.get_sign_html(ss, host_html, proxies)
+
+        self.host_info = self.get_host_info(host_html, sign_html, query_text)
+        self.new_bdtk = {"baidu_id": ss.cookies.get("BAIDUID"), "token": self.host_info.get("token")}
+        self.language_map = self.host_info['langMap']
+        from_language,to_language = self.check_language(from_language,to_language,self.language_map,output_zh=self.output_zh)
+        self.api_headers.update({"cookie": "BAIDUID={};".format(self.bdtk['baidu_id'])})
+        res = ss.post(self.langdetect_url, headers=self.api_headers, data={"query": query_text}, proxies=proxies)
+        from_language = res.json()['lan'] if from_language == 'auto' else from_language
+        
+        # param_data = {"from": from_language, "to": to_language}
+        form_data = {
+            "from": from_language,
+            "to": to_language,
+            "query": str(query_text),  # from urllib.parse import quote_plus
+            "transtype": "translang",  # ["translang","realtime"]
+            "simple_means_flag": "3",
+            "sign": self.host_info.get('sign'),
+            "token": self.bdtk['token'],  # self.host_info.get('token'),
+            "domain": use_domain,
+        }
+        r = ss.post(self.api_url, headers=self.api_headers, data=urlencode(form_data).encode('utf-8'),proxies=proxies)
+        r.raise_for_status()
+        data = r.json()
+
         time.sleep(sleep_seconds)
         self.query_count += 1
         simple_data = data['trans_result']['data'][0]['dst'] if data.get('trans_result') else {'errno': data.get('errno')}
