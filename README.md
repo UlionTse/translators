@@ -28,6 +28,7 @@ The old version is called **translate-api** ![downloads](https://pepy.tech/badge
     - [Requests](#Requests)
     - [Host](#Host)
     - [Detail Result](#Detail-Result)
+    - [Translate HTML](#translate-html)
     - [Help](#Help)
 - [Issues]()
     - [Linux Runtime Environment](#linux-runtime-environment)
@@ -93,6 +94,9 @@ print(ts.bing(wyw_text, if_use_cn_host=False))
 
 # detail result
 print(ts.sogou(wyw_text, is_detail_result=True)
+      
+# translate html
+print(ts.translate_html(html_text, translator=ts.google, translator_params={'to_language':'en'}))
       
 # help
 help(ts.deepl)

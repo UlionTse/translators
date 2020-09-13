@@ -123,3 +123,8 @@ update README.md
 
 4.7.2
 make deepl() strong with `content-type` of request headers.
+
+4.7.3
+make output strong with '\n'.
+add translate_html().
+

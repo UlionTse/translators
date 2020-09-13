@@ -39,7 +39,7 @@ import sys
 import time
 import random
 from functools import wraps
-from typing import Union
+from typing import Union, Callable
 from hashlib import md5
 from urllib.parse import quote, urlencode, urlparse
 
@@ -65,13 +65,9 @@ class Tse:
             t1 = time.time()
             r = func(*args, **kwargs)
             t2 = time.time()
-            logger.success('UseTimeSeconds(fn: {}): {}'.format(func.__name__, round((t2 - t1), 1)), style='braces')
+            logger.success('CostTime(fn: {}): {}s'.format(func.__name__, round((t2 - t1), 1)), style='braces')
             return r
         return wrapper
-
-    @staticmethod
-    def if_none(v1,v2):
-        return v1 if v1 else v2
 
     @staticmethod
     def get_headers(host_url, if_use_api=False, if_use_referer=True, if_ajax=True):
@@ -222,7 +218,7 @@ class Google(Tse):
         lang_list = [x['code'] for x in eval(lang_list_str) if x['code'] != 'auto']
         return {}.fromkeys(lang_list,lang_list)
 
-    @Tse.time_stat
+    # @Tse.time_stat
     def google_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,list]:
         """
         https://translate.google.com, https://translate.google.cn.
@@ -277,9 +273,9 @@ class Baidu(Tse):
         self.api_headers = self.get_headers(self.host_url, if_use_api=True)
         self.bdtk_pool = [
             {"baidu_id": "F215FBBB82CAF048A24B86785E193475:FG=1", "token": "4e6d918b00ada40933d3e63fd2f2c009"},
-            {"baidu_id": "CC1996183B06AC5DD987C80465B33C2D:FG=1", "token": "b670bbc1562d679045dbea34270af2bc"},
+            # {"baidu_id": "CC1996183B06AC5DD987C80465B33C2D:FG=1", "token": "b670bbc1562d679045dbea34270af2bc"},
             {"baidu_id": "97AD065BAC1491494A8D48510DABE382:FG=1", "token": "9d893922f8ea987de2f2adc81a81fbe7"},
-            # {"baidu_id": "A6D0C58DDED7B75B744EDE8A26054BF3:FG=1", "token": "4a1edb47b0528aad49d622db98c7c750"},
+            {"baidu_id": "A6D0C58DDED7B75B744EDE8A26054BF3:FG=1", "token": "4a1edb47b0528aad49d622db98c7c750"},
         ]
         self.bdtk = random.choice(self.bdtk_pool)
         self.new_bdtk = None
@@ -290,10 +286,10 @@ class Baidu(Tse):
 
     def get_sign_html(self, ss, host_html, proxies):
         try:
+            self.get_sign_url = re.search(self.get_sign_pattern,host_html).group(0)
             r = ss.get(self.get_sign_url, headers=self.host_headers, proxies=proxies)
             r.raise_for_status()
         except:
-            self.get_sign_url = re.search(self.get_sign_pattern,host_html).group(0)
             r = ss.get(self.get_sign_url, headers=self.host_headers, proxies=proxies)
         return r.text
 
@@ -314,7 +310,7 @@ class Baidu(Tse):
         js_data.update({'gtk': gtk, 'sign': sign})
         return js_data
 
-    @Tse.time_stat
+    # @Tse.time_stat
     def baidu_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
         """
         https://fanyi.baidu.com
@@ -333,7 +329,6 @@ class Baidu(Tse):
         assert use_domain in ('common', 'medicine', 'electronics', 'mechanics')
         is_detail_result = kwargs.get('is_detail_result', False)
         proxies = kwargs.get('proxies', None)
-        # use_cache = kwargs.get('use_cache', False)
         sleep_seconds = kwargs.get('sleep_seconds', 0.05 + random.random()/2 + 1e-100*2**self.query_count)
     
         with requests.Session() as ss:
@@ -364,8 +359,8 @@ class Baidu(Tse):
             data = r.json()
         time.sleep(sleep_seconds)
         self.query_count += 1
-        simple_data = data['trans_result']['data'][0]['dst'] if data.get('trans_result') else {'errno': data.get('errno')}
-        return data if is_detail_result else simple_data
+        # simple_data = data['trans_result']['data'][0]['dst'] if data.get('trans_result') else {'errno': data.get('errno')}
+        return data if is_detail_result else '\n'.join([x['dst'] for x in data['trans_result']['data']])
 
 
 class Youdao(Tse):
@@ -425,7 +420,7 @@ class Youdao(Tse):
         }
         return form
 
-    @Tse.time_stat
+    # @Tse.time_stat
     def youdao_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
         """
         http://fanyi.youdao.com
@@ -461,7 +456,7 @@ class Youdao(Tse):
                                 'please specify parameters of `from_language` or `to_language`.')
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return data if is_detail_result else ''.join(item['tgt'] for result in data['translateResult'] for item in result)
+        return data if is_detail_result else ''.join(item['tgt'] if item['tgt'] else '\n' for result in data['translateResult'] for item in result)
 
 
 class Tencent(Tse):
@@ -479,10 +474,10 @@ class Tencent(Tse):
     def get_language_map(self, ss, language_url, proxies):
         r = ss.get(language_url,headers=self.host_headers,proxies=proxies)
         r.raise_for_status()
-        lang_map_str = re.search(pattern='languagePair = {(.*?)}', string=r.text, flags=re.S).group(0) #C=
+        lang_map_str = re.search(pattern='C={(.*?)}|languagePair = {(.*?)}', string=r.text, flags=re.S).group(0) #C=
         return execjs.get().eval(lang_map_str)
 
-    @Tse.time_stat
+    # @Tse.time_stat
     def tencent_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
         """
         http://fanyi.qq.com
@@ -569,7 +564,7 @@ class Alibaba(Tse):
         except:
             return _get_lang(self.get_language_old_url, params=params)
 
-    @Tse.time_stat
+    # @Tse.time_stat
     def alibaba_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
         """
         https://translate.alibaba.com
@@ -605,15 +600,13 @@ class Alibaba(Tse):
                 "source": "",
                 "bizType": use_domain,
             }
-            i, data, ts_result, params = 0, {}, [], {"dmtrack_pageid":dmtrack_pageid}
-            while not ts_result and i < 3:
-                res = ss.post(self.api_url,headers=self.api_headers,data=form_data,params=params,proxies=proxies)
-                data = res.json()
-                ts_result = data.get('listTargetText')
-                i += 1
+            params = {"dmtrack_pageid":dmtrack_pageid}
+            r = ss.post(self.api_url,headers=self.api_headers,data=form_data,params=params,proxies=proxies)
+            r.raise_for_status()
+            data = r.json()
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return data if is_detail_result else ts_result[0]
+        return data if is_detail_result else data['listTargetText'][0]
 
 
 class Bing(Tse):
@@ -641,7 +634,7 @@ class Bing(Tse):
         ig = re.findall('IG:"(.*?)"', host_html)[0]
         return {'iid': iid, 'ig': ig, 'language_map': language_map}
 
-    @Tse.time_stat
+    # @Tse.time_stat
     def bing_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,list]:
         """
         http://bing.com/Translator, http://cn.bing.com/Translator.
@@ -727,7 +720,7 @@ class Sogou(Tse):
         }
         return form
     
-    @Tse.time_stat
+    # @Tse.time_stat
     def sogou_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
         """
         https://fanyi.sogou.com
@@ -824,7 +817,7 @@ class Deepl(Tse):
         }
         return param
 
-    @Tse.time_stat
+    # @Tse.time_stat
     def deepl_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
         """
         https://www.deepl.com
@@ -886,7 +879,7 @@ class Yandex(Tse):
         r.raise_for_status()
         return r.json().get('lang')
 
-    @Tse.time_stat
+    # @Tse.time_stat
     def yandex_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
         """
         https://www.deepl.com
@@ -955,24 +948,21 @@ _youdao = Youdao()
 youdao = _youdao.youdao_api
 
 
-@logger.catch
-def test():
-    query_text1 = '季姬寂，集鸡，鸡即棘鸡。棘鸡饥叽，季姬及箕稷济鸡。👍👍👍'
-    query_text2 = """北国风光，千里冰封，万里雪飘。望长城内外，惟余莽莽；大河上下，顿失滔滔。山舞银蛇，原驰蜡象，欲与天公试比高。
-    须晴日，看红装素裹，分外妖娆。江山如此多娇，引无数英雄竞折腰。惜秦皇汉武，略输文采；唐宗宋祖，稍逊风骚。一代天骄，成吉思汗，只识弯弓射大雕。
-    俱往矣，数风流人物，还看今朝。
+
+def translate_html(html_text:str, translator:Callable, translator_params:dict) -> str:
     """
-    query_text3 = 'All the past, a number of heroes, but also look at the present.'
-
-    for query_text in [query_text1,query_text2,query_text3]:
-        print(alibaba(query_text))
-        print(baidu(query_text))
-        print(bing(query_text))
-        print(deepl(query_text))
-        print(google(query_text))
-        print(sogou(query_text))
-        print(tencent(query_text))
-        print(yandex(query_text))
-        print(youdao(query_text))
-
-# test()
+    Translate the displayed content of html without changing the html structure.
+    :param html_text: str, html format.
+    :param translator: translator, eg: ts.google
+    :param translator_params: dict, eg: {'to_language':'en'}
+    :return:
+    """
+    assert 'query_text' not in translator_params
+    assert 'is_detail_result' not in translator_params
+    pattern = re.compile(r"(?:^|(?<=>))([\s\S]*?)(?:(?=<)|$)")
+    new_html_text = re.sub(
+        pattern=pattern,
+        repl=lambda x: translator(query_text=x.group(1).strip(), **translator_params) if x.group(1).strip() else '',
+        string=html_text
+    )
+    return new_html_text
