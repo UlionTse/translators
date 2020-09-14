@@ -949,6 +949,7 @@ youdao = _youdao.youdao_api
 
 
 
+
 def translate_html(html_text:str, translator:Callable, translator_params:dict) -> str:
     """
     Translate the displayed content of html without changing the html structure.
@@ -960,9 +961,5 @@ def translate_html(html_text:str, translator:Callable, translator_params:dict) -
     assert 'query_text' not in translator_params
     assert 'is_detail_result' not in translator_params
     pattern = re.compile(r"(?:^|(?<=>))([\s\S]*?)(?:(?=<)|$)")
-    new_html_text = re.sub(
-        pattern=pattern,
-        repl=lambda x: translator(query_text=x.group(1).strip(), **translator_params) if x.group(1).strip() else '',
-        string=html_text
-    )
-    return new_html_text
+    repl = lambda x: translator(query_text=x.group(1).strip(), **translator_params) if x.group(1).strip() else ''
+    return re.sub(pattern=pattern, repl=repl, string=html_text)

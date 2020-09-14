@@ -1,4 +1,4 @@
-__version__ = "4.7.3"
+__version__ = "4.7.4"
 __author__ = "UlionTse"
 
 from .apis import alibaba, baidu, bing, deepl, google, sogou, tencent, yandex, youdao
