@@ -143,6 +143,7 @@ class Google(Tse):
         self.host_headers = None
         self.language_map = None
         self.api_url = None
+        self.tkk = None
         self.query_count = 0
         self.output_zh = 'zh-CN'
 
@@ -229,7 +230,6 @@ class Google(Tse):
                 :param if_use_cn_host: boolean, default None.
                 :param is_detail_result: boolean, default False.
                 :param proxies: dict, default None.
-                :param use_cache: bool, default False.
                 :param sleep_seconds: float, >0.05. Best to set it yourself, otherwise there will be surprises.
         :return: str or list
         """
@@ -239,17 +239,18 @@ class Google(Tse):
         self.host_headers = self.get_headers(self.cn_host_url, if_use_api=False)
         is_detail_result = kwargs.get('is_detail_result', False)
         proxies = kwargs.get('proxies', None)
-        use_cache = kwargs.get('use_cache', False)
         sleep_seconds = kwargs.get('sleep_seconds', 0.05 + random.random()/2 + 1e-100*2**self.query_count)
     
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
-            if self.query_count==0 or not use_cache:
+            if not self.language_map:
                  self.language_map = self.get_language_map(host_html)
             from_language,to_language = self.check_language(from_language,to_language,self.language_map,output_zh=self.output_zh)
-            
-            tkk = re.findall("tkk:'(.*?)'", host_html)[0]
-            tk = self.acquire(query_text, tkk)
+
+            if not self.tkk:
+                self.tkk = re.findall("tkk:'(.*?)'", host_html)[0]
+
+            tk = self.acquire(query_text, self.tkk)
             self.api_url = (self.host_url + '/translate_a/single?client={0}&sl={1}&tl={2}&hl=zh-CN&dt=at&dt=bd&dt=ex'
                 + '&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&source=bh&ssel=0&tsel=0&kc=1&tk='
                 + str(tk) + '&q=' + quote(query_text)).format('webapp', from_language,to_language)  # [t,webapp]
@@ -340,8 +341,10 @@ class Baidu(Tse):
             self.language_map = self.host_info['langMap']
             from_language,to_language = self.check_language(from_language,to_language,self.language_map,output_zh=self.output_zh)
             self.api_headers.update({"cookie": "BAIDUID={};".format(self.bdtk['baidu_id'])})
-            res = ss.post(self.langdetect_url, headers=self.api_headers, data={"query": query_text}, proxies=proxies)
-            from_language = res.json()['lan'] if from_language == 'auto' else from_language
+
+            if from_language == 'auto':
+                res = ss.post(self.langdetect_url, headers=self.api_headers, data={"query": query_text}, proxies=proxies)
+                from_language = res.json()['lan']
             
             # param_data = {"from": from_language, "to": to_language}
             form_data = {
@@ -359,7 +362,6 @@ class Baidu(Tse):
             data = r.json()
         time.sleep(sleep_seconds)
         self.query_count += 1
-        # simple_data = data['trans_result']['data'][0]['dst'] if data.get('trans_result') else {'errno': data.get('errno')}
         return data if is_detail_result else '\n'.join([x['dst'] for x in data['trans_result']['data']])
 
 
@@ -430,18 +432,16 @@ class Youdao(Tse):
         :param **kwargs:
                 :param is_detail_result: boolean, default False.
                 :param proxies: dict, default None.
-                :param use_cache: bool, default False.
                 :param sleep_seconds: float, >0.05. Best to set it yourself, otherwise there will be surprises.
         :return: str or dict
         """
         is_detail_result = kwargs.get('is_detail_result', False)
         proxies = kwargs.get('proxies', None)
-        use_cache = kwargs.get('use_cache', False)
         sleep_seconds = kwargs.get('sleep_seconds', 0.05 + random.random()/2 + 1e-100*2**self.query_count)
 
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
-            if self.query_count==0 or not use_cache:
+            if not self.language_map:
                  self.language_map = self.get_language_map(host_html)
             sign_key = self.get_sign_key(ss, host_html, proxies)
             from_language, to_language = self.check_language(from_language, to_language, self.language_map,output_zh=self.output_zh)
@@ -487,18 +487,16 @@ class Tencent(Tse):
         :param **kwargs:
                 :param is_detail_result: boolean, default False.
                 :param proxies: dict, default None.
-                :param use_cache: bool, default False.
                 :param sleep_seconds: float, >0.05. Best to set it yourself, otherwise there will be surprises.
         :return: str or dict
         """
         is_detail_result = kwargs.get('is_detail_result', False)
         proxies = kwargs.get('proxies', None)
-        use_cache = kwargs.get('use_cache', False)
         sleep_seconds = kwargs.get('sleep_seconds', 0.05 + random.random()/2 + 1e-100*2**self.query_count)
 
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers,proxies=proxies).text
-            if self.query_count==0 or not use_cache:
+            if not self.language_map:
                  self.language_map = self.get_language_map(ss,self.get_language_url, proxies)
             from_language, to_language = self.check_language(from_language, to_language, self.language_map,output_zh=self.output_zh)
             qtv = re.findall('var qtv = "(.*?)"', host_html)[0]
@@ -575,7 +573,6 @@ class Alibaba(Tse):
                 :param professional_field: str, default 'message', choose from ("general","message","offer")
                 :param is_detail_result: boolean, default False.
                 :param proxies: dict, default None.
-                :param use_cache: bool, default False.
                 :param sleep_seconds: float, >0.05. Best to set it yourself, otherwise there will be surprises.
         :return: str or dict
         """
@@ -583,13 +580,12 @@ class Alibaba(Tse):
         assert use_domain in ("general","message","offer")
         is_detail_result = kwargs.get('is_detail_result', False)
         proxies = kwargs.get('proxies', None)
-        use_cache = kwargs.get('use_cache', False)
         sleep_seconds = kwargs.get('sleep_seconds', 0.05 + random.random()/2 + 1e-100*2**self.query_count)
         
         with requests.Session() as ss:
             host_response = ss.get(self.host_url, headers=self.host_headers, proxies=proxies)
             dmtrack_pageid = self.get_dmtrack_pageid(host_response)
-            if self.query_count==0 or not use_cache:
+            if not self.language_map:
                  self.language_map = self.get_language_map(ss, use_domain, dmtrack_pageid, proxies)
             from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
             form_data = {
@@ -655,14 +651,14 @@ class Bing(Tse):
         self.api_headers = self.get_headers(self.host_url, if_use_api=True)
         is_detail_result = kwargs.get('is_detail_result', False)
         proxies = kwargs.get('proxies', None)
-        # use_cache = kwargs.get('use_cache', False)
         sleep_seconds = kwargs.get('sleep_seconds', 0.05 + random.random()/2 + 1e-100*2**self.query_count)
     
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
             self.host_info = self.get_host_info(host_html)
 
-            self.language_map = self.host_info.get('language_map')
+            if not self.language_map:
+                self.language_map = self.host_info.get('language_map')
             from_language, to_language = self.check_language(from_language, to_language, self.language_map,
                                                              output_zh=self.output_zh,output_auto=self.output_auto)
             # params = {'isVertical': '1', '': '', 'IG': self.host_info['ig'], 'IID': self.host_info['iid']}
@@ -730,18 +726,16 @@ class Sogou(Tse):
         :param **kwargs:
                 :param is_detail_result: boolean, default False.
                 :param proxies: dict, default None.
-                :param use_cache: bool, default False.
                 :param sleep_seconds: float, >0.05. Best to set it yourself, otherwise there will be surprises.
         :return: str or dict
         """
         is_detail_result = kwargs.get('is_detail_result', False)
         proxies = kwargs.get('proxies', None)
-        use_cache = kwargs.get('use_cache', False)
         sleep_seconds = kwargs.get('sleep_seconds', 0.05 + random.random()/2 + 1e-100*2**self.query_count)
         
         with requests.Session() as ss:
             _ = ss.get(self.host_url, headers=self.host_headers, proxies=proxies)
-            if self.query_count==0 or not use_cache:
+            if not self.language_map:
                  self.language_map = self.get_language_map(ss,self.get_language_url,proxies)
             from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
             self.form_data = self.get_form(query_text, from_language, to_language)
@@ -827,18 +821,16 @@ class Deepl(Tse):
         :param **kwargs:
                 :param is_detail_result: boolean, default False.
                 :param proxies: dict, default None.
-                :param use_cache: bool, default False.
                 :param sleep_seconds: float, >0.05. Best to set it yourself, otherwise there will be surprises.
         :return: str or dict
         """
         is_detail_result = kwargs.get('is_detail_result', False)
         proxies = kwargs.get('proxies', None)
-        use_cache = kwargs.get('use_cache', False)
         sleep_seconds = kwargs.get('sleep_seconds', 0.05 + random.random()/2 + 1e-100*2**self.query_count)
 
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
-            if self.query_count==0 or not use_cache:
+            if not self.language_map:
                  self.language_map = self.get_language_map(host_html)
             from_language, to_language = self.check_language(from_language, to_language, language_map=self.language_map,
                                                              output_zh=self.output_zh, output_auto='auto')
@@ -882,31 +874,29 @@ class Yandex(Tse):
     # @Tse.time_stat
     def yandex_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
         """
-        https://www.deepl.com
+        https://translate.yandex.com
         :param query_text: str, must.
         :param from_language: str, default 'auto'.
         :param to_language: str, default 'en'.
         :param **kwargs:
                 :param is_detail_result: boolean, default False.
                 :param proxies: dict, default None.
-                :param use_cache: bool, default False.
                 :param sleep_seconds: float, >0.05. Best to set it yourself, otherwise there will be surprises.
         :return: str or dict
         """
         is_detail_result = kwargs.get('is_detail_result', False)
         proxies = kwargs.get('proxies', None)
-        use_cache = kwargs.get('use_cache', False)
         sleep_seconds = kwargs.get('sleep_seconds', 0.05 + random.random()/2 + 1e-100*2**self.query_count)
 
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
-            if self.query_count==0 or not use_cache:
+            if not self.sid:
                 sid_find = re.findall("SID: '(.*?)',", host_html)
                 self.sid = sid_find[0] if sid_find else '3d58bd71.5f49c293.93b157d0.74722d74657874'
+            if not self.language_map:
                 self.language_map = self.get_language_map(host_html)
 
-            if self.language_map:
-                from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
+            from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
             from_language = self.detect_language(ss, query_text, self.sid, proxies) if from_language=='auto' else from_language
             params = {
                 'id': f'{self.sid}-{self.query_count}-0',
@@ -916,14 +906,12 @@ class Yandex(Tse):
                 'format': 'text'
             }
             form_data = {'text': str(query_text), 'options': 4}
-            r = ss.post(self.host_url,params=params,data=form_data,headers=self.api_headers,proxies=proxies)
+            r = ss.post(self.api_url,params=params,data=form_data,headers=self.api_headers,proxies=proxies)
             r.raise_for_status()
             data = r.json()
         time.sleep(sleep_seconds)
         self.query_count += 1
         return data if is_detail_result else data['text'][0]
-
-
 
 
 REQUEST_SERVER_REGION_INFO = TranslatorSeverRegion().request_server_region_info
@@ -948,18 +936,22 @@ _youdao = Youdao()
 youdao = _youdao.youdao_api
 
 
-
-
-def translate_html(html_text:str, translator:Callable, translator_params:dict) -> str:
+@Tse.time_stat
+def translate_html(html_text:str, to_language:str='en', translator:Callable='auto', translator_params:dict={}) -> str:
     """
     Translate the displayed content of html without changing the html structure.
     :param html_text: str, html format.
-    :param translator: translator, eg: ts.google
-    :param translator_params: dict, eg: {'to_language':'en'}
-    :return:
+    :param to_language: str, eg: 'en'.
+    :param translator: translator, default 'auto', means ts.google
+    :param translator_params: dict
+    :return: str
     """
-    assert 'query_text' not in translator_params
-    assert 'is_detail_result' not in translator_params
-    pattern = re.compile(r"(?:^|(?<=>))([\s\S]*?)(?:(?=<)|$)")
-    repl = lambda x: translator(query_text=x.group(1).strip(), **translator_params) if x.group(1).strip() else ''
+    if translator_params:
+        for param in ('query_text', 'to_language','is_detail_result'):
+            assert param not in translator_params, f'{param} in {translator_params}'
+
+    translator = google if translator=='auto' else translator
+    translator_params.update({'sleep_seconds': 1e-8})
+    pattern = re.compile(r"(?:^|(?<=>))([\s\S]*?)(?:(?=<)|$)") #TODO: <code></code>
+    repl = lambda x: translator(query_text=x.group(1).strip(), to_language=to_language,**translator_params) if x.group(1).strip() else ''
     return re.sub(pattern=pattern, repl=repl, string=html_text)

@@ -36,6 +36,11 @@ USA
 <p>5%</p>
 <p>123\t</p>
 
+<strong>hello world</strong>
+<code>
+import translators as ts
+</code>
+
 </body>
 </html>
 """
@@ -54,10 +59,10 @@ def test():
         print(yandex(query_text))
         print(youdao(query_text))
 
+        for i in range(5):
+            r = translate_html(html_text, to_language='zh', translator=google)
+            print(i)
+
 
 if __name__ == '__main__':
     test()
-
-    print(html_text)
-    r = translate_html(html_text, translator=google, translator_params={'to_language':'zh'})
-    print(r)

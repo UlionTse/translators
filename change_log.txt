@@ -128,3 +128,11 @@ make deepl() strong with `content-type` of request headers.
 make output strong with '\n'.
 add translate_html().
 
+4.7.5
+upgrade translate_html().
+upgrade baidu() by advice of user `mozbugbox`.
+
+4.7.6
+remove parameter `use_cache`, default cache language_map.
+cache `tkk` in google().
+fixed yandex() with `api_url`

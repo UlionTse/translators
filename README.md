@@ -119,23 +119,23 @@ help(ts.deepl)
 1. Please check whether you made high frequency requests.
 2. Please check whether this service is provided in your country or region.
 3. Detail to solve [HTTPError](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) itself.
-4. Please [issues me](https://github.com/UlionTse/translators/issues), thanks.
+4. Please [issue me](https://github.com/UlionTse/translators/issues), thanks.
 
 ## More About Translators
 
 ### Features
 
-| Translator | Supported Language Count | Advantage                                                  |
-| ---------- | ------------------------ | ---------------------------------------------------------- |
-| Google     | 108                      | support the most languages in the world                    |
-| Yandex     | 99                       | support more languages in the world, support word to emoji |
-| Bing       | 77                       | support more languages in the world                        |
-| Sogou      | 61                       | support more languages in the world                        |
-| Baidu      | 28                       | support more languages, support professional field         |
-| Tencent    | 17                       | support more languages                                     |
-| Youdao     | 14                       | support more languages                                     |
-| Alibaba    | 12                       | support more languages, support professional field         |
-| Deepl      | 11                       | high quality to translate but response slowly              |
+| Translator | Supported Language Count | Advantage                                                    |
+| ---------- | ------------------------ | ------------------------------------------------------------ |
+| Google     | 108                      | support the most languages in the world                      |
+| Yandex     | 99                       | support more languages in the world, support word to emoji, unstable |
+| Bing       | 77                       | support more languages in the world                          |
+| Sogou      | 61                       | support more languages in the world                          |
+| Baidu      | 28                       | support more languages, support professional field           |
+| Tencent    | 17                       | support more languages                                       |
+| Youdao     | 14                       | support more languages                                       |
+| Alibaba    | 12                       | support more languages, support professional field           |
+| Deepl      | 11                       | high quality to translate but response slowly, unstable      |
 
 
 
