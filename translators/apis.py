@@ -213,7 +213,11 @@ class Google(Tse):
         a %= int(1E6)
         return '{}.{}'.format(a, a ^ b)
 
-    def get_language_map(self,host_html):
+    def get_language_map(self,host_html,ss,proxies):
+        while 'source_code_name:' not in host_html:
+            host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
+            time.sleep(0.01)
+
         lang_list_str = re.findall("source_code_name:\[(.*?)\],", host_html)[0]
         lang_list_str = ('['+ lang_list_str + ']').replace('code','"code"').replace('name','"name"')
         lang_list = [x['code'] for x in eval(lang_list_str) if x['code'] != 'auto']
@@ -244,7 +248,7 @@ class Google(Tse):
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
             if not self.language_map:
-                 self.language_map = self.get_language_map(host_html)
+                 self.language_map = self.get_language_map(host_html,ss,proxies)
             from_language,to_language = self.check_language(from_language,to_language,self.language_map,output_zh=self.output_zh)
 
             if not self.tkk:

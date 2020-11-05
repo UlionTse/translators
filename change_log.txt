@@ -136,3 +136,6 @@ upgrade baidu() by advice of user `mozbugbox`.
 remove parameter `use_cache`, default cache language_map.
 cache `tkk` in google().
 fixed yandex() with `api_url`
+
+4.7.7
+make `get_language_map` with google stronger.
