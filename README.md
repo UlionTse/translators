@@ -86,7 +86,7 @@ print(ts._tencent.query_count)
 print(dir(ts._tencent))
 
 # requests
-print(ts.youdao(wyw_text, sleep_seconds=5, proxies={}, use_cache=True))
+print(ts.youdao(wyw_text, sleep_seconds=5, proxies={}))
 
 # host service
 print(ts.google(wyw_text, if_use_cn_host=True))
@@ -96,7 +96,7 @@ print(ts.bing(wyw_text, if_use_cn_host=False))
 print(ts.sogou(wyw_text, is_detail_result=True)
       
 # translate html
-print(ts.translate_html(html_text, translator=ts.google, translator_params={'to_language':'en'}))
+print(ts.translate_html(html_text, translator=ts.google, to_language='en', translator_params={}))
       
 # help
 help(ts.deepl)

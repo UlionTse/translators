@@ -139,3 +139,6 @@ fixed yandex() with `api_url`
 
 4.7.7
 make `get_language_map` with google stronger.
+
+4.7.8
+update README.md
