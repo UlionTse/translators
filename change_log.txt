@@ -142,3 +142,6 @@ make `get_language_map` with google stronger.
 
 4.7.8
 update README.md
+
+4.7.9
+make `get_tkk` with google stronger.

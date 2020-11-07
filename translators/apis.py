@@ -223,6 +223,12 @@ class Google(Tse):
         lang_list = [x['code'] for x in eval(lang_list_str) if x['code'] != 'auto']
         return {}.fromkeys(lang_list,lang_list)
 
+    def get_tkk(self,host_html,ss,proxies):
+        while 'tkk:' not in host_html:
+            host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
+            time.sleep(0.01)
+        return re.findall("tkk:'(.*?)'", host_html)[0]
+
     # @Tse.time_stat
     def google_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,list]:
         """
@@ -252,7 +258,7 @@ class Google(Tse):
             from_language,to_language = self.check_language(from_language,to_language,self.language_map,output_zh=self.output_zh)
 
             if not self.tkk:
-                self.tkk = re.findall("tkk:'(.*?)'", host_html)[0]
+                self.tkk = self.get_tkk(host_html,ss,proxies)
 
             tk = self.acquire(query_text, self.tkk)
             self.api_url = (self.host_url + '/translate_a/single?client={0}&sl={1}&tl={2}&hl=zh-CN&dt=at&dt=bd&dt=ex'
@@ -952,7 +958,7 @@ def translate_html(html_text:str, to_language:str='en', translator:Callable='aut
     """
     if translator_params:
         for param in ('query_text', 'to_language','is_detail_result'):
-            assert param not in translator_params, f'{param} in {translator_params}'
+            assert param not in translator_params, f'{param} should not be in {translator_params}.'
 
     translator = google if translator=='auto' else translator
     translator_params.update({'sleep_seconds': 1e-8})
