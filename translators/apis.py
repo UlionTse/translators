@@ -784,7 +784,7 @@ class Deepl(Tse):
                 'texts': [str(query_text)],
                 'lang': {
                     'lang_user_selected': from_language,
-                    'user_preferred_langs': [to_language, from_language],
+                    'user_preferred_langs': [] if from_language=='auto' else [to_language, from_language],
                 },
             },
         }
@@ -800,16 +800,17 @@ class Deepl(Tse):
             'id': self.request_id + 2 * self.query_count + 1,
             'jsonrpc':' 2.0',
             'params': {
-                'priority': 1,
+                'priority': 1, #-1 if 'quality': 'fast'
                 'commonJobParams': {},
                 'timestamp': int(time.time()*1000),
                 'jobs': [
                     {
                         'kind': 'default',
+                        # 'quality': 'fast', # -1
                         'raw_en_sentence': sentences[i],
                         'raw_en_context_before': [sentences[i-1]] if sentences[i-1] else [],
                         'raw_en_context_after': [sentences[i+1]] if sentences[i+1] else [],
-                        'preferred_num_beams': 1 if len(sentences)>3 else 4,
+                        'preferred_num_beams': 1 if len(sentences)>3 else 4, # 1 if two sentences else 4
                     } for i in range(1,len(sentences)-1)
                 ],
                 'lang': {
@@ -844,7 +845,9 @@ class Deepl(Tse):
                  self.language_map = self.get_language_map(host_html)
             from_language, to_language = self.check_language(from_language, to_language, language_map=self.language_map,
                                                              output_zh=self.output_zh, output_auto='auto')
-            from_language, to_language = from_language.upper() if from_language != 'auto' else from_language, to_language.upper()
+            from_language = from_language.upper() if from_language != 'auto' else from_language
+            to_language = to_language.upper() if to_language != 'auto' else to_language
+
             ss, sentences = self.split_sentences(ss, query_text, from_language, to_language, proxies)
             params = self.context_sentences_param(sentences, from_language, to_language)
             r = ss.post(self.api_url, json=params, headers=self.api_headers, proxies=proxies)

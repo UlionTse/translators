@@ -145,3 +145,7 @@ update README.md
 
 4.7.9
 make `get_tkk` with google stronger.
+
+4.7.11
+make deepl() stronger.
+
