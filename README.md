@@ -239,5 +239,5 @@ print(ts._google.language_map)
 
 ### License
 
-[MIT Llicense.](https://github.com/uliontse/translators/blob/master/LICENSE)
+[MIT Llicense](https://github.com/uliontse/translators/blob/master/LICENSE)
 
