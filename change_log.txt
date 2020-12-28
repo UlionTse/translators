@@ -149,3 +149,6 @@ make `get_tkk` with google stronger.
 4.7.11
 make deepl() stronger.
 
+4.7.12
+add google_v2().
+absolute import.

@@ -37,6 +37,7 @@ SOFTWARE.
 import re
 import sys
 import time
+import json
 import random
 from functools import wraps
 from typing import Union, Callable
@@ -97,9 +98,9 @@ class Tse:
         to_language = output_zh if output_zh and to_language in ('zh','zh-CN','zh-CHS','zh-Hans') else to_language
         
         if from_language != output_auto and from_language not in language_map:
-            raise TranslatorError('Unsupported from_language[{}] in {}.'.format(from_language,list(language_map.keys())))
+            raise TranslatorError('Unsupported from_language[{}] in {}.'.format(from_language,sorted(language_map.keys())))
         elif to_language not in language_map:
-            raise TranslatorError('Unsupported to_language[{}] in {}.'.format(to_language,list(language_map.keys())))
+            raise TranslatorError('Unsupported to_language[{}] in {}.'.format(to_language,sorted(language_map.keys())))
         elif from_language != output_auto and to_language not in language_map[from_language]:
             logger.exception('language_map:', language_map)
             raise TranslatorError('Unsupported translation: from [{0}] to [{1}]!'.format(from_language,to_language))
@@ -133,7 +134,7 @@ class TranslatorError(Exception):
     pass
 
 
-class Google(Tse):
+class GoogleV1(Tse):
     def __init__(self):
         super().__init__()
         self.host_url = None
@@ -146,6 +147,8 @@ class Google(Tse):
         self.tkk = None
         self.query_count = 0
         self.output_zh = 'zh-CN'
+
+        self.rpcid = 'MkEWBc' #'exi25c'
 
     
     def _xr(self, a, b):
@@ -244,8 +247,8 @@ class Google(Tse):
         :return: str or list
         """
 
-        self.host_url = self.cn_host_url if kwargs.get('if_use_cn_host', None) \
-            or self.request_server_region_info.get('countryCode')=='CN' else self.en_host_url
+        use_cn_condition = kwargs.get('if_use_cn_host', None) or self.request_server_region_info.get('countryCode')=='CN'
+        self.host_url = self.cn_host_url if use_cn_condition else self.en_host_url
         self.host_headers = self.get_headers(self.cn_host_url, if_use_api=False)
         is_detail_result = kwargs.get('is_detail_result', False)
         proxies = kwargs.get('proxies', None)
@@ -270,6 +273,76 @@ class Google(Tse):
         time.sleep(sleep_seconds)
         self.query_count += 1
         return data if is_detail_result else ''.join([item[0] for item in data[0] if isinstance(item[0],str)])
+
+
+class GoogleV2(Tse):
+    def __init__(self):
+        super().__init__()
+        self.host_url = None
+        self.cn_host_url = 'https://translate.google.cn'
+        self.en_host_url = 'https://translate.google.com'
+        self.api_url = 'https://translate.google.cn/_/TranslateWebserverUi/data/batchexecute'
+        self.request_server_region_info = REQUEST_SERVER_REGION_INFO
+        self.host_headers = None
+        self.api_headers = None
+        self.language_map = None
+        self.rpcid = 'MkEWBc'
+        self.query_count = 0
+        self.output_zh = 'zh-CN'
+
+    def get_rpc(self, query_text, from_language, to_language):
+        param = json.dumps([[str(query_text).strip(), from_language, to_language, True], [1]])
+        rpc = json.dumps([[[self.rpcid, param, None, "generic"]]])
+        return {'f.req': rpc}
+
+    def get_language_map(self, host_html):
+        et = etree.HTML(host_html)
+        lang_list = sorted(list(set(et.xpath('//*[@class="ordo2"]/@data-language-code'))))
+        return {}.fromkeys(lang_list, lang_list)
+
+    def get_info(self, host_html):
+        data_str = re.findall(r'window.WIZ_global_data = (.*?);</script>', host_html)[0]
+        data = execjs.get().eval(data_str)
+        return {'bl': data['cfb2h'], 'f.sid': data['FdrFJe']}
+
+    # @Tse.time_stat
+    def google_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, list]:
+        """
+        https://translate.google.com, https://translate.google.cn.
+        :param query_text: str, must.
+        :param from_language: str, default 'auto'.
+        :param to_language: str, default 'en'.
+        :param **kwargs:
+                :param if_use_cn_host: boolean, default None.
+                :param is_detail_result: boolean, default False.
+                :param proxies: dict, default None.
+                :param sleep_seconds: float, >0.05. Best to set it yourself, otherwise there will be surprises.
+        :return: str or list
+        """
+
+        use_cn_condition = kwargs.get('if_use_cn_host', None) or self.request_server_region_info.get('countryCode')=='CN'
+        self.host_url = self.cn_host_url if use_cn_condition else self.en_host_url
+        self.host_headers = self.get_headers(self.cn_host_url, if_use_api=False)
+        self.api_headers = self.get_headers(self.cn_host_url, if_use_api=True, if_use_referer=True, if_ajax=True)
+        is_detail_result = kwargs.get('is_detail_result', False)
+        proxies = kwargs.get('proxies', None)
+        sleep_seconds = kwargs.get('sleep_seconds', 0.05 + random.random() / 2 + 1e-100 * 2 ** self.query_count)
+
+        with requests.Session() as ss:
+            host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
+            if not self.language_map:
+                self.language_map = self.get_language_map(host_html)
+            from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
+
+            rpc_data = self.get_rpc(query_text, from_language, to_language)
+            r = ss.post(self.api_url, headers=self.api_headers, data=urlencode(rpc_data), proxies=proxies)
+            r.raise_for_status()
+            json_data = execjs.get().eval(r.text[6:])
+            data = execjs.get().eval(json_data[0][2])
+
+        time.sleep(sleep_seconds)
+        self.query_count += 1
+        return data if is_detail_result else ''.join([x[0] for x in data[1][0][0][5]])
 
 
 class Baidu(Tse):
@@ -360,7 +433,7 @@ class Baidu(Tse):
             form_data = {
                 "from": from_language,
                 "to": to_language,
-                "query": str(query_text),  # from urllib.parse import quote_plus
+                "query": str(query_text).strip(),  # from urllib.parse import quote_plus
                 "transtype": "translang",  # ["translang","realtime"]
                 "simple_means_flag": "3",
                 "sign": self.host_info.get('sign'),
@@ -415,7 +488,7 @@ class Youdao(Tse):
         sign = md5(sign_text.encode()).hexdigest()
         bv = md5(self.api_headers['User-Agent'][8:].encode()).hexdigest()
         form = {
-            'i': str(query_text),
+            'i': str(query_text).strip(),
             'from': from_language,
             'to': to_language,
             'lts': ts,                   # r = "" + (new Date).getTime()
@@ -457,7 +530,7 @@ class Youdao(Tse):
             from_language, to_language = self.check_language(from_language, to_language, self.language_map,output_zh=self.output_zh)
             from_language, to_language = ('auto','auto') if from_language=='auto' else (from_language,to_language)
 
-            form = self.get_form(str(query_text), from_language, to_language, sign_key)
+            form = self.get_form(str(query_text).strip(), from_language, to_language, sign_key)
             r = ss.post(self.api_url, data=form, headers=self.api_headers, proxies=proxies)
             r.raise_for_status()
             data = r.json()
@@ -509,12 +582,17 @@ class Tencent(Tse):
             if not self.language_map:
                  self.language_map = self.get_language_map(ss,self.get_language_url, proxies)
             from_language, to_language = self.check_language(from_language, to_language, self.language_map,output_zh=self.output_zh)
-            qtv = re.findall('var qtv = "(.*?)"', host_html)[0]
-            qtk = re.findall('var qtk = "(.*?)"', host_html)[0]
+            try:
+                qtv = re.findall('var qtv = "(.*?)"', host_html)[0]
+                qtk = re.findall('var qtk = "(.*?)"', host_html)[0]
+            except Exception as e:
+                # print(e)
+                qtv, qtk = '', ''
+
             form_data = {
                 'source': from_language,
                 'target': to_language,
-                'sourceText': str(query_text),
+                'sourceText': str(query_text).strip(),
                 'qtv': qtv,
                 'qtk': qtk,
                 'sessionUuid': 'translate_uuid' + str(int(time.time()*1000))
@@ -601,7 +679,7 @@ class Alibaba(Tse):
             form_data = {
                 "srcLanguage": from_language,
                 "tgtLanguage": to_language,
-                "srcText": str(query_text),
+                "srcText": str(query_text).strip(),
                 "viewType": "",
                 "source": "",
                 "bizType": use_domain,
@@ -634,6 +712,7 @@ class Bing(Tse):
     def get_host_info(self, host_html):
         et = etree.HTML(host_html)
         lang_list = et.xpath('//*[@id="tta_srcsl"]/option/@value') or et.xpath('//*[@id="t_srcAllLang"]/option/@value')
+        lang_list = list(set(lang_list))
         lang_list.remove(self.output_auto)
         language_map = {}.fromkeys(lang_list,lang_list)
         iid = et.xpath('//*[@id="rich_tta"]/@data-iid')[0] + '.' + str(self.query_count + 1)
@@ -654,8 +733,8 @@ class Bing(Tse):
                 :param sleep_seconds: float, >0.05. Best to set it yourself, otherwise there will be surprises.
         :return: str or list
         """
-        self.host_url = self.cn_host_url if kwargs.get('if_use_cn_host', None) \
-            or self.request_server_region_info.get('countryCode')=='CN' else self.en_host_url
+        use_cn_condition = kwargs.get('if_use_cn_host', None) or self.request_server_region_info.get('countryCode')=='CN'
+        self.host_url = self.cn_host_url if use_cn_condition else self.en_host_url
         self.api_url = self.host_url.replace('Translator', 'ttranslatev3')
         self.host_headers = self.get_headers(self.host_url, if_use_api=False)
         self.api_headers = self.get_headers(self.host_url, if_use_api=True)
@@ -673,7 +752,7 @@ class Bing(Tse):
                                                              output_zh=self.output_zh,output_auto=self.output_auto)
             # params = {'isVertical': '1', '': '', 'IG': self.host_info['ig'], 'IID': self.host_info['iid']}
             self.api_url = self.api_url + '?isVertical=1&&IG={}&IID={}'.format(self.host_info['ig'],self.host_info['iid'])
-            form_data = {'text': str(query_text), 'fromLang': from_language, 'to': to_language}
+            form_data = {'text': str(query_text).strip(), 'fromLang': from_language, 'to': to_language}
             r = ss.post(self.api_url, headers=self.host_headers, data=form_data, proxies=proxies)
             r.raise_for_status()
             data = r.json()
@@ -686,7 +765,7 @@ class Sogou(Tse):
     def __init__(self):
         super().__init__()
         self.host_url = 'https://fanyi.sogou.com'
-        self.api_url = 'https://fanyi.sogou.com/reventondc/translateV2'
+        self.api_url = 'https://fanyi.sogou.com/reventondc/translateV3'
         self.get_language_url = 'https://dlweb.sogoucdn.com/translate/pc/static/js/app.7016e0df.js'
         self.host_headers = self.get_headers(self.host_url, if_use_api=False)
         self.api_headers = self.get_headers(self.host_url, if_use_api=True)
@@ -708,16 +787,16 @@ class Sogou(Tse):
             uuid += hex(int(65536 * (1 + random.random())))[2:][1:]
             if i in range(1,5):
                 uuid += '-'
-        sign_text = "" + from_language + to_language + query_text + "8511813095152" #window.seccode
+        sign_text = "" + from_language + to_language + query_text + ''#'"8511813095152" #window.seccode
         sign = md5(sign_text.encode()).hexdigest()
         form = {
             "from": from_language,
             "to": to_language,
-            "text": str(query_text),
+            "text": str(query_text).strip(),
             "uuid": uuid, #"ec3ad428-09a8-42a5-97af-608b88697d4f",
             "s": sign, #"c04897e2f7e7e9863ced444357b30356",
-            "client": "pc",
-            "fr": "browser_pc",
+            "client": "pc", #wap
+            "fr": "browser_pc", #browser_wap
             "pid": "sogou-dict-vr",
             "dict": "true",
             "word_group": "true",
@@ -781,7 +860,7 @@ class Deepl(Tse):
             'id': self.request_id + 2 * self.query_count,
             'jsonrpc': '2.0',
             'params': {
-                'texts': [str(query_text)],
+                'texts': [str(query_text).strip()],
                 'lang': {
                     'lang_user_selected': from_language,
                     'user_preferred_langs': [] if from_language=='auto' else [to_language, from_language],
@@ -918,7 +997,7 @@ class Yandex(Tse):
                 'reason': 'auto',
                 'format': 'text'
             }
-            form_data = {'text': str(query_text), 'options': 4}
+            form_data = {'text': str(query_text).strip(), 'options': 4}
             r = ss.post(self.api_url,params=params,data=form_data,headers=self.api_headers,proxies=proxies)
             r.raise_for_status()
             data = r.json()
@@ -937,7 +1016,8 @@ _bing = Bing()
 bing = _bing.bing_api
 _deepl = Deepl()
 deepl = _deepl.deepl_api
-_google = Google()
+# _google = GoogleV1()
+_google = GoogleV2()
 google = _google.google_api
 _sogou = Sogou()
 sogou = _sogou.sogou_api

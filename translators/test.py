@@ -1,7 +1,7 @@
 # coding=utf-8
 # author=UlionTse
 
-from .apis import *
+from translators.apis import *
 
 
 query_text1 = '季姬寂，集鸡，鸡即棘鸡。棘鸡饥叽，季姬及箕稷济鸡。👍👍👍'
@@ -46,7 +46,7 @@ import translators as ts
 """
 
 
-@logger.catch
+# @logger.catch
 def test():
     for query_text in [query_text1,query_text2,query_text3]:
         print(alibaba(query_text))
@@ -54,14 +54,14 @@ def test():
         print(bing(query_text))
         print(deepl(query_text))
         print(google(query_text))
-        print(sogou(query_text))
-        print(tencent(query_text))
+        print(sogou(query_text, is_detail_result=True))
+        print(tencent(query_text, is_detail_result=True))
         print(yandex(query_text))
         print(youdao(query_text))
 
         for i in range(5):
             r = translate_html(html_text, to_language='zh', translator=google)
-            print(i)
+            print(i, r)
 
 
 if __name__ == '__main__':
