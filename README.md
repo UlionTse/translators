@@ -237,15 +237,7 @@ print(ts._google.language_map)
 
 
 
-License
+### License
 
-- Prohibition of commercial use !
-
-  This library is designed to help students and individuals with translation services. For commercial use, please purchase API services from translation suppliers.
-
-- Don't make high frequency requests !
-
-  Enterprises provide free services, we should keep grateful, but not cause trouble.
-
-[click the detail license.](https://github.com/uliontse/translators/blob/master/LICENSE)
+[MIT Llicense.](https://github.com/uliontse/translators/blob/master/LICENSE)
 
