@@ -152,3 +152,6 @@ make deepl() stronger.
 4.7.12
 add google_v2().
 absolute import.
+
+4.7.13
+fix bugs by replacing execjs.get().eval(...) to json.loads(...) for google_v2

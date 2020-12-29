@@ -3,7 +3,7 @@
 
 """MIT License
 
-Copyright (c) 2017-2020 UlionTse
+Copyright (c) 2017-2021 UlionTse
 
 Warning: Prohibition of commercial use!
 This module is designed to help students and individuals with translation services.
@@ -337,8 +337,8 @@ class GoogleV2(Tse):
             rpc_data = self.get_rpc(query_text, from_language, to_language)
             r = ss.post(self.api_url, headers=self.api_headers, data=urlencode(rpc_data), proxies=proxies)
             r.raise_for_status()
-            json_data = execjs.get().eval(r.text[6:])
-            data = execjs.get().eval(json_data[0][2])
+            json_data = json.loads(r.text[6:])
+            data = json.loads(json_data[0][2])
 
         time.sleep(sleep_seconds)
         self.query_count += 1
