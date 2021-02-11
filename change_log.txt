@@ -155,3 +155,6 @@ absolute import.
 
 4.7.13
 fix bugs by replacing execjs.get().eval(...) to json.loads(...) for google_v2
+
+4.7.14
+follow the provider to adjust the strategy for [baidu(), sogou(), youdao()].

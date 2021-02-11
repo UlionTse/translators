@@ -148,9 +148,6 @@ class GoogleV1(Tse):
         self.query_count = 0
         self.output_zh = 'zh-CN'
 
-        self.rpcid = 'MkEWBc' #'exi25c'
-
-    
     def _xr(self, a, b):
         size_b = len(b)
         c = 0
@@ -161,7 +158,6 @@ class GoogleV1(Tse):
             a = a + d & (2**32-1) if '+' == b[c] else a ^ d
             c += 3
         return a
-
 
     def _ints(self, text):
         ints = []
@@ -174,7 +170,6 @@ class GoogleV1(Tse):
                 ints.append(int((int_v - 2**16) / 2**10 + 55296))
                 ints.append(int((int_v - 2**16) % 2**10 + 56320))
         return ints
-
 
     def acquire(self, text, tkk):
         ints = self._ints(text)
@@ -389,7 +384,14 @@ class Baidu(Tse):
         sign = self.get_sign(sign_html, ts_text, gtk)
     
         et = etree.HTML(host_html)
-        js_txt = et.xpath("/html/body/script[2]/text()")[0][20:-3]
+        js_txt = ''
+        for i in range(6):
+            js_re_list = et.xpath(f"/html/body/script[{i}]/text()")
+            if js_re_list:
+                if 'langMap' in js_re_list[0]:
+                    js_txt = js_re_list[0][20:]
+                    break
+
         js_data = execjs.get().eval(js_txt)
         js_data.update({'gtk': gtk, 'sign': sign})
         return js_data
@@ -455,7 +457,7 @@ class Youdao(Tse):
         self.api_url = 'http://fanyi.youdao.com/translate_o?smartresult=dict&smartresult=rule'
         self.get_old_sign_url = 'http://shared.ydstatic.com/fanyi/newweb/v1.0.29/scripts/newweb/fanyi.min.js'
         self.get_new_sign_url = None
-        self.get_sign_pattern = 'http://shared.ydstatic.com/fanyi/newweb/(.*?))/scripts/newweb/fanyi.min.js'
+        self.get_sign_pattern = 'http://shared.ydstatic.com/fanyi/newweb/(.*?)/scripts/newweb/fanyi.min.js'
         self.host_headers = self.get_headers(self.host_url, if_use_api=False)
         self.api_headers = self.get_headers(self.host_url, if_use_api=True)
         self.language_map = None
@@ -479,12 +481,13 @@ class Youdao(Tse):
         except:
             r = ss.get(self.get_old_sign_url, headers=self.host_headers, proxies=proxies)
         sign = re.findall('n.md5\("fanyideskweb"\+e\+i\+"(.*?)"\)', r.text)
-        return sign[0] if sign and sign != [''] else 'mmbP%A-r6U3Nw(n]BjuEU' #v.1.0.27
+        return sign[0] if sign and sign != [''] else "Tbh5E8=q6U3EXe+&L[4c@" #v1.0.31
 
     def get_form(self, query_text, from_language, to_language, sign_key):
-        ts = str(int(time.time()))
+        ts = str(int(time.time()*1000))
         salt = str(ts) + str(random.randrange(0, 10))
         sign_text = ''.join(['fanyideskweb', query_text, salt, sign_key])
+        print(sign_text)
         sign = md5(sign_text.encode()).hexdigest()
         bv = md5(self.api_headers['User-Agent'][8:].encode()).hexdigest()
         form = {
@@ -500,7 +503,7 @@ class Youdao(Tse):
             'doctype': 'json',
             'version': '2.1',
             'keyfrom': 'fanyi.web',
-            'action': "FY_BY_DEFAULT", #'FY_BY_REALTlME',  # not time.["FY_BY_REALTlME","FY_BY_DEFAULT"]
+            'action': 'FY_BY_DEFAULT',  # not time.["FY_BY_REALTlME","FY_BY_DEFAULT"]
             # 'typoResult': 'false'
         }
         return form
@@ -578,7 +581,7 @@ class Tencent(Tse):
         sleep_seconds = kwargs.get('sleep_seconds', 0.05 + random.random()/2 + 1e-100*2**self.query_count)
 
         with requests.Session() as ss:
-            host_html = ss.get(self.host_url, headers=self.host_headers,proxies=proxies).text
+            host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
             if not self.language_map:
                  self.language_map = self.get_language_map(ss,self.get_language_url, proxies)
             from_language, to_language = self.check_language(from_language, to_language, self.language_map,output_zh=self.output_zh)
@@ -587,7 +590,7 @@ class Tencent(Tse):
                 qtk = re.findall('var qtk = "(.*?)"', host_html)[0]
             except Exception as e:
                 # print(e)
-                qtv, qtk = '', ''
+                qtv, qtk = '', '' # window.qtv, window.qtk
 
             form_data = {
                 'source': from_language,
@@ -595,7 +598,8 @@ class Tencent(Tse):
                 'sourceText': str(query_text).strip(),
                 'qtv': qtv,
                 'qtk': qtk,
-                'sessionUuid': 'translate_uuid' + str(int(time.time()*1000))
+                'sessionUuid': 'translate_uuid' + str(int(time.time()*1000)),
+                # 'cookie': f'fy_guid={ss.cookies.get("fy_guid")}; qtk={qtk}; qtv={qtv}'
             }
             r = ss.post(self.api_url, headers=self.api_headers, data=form_data,proxies=proxies)
             r.raise_for_status()
@@ -765,7 +769,8 @@ class Sogou(Tse):
     def __init__(self):
         super().__init__()
         self.host_url = 'https://fanyi.sogou.com'
-        self.api_url = 'https://fanyi.sogou.com/reventondc/translateV3'
+        # self.api_url = 'https://fanyi.sogou.com/reventondc/translateV3'
+        self.api_url = 'https://fanyi.sogou.com/api/transpc/text/result'
         self.get_language_url = 'https://dlweb.sogoucdn.com/translate/pc/static/js/app.7016e0df.js'
         self.host_headers = self.get_headers(self.host_url, if_use_api=False)
         self.api_headers = self.get_headers(self.host_url, if_use_api=True)
@@ -787,7 +792,7 @@ class Sogou(Tse):
             uuid += hex(int(65536 * (1 + random.random())))[2:][1:]
             if i in range(1,5):
                 uuid += '-'
-        sign_text = "" + from_language + to_language + query_text + ''#'"8511813095152" #window.seccode
+        sign_text = "" + from_language + to_language + query_text + '109984457' # window.__INITIAL_STATE__.common.CONFIG.secretCode
         sign = md5(sign_text.encode()).hexdigest()
         form = {
             "from": from_language,
@@ -797,10 +802,6 @@ class Sogou(Tse):
             "s": sign, #"c04897e2f7e7e9863ced444357b30356",
             "client": "pc", #wap
             "fr": "browser_pc", #browser_wap
-            "pid": "sogou-dict-vr",
-            "dict": "true",
-            "word_group": "true",
-            "second_query": "true",
             "needQc": "1",
         }
         return form
