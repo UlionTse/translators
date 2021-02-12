@@ -487,7 +487,6 @@ class Youdao(Tse):
         ts = str(int(time.time()*1000))
         salt = str(ts) + str(random.randrange(0, 10))
         sign_text = ''.join(['fanyideskweb', query_text, salt, sign_key])
-        print(sign_text)
         sign = md5(sign_text.encode()).hexdigest()
         bv = md5(self.api_headers['User-Agent'][8:].encode()).hexdigest()
         form = {
