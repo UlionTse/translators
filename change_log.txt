@@ -158,3 +158,6 @@ fix bugs by replacing execjs.get().eval(...) to json.loads(...) for google_v2
 
 4.7.14
 follow the provider to adjust the strategy for [baidu(), sogou(), youdao()].
+
+4.7.16
+make baidu() stronger with js_txt.

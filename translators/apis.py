@@ -389,7 +389,7 @@ class Baidu(Tse):
             js_re_list = et.xpath(f"/html/body/script[{i}]/text()")
             if js_re_list:
                 if 'langMap' in js_re_list[0]:
-                    js_txt = js_re_list[0][20:]
+                    js_txt = js_re_list[0][20:-111] #TODO
                     break
 
         js_data = execjs.get().eval(js_txt)
