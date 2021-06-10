@@ -161,3 +161,17 @@ follow the provider to adjust the strategy for [baidu(), sogou(), youdao()].
 
 4.7.16
 make baidu() stronger with js_txt.
+
+4.7.20
+fix google() can’t get a complete language map, temporary, to be improved. #37 #42
+fix bing().
+fix deepl().
+fix default `sleep_seconds`. #39
+fix limit of `len(query_text)<5000`. #40
+add check_query_text().
+make `get_headers()` stronger.
+make `translate_html()` time complexity from O(n) to O(1), multiprocessing.
+
+
+
+

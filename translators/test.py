@@ -1,6 +1,7 @@
 # coding=utf-8
 # author=UlionTse
 
+import loguru
 from translators.apis import *
 
 
@@ -45,10 +46,16 @@ import translators as ts
 </html>
 """
 
+@Tse.time_stat
+@loguru.logger.catch
+def test0():
+    r = translate_html(html_text, to_language='zh', translator=google)
+    print(r)
 
-@logger.catch
-def test():
-    for query_text in [query_text1,query_text2,query_text3]:
+
+@loguru.logger.catch
+def test1():
+    for query_text in [query_text1, query_text2, query_text3]:
         print(alibaba(query_text))
         print(baidu(query_text))
         print(bing(query_text))
@@ -59,10 +66,7 @@ def test():
         print(yandex(query_text))
         print(youdao(query_text))
 
-    for i in range(5):
-        r = translate_html(html_text, to_language='zh', translator=google)
-        print(i, r)
 
-
-if __name__ == '__main__':
-    test()
+if __name__ == "__main__":
+    test0()
+    test1()

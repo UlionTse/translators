@@ -69,6 +69,17 @@ import translators as ts
 
 wyw_text = '季姬寂，集鸡，鸡即棘鸡。棘鸡饥叽，季姬及箕稷济鸡。'
 chs_text = '季姬感到寂寞，罗集了一些鸡来养，鸡是那种出自荆棘丛中的野鸡。野鸡饿了唧唧叫，季姬就拿竹箕中的谷物喂鸡。'
+html_text = '''
+<!DOCTYPE html>
+<html>
+<head>
+	<title>我是标题</title>
+</head>
+<body>
+<p>我是文章《你的父亲》</p>
+</body>
+</html>
+'''
 
 # input languages
 print(ts.deepl(wyw_text)) # default: from_language='auto', to_language='en'
@@ -93,10 +104,10 @@ print(ts.google(wyw_text, if_use_cn_host=True))
 print(ts.bing(wyw_text, if_use_cn_host=False))
 
 # detail result
-print(ts.sogou(wyw_text, is_detail_result=True)
+print(ts.sogou(wyw_text, is_detail_result=True))
       
 # translate html
-print(ts.translate_html(html_text, translator=ts.google, to_language='en', translator_params={}))
+print(ts.translate_html(html_text, translator=ts.google, to_language='en', n_jobs=-1))
       
 # help
 help(ts.deepl)
@@ -135,7 +146,7 @@ help(ts.deepl)
 | Tencent    | 17                       | support more languages                                       |
 | Youdao     | 14                       | support more languages                                       |
 | Alibaba    | 12                       | support more languages, support professional field           |
-| Deepl      | 11                       | high quality to translate but response slowly, unstable      |
+| Deepl      | 24                       | high quality to translate but response slowly, unstable      |
 
 
 
@@ -156,7 +167,7 @@ help(ts.deepl)
 | italian              | it                     | Y      | Y      | Y                  | Y      | Y       | Y       | Y      | Y                  | Y     |
 | japanese             | ja                     | Y      | Y      | Y                  | Y(jp)  |         | Y       | Y      | Y                  | Y     |
 | korean               | ko                     | Y      | Y      | Y                  | Y(kor) |         | Y       | Y      | Y                  |       |
-| greek                | el                     | Y      | Y      | Y                  | Y      |         |         |        | Y                  |       |
+| greek                | el                     | Y      | Y      | Y                  | Y      |         |         |        | Y                  | Y     |
 | dutch                | nl                     | Y      | Y      | Y                  | Y      |         |         | Y      | Y                  | Y     |
 | hindi                | hi                     | Y      | Y      | Y                  |        |         | Y       |        | Y                  |       |
 | turkish              | tr                     | Y      | Y      | Y                  |        | Y       | Y       |        | Y                  |       |
@@ -167,15 +178,15 @@ help(ts.deepl)
 | hebrew               | he                     | Y(iw)  | Y      | Y                  |        |         |         |        | Y                  |       |
 | polish               | pl                     | Y      | Y      | Y                  | Y      |         |         |        | Y                  | Y     |
 | mongolian            | mn                     | Y      | Y      |                    |        |         |         |        |                    |       |
-| czech                | cs                     | Y      | Y      | Y                  | Y      |         |         |        | Y                  |       |
-| hungarian            | hu                     | Y      | Y      | Y                  | Y      |         |         |        | Y                  |       |
-| estonian             | et                     | Y      | Y      | Y                  | Y(est) |         |         |        | Y                  |       |
-| bulgarian            | bg                     | Y      | Y      | Y                  | Y(bul) |         |         |        | Y                  |       |
-| danish               | da                     | Y      | Y      | Y                  | Y(dan) |         |         |        | Y                  |       |
-| finnish              | fi                     | Y      | Y      | Y                  | Y(fin) |         |         |        | Y                  |       |
-| romanian             | ro                     | Y      | Y      | Y                  | Y(rom) |         |         |        | Y                  |       |
-| swedish              | sv                     | Y      | Y      | Y                  | Y(swe) |         |         |        | Y                  |       |
-| slovenian            | sl                     | Y      | Y      | Y                  | Y(slo) |         |         |        | Y                  |       |
+| czech                | cs                     | Y      | Y      | Y                  | Y      |         |         |        | Y                  | Y     |
+| hungarian            | hu                     | Y      | Y      | Y                  | Y      |         |         |        | Y                  | Y     |
+| estonian             | et                     | Y      | Y      | Y                  | Y(est) |         |         |        | Y                  | Y     |
+| bulgarian            | bg                     | Y      | Y      | Y                  | Y(bul) |         |         |        | Y                  | Y     |
+| danish               | da                     | Y      | Y      | Y                  | Y(dan) |         |         |        | Y                  | Y     |
+| finnish              | fi                     | Y      | Y      | Y                  | Y(fin) |         |         |        | Y                  | Y     |
+| romanian             | ro                     | Y      | Y      | Y                  | Y(rom) |         |         |        | Y                  | Y     |
+| swedish              | sv                     | Y      | Y      | Y                  | Y(swe) |         |         |        | Y                  | Y     |
+| slovenian            | sl                     | Y      | Y      | Y                  | Y(slo) |         |         |        | Y                  | Y     |
 | persian/farsi        | fa                     | Y      | Y      | Y                  |        |         |         |        | Y                  |       |
 | bosnian              | bs                     | Y      | Y      | Y(bs-Latn)         |        |         |         |        | Y(bs-Latn)         |       |
 | serbian              | sr                     | Y      | Y      | Y(sr-Latn/sr-Cyrl) |        |         |         |        | Y(sr-Latn/sr-Cyrl) |       |
@@ -184,8 +195,8 @@ help(ts.deepl)
 | haitiancreole        | ht                     | Y      | Y      | Y                  |        |         |         |        | Y                  |       |
 | catalan              | ca                     | Y      | Y      | Y                  |        |         |         |        | Y                  |       |
 | croatian             | hr                     | Y      | Y      | Y                  |        |         |         |        | Y                  |       |
-| latvian              | lv                     | Y      | Y      | Y                  |        |         |         |        | Y                  |       |
-| lithuanian           | lt                     | Y      | Y      | Y                  |        |         |         |        | Y                  |       |
+| latvian              | lv                     | Y      | Y      | Y                  |        |         |         |        | Y                  | Y     |
+| lithuanian           | lt                     | Y      | Y      | Y                  |        |         |         |        | Y                  | Y     |
 | urdu                 | ur                     | Y      | Y      | Y                  |        |         |         |        | Y                  |       |
 | ukrainian            | uk                     | Y      | Y      | Y                  |        |         |         |        | Y                  |       |
 | welsh                | cy                     | Y      | Y      | Y                  |        |         |         |        | Y                  |       |
@@ -193,7 +204,7 @@ help(ts.deepl)
 | tongan               | to                     |        |        | Y                  |        |         |         |        | Y                  |       |
 | swahili              | sw                     | Y      | Y      | Y                  |        |         |         |        | Y                  |       |
 | samoan               | sm                     | Y      |        | Y                  |        |         |         |        | Y                  |       |
-| slovak               | sk                     | Y      | Y      | Y                  |        |         |         |        | Y                  |       |
+| slovak               | sk                     | Y      | Y      | Y                  |        |         |         |        | Y                  | Y     |
 | afrikaans            | af                     | Y      | Y      | Y                  |        |         |         |        | Y                  |       |
 | norwegian            | no                     | Y      | Y      | Y                  |        |         |         |        | Y                  |       |
 | bengali              | bn                     | Y      | Y      | Y(bn-BD)           |        |         |         |        | Y                  |       |
