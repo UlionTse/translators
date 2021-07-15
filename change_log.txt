@@ -171,3 +171,12 @@ fix limit of `len(query_text)<5000`. #40
 add check_query_text().
 make `get_headers()` stronger.
 make `translate_html()` time complexity from O(n) to O(1), multiprocessing.
+
+4.8.0
+fix tencent().
+fix bing().
+fix google() can’t get a complete language map.
+delete temp_language_map
+fix `request_server_region_info`，can `input`.
+
+New beginning！

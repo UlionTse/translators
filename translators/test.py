@@ -38,9 +38,12 @@ USA
 <p>123\t</p>
 
 <strong>hello world</strong>
+
+<div class="codetext notranslate">
 <code>
 import translators as ts
 </code>
+</div>
 
 </body>
 </html>

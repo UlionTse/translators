@@ -131,14 +131,16 @@ class TranslatorSeverRegion:
     @property
     def request_server_region_info(self):
         try:
-            ip_address = requests.get('http://httpbin.org/ip').json()['origin']
+            ip_address = requests.get('https://httpbin.org/ip').json()['origin']
             try:
-                data = requests.get(f'http://ip-api.com/json/{ip_address}', timeout=10).json()
-                sys.stderr.write(f'Using {data.get("country")} server backend.\n')
+                data = requests.get(f'https://ip-api.com/json/{ip_address}', timeout=10).json() # limit 45/min.
+                country = data.get("country")
+                assert country
+                sys.stderr.write(f'Using {country} server backend.\n')
                 return data
             except requests.exceptions.Timeout:
                 data = requests.post(
-                    url='http://ip.taobao.com/outGetIpInfo',
+                    url='https://ip.taobao.com/outGetIpInfo',
                     data={'ip': ip_address, 'accessKey': 'alibaba-inc'}
                 ).json().get('data')
                 data.update({'countryCode': data.get('country_id')})
@@ -147,7 +149,10 @@ class TranslatorSeverRegion:
         except requests.exceptions.ConnectionError:
             raise TranslatorError('Unable to connect the Internet.\n')
         except:
-            raise TranslatorError('Unable to find server backend.\n')
+            warnings.warn('Unable to find server backend.\n')
+            country = input('Please input your server region need to visit:\neg: [England, China, ...]\n')
+            sys.stderr.write(f'Using {country} server backend.\n')
+            return {'country': country, 'countryCode': 'CN' if country=='China' else 'EN'}
 
 
 class TranslatorError(Exception):
@@ -317,7 +322,7 @@ class GoogleV2(Tse):
 
     def get_language_map(self, host_html):
         et = lxml.etree.HTML(host_html)
-        lang_list = sorted(list(set(et.xpath('//*[@class="ordo2"]/@data-language-code'))))
+        lang_list = sorted(list(set(et.xpath('//*/@data-language-code'))))
         return {}.fromkeys(lang_list, lang_list)
 
     def make_temp_language_map(self, from_language, to_language):
@@ -354,6 +359,7 @@ class GoogleV2(Tse):
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
         query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        delete_temp_language_map_label = 0
         if not query_text:
             return ''
 
@@ -362,6 +368,7 @@ class GoogleV2(Tse):
             if not self.language_map:
                 self.language_map = self.get_language_map(host_html)
             if not self.language_map:
+                delete_temp_language_map_label += 1
                 warnings.warn('Did not get a complete language map.')
                 self.language_map = self.make_temp_language_map(from_language, to_language)
             from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
@@ -371,6 +378,9 @@ class GoogleV2(Tse):
             r.raise_for_status()
             json_data = json.loads(r.text[6:])
             data = json.loads(json_data[0][2])
+
+        if delete_temp_language_map_label != 0:
+            self.language_map = None
 
         time.sleep(sleep_seconds)
         self.query_count += 1
@@ -483,8 +493,8 @@ class Baidu(Tse):
                 "token": self.bdtk['token'],  # self.host_info.get('token'),
                 "domain": use_domain,
             }
-            r = ss.post(self.api_url, headers=self.api_headers,
-                data=urllib.parse.urlencode(form_data).encode('utf-8'),proxies=proxies)
+            form_data = urllib.parse.urlencode(form_data).encode('utf-8')
+            r = ss.post(self.api_url, headers=self.api_headers, data=form_data, proxies=proxies)
             r.raise_for_status()
             data = r.json()
         time.sleep(sleep_seconds)
@@ -495,11 +505,11 @@ class Baidu(Tse):
 class Youdao(Tse):
     def __init__(self):
         super().__init__()
-        self.host_url = 'http://fanyi.youdao.com'
-        self.api_url = 'http://fanyi.youdao.com/translate_o?smartresult=dict&smartresult=rule'
-        self.get_old_sign_url = 'http://shared.ydstatic.com/fanyi/newweb/v1.0.29/scripts/newweb/fanyi.min.js'
+        self.host_url = 'https://fanyi.youdao.com'
+        self.api_url = 'https://fanyi.youdao.com/translate_o?smartresult=dict&smartresult=rule'
+        self.get_old_sign_url = 'https://shared.ydstatic.com/fanyi/newweb/v1.0.29/scripts/newweb/fanyi.min.js'
         self.get_new_sign_url = None
-        self.get_sign_pattern = 'http://shared.ydstatic.com/fanyi/newweb/(.*?)/scripts/newweb/fanyi.min.js'
+        self.get_sign_pattern = 'https://shared.ydstatic.com/fanyi/newweb/(.*?)/scripts/newweb/fanyi.min.js'
         self.host_headers = self.get_headers(self.host_url, if_api=False)
         self.api_headers = self.get_headers(self.host_url, if_api=True)
         self.language_map = None
@@ -552,7 +562,7 @@ class Youdao(Tse):
     # @Tse.time_stat
     def youdao_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
         """
-        http://fanyi.youdao.com
+        https://fanyi.youdao.com
         :param query_text: str, must.
         :param from_language: str, default 'auto'.
         :param to_language: str, default 'en'.
@@ -584,7 +594,7 @@ class Youdao(Tse):
             r.raise_for_status()
             data = r.json()
             if data['errorCode'] == 40:
-                raise Exception('Invalid translation of `from_language[auto]`, '
+                raise TranslatorError('Invalid translation of `from_language[auto]`, '
                                 'please specify parameters of `from_language` or `to_language`.')
         time.sleep(sleep_seconds)
         self.query_count += 1
@@ -597,9 +607,12 @@ class Tencent(Tse):
         self.host_url = 'https://fanyi.qq.com'
         self.api_url = 'https://fanyi.qq.com/api/translate'
         self.get_language_url = 'https://fanyi.qq.com/js/index.js'
+        self.get_qt_url = 'https://fanyi.qq.com/api/reauth12f'
         self.host_headers = self.get_headers(self.host_url, if_api=False)
         self.api_headers = self.get_headers(self.host_url, if_api=True)
+        self.qt_headers = self.get_headers(self.host_url, if_api=True, if_json_for_api=True)
         self.language_map = None
+        self.qtv_qtk = None
         self.query_count = 0
         self.output_zh = 'zh'
  
@@ -609,10 +622,13 @@ class Tencent(Tse):
         lang_map_str = re.compile(pattern='C={(.*?)}|languagePair = {(.*?)}', flags=re.S).search(r.text).group(0) #C=
         return execjs.get().eval(lang_map_str)
 
+    def get_qt(self):
+        return requests.post(self.get_qt_url, headers=self.qt_headers, json=self.qtv_qtk).json()
+
     # @Tse.time_stat
     def tencent_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
         """
-        http://fanyi.qq.com
+        https://fanyi.qq.com
         :param query_text: str, must.
         :param from_language: str, default 'auto'.
         :param to_language: str, default 'en'.
@@ -632,25 +648,20 @@ class Tencent(Tse):
             return ''
 
         with requests.Session() as ss:
-            host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
+            _ = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
             if not self.language_map:
-                 self.language_map = self.get_language_map(ss,self.get_language_url, proxies)
-            from_language, to_language = self.check_language(from_language, to_language, self.language_map,output_zh=self.output_zh)
-            try:
-                qtv = re.compile('var qtv = "(.*?)"').findall(host_html)[0]
-                qtk = re.compile('var qtk = "(.*?)"').findall(host_html)[0]
-            except Exception as e:
-                # print(e)
-                qtv, qtk = '', '' # window.qtv, window.qtk
-
+                self.language_map = self.get_language_map(ss,self.get_language_url, proxies)
+            from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
+            self.qtv_qtk = self.get_qt()
             form_data = {
                 'source': from_language,
                 'target': to_language,
                 'sourceText': query_text,
-                'qtv': qtv,
-                'qtk': qtk,
+                'qtv': self.qtv_qtk.get('qtv', ''),
+                'qtk': self.qtv_qtk.get('qtk', ''),
+                'ticket': '',
+                'randstr': '',
                 'sessionUuid': 'translate_uuid' + str(int(time.time()*1000)),
-                # 'cookie': f'fy_guid={ss.cookies.get("fy_guid")}; qtk={qtk}; qtv={qtv}'
             }
             r = ss.post(self.api_url, headers=self.api_headers, data=form_data,proxies=proxies)
             r.raise_for_status()
@@ -775,7 +786,6 @@ class Bing(Tse):
         et = lxml.etree.HTML(host_html)
         lang_list = et.xpath('//*[@id="tta_srcsl"]/option/@value') or et.xpath('//*[@id="t_srcAllLang"]/option/@value')
         lang_list = list(set(lang_list))
-        lang_list.remove(self.output_auto)
         language_map = {}.fromkeys(lang_list,lang_list)
         iid = et.xpath('//*[@id="rich_tta"]/@data-iid')[0] + '.' + str(self.query_count + 1)
         ig = re.compile('IG:"(.*?)"').findall(host_html)[0]
@@ -1148,7 +1158,7 @@ def translate_html(html_text:str, to_language:str='en', translator:Callable='aut
     n_jobs = os.cpu_count() if n_jobs <= 0 else n_jobs
     translator = google if translator=='auto' else translator
 
-    pattern = re.compile(r"(?:^|(?<=>))([\s\S]*?)(?:(?=<)|$)") #TODO: <code></code>
+    pattern = re.compile(r"(?:^|(?<=>))([\s\S]*?)(?:(?=<)|$)") #TODO: <code></code> <div class="codetext notranslate">
     sentence_list = set(pattern.findall(html_text))
     _map_translate_func = lambda sentence: (sentence,translator(query_text=sentence, to_language=to_language, **kwargs))
     result_list = pathos.multiprocessing.ProcessPool(n_jobs).map(_map_translate_func, sentence_list)
