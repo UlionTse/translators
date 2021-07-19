@@ -180,3 +180,6 @@ delete temp_language_map
 fix `request_server_region_info`，can `input`.
 
 New beginning！
+
+4.8.1
+fix `request_server_region_info`, https -> http, merge user `dadas190`.
