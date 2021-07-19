@@ -133,7 +133,7 @@ class TranslatorSeverRegion:
         try:
             ip_address = requests.get('https://httpbin.org/ip').json()['origin']
             try:
-                data = requests.get(f'http://ip-api.com/json/{ip_address}', timeout=10).json() # http # limit 45/min.
+                data = requests.get(f'http://ip-api.com/json/{ip_address}', timeout=10).json() # limit 45/min.
                 country = data.get("country")
                 assert country
                 sys.stderr.write(f'Using {country} server backend.\n')
