@@ -183,3 +183,6 @@ New beginning！
 
 4.8.1
 fix `request_server_region_info`, https -> http, merge user `dadas190`.
+
+4.9.1
+add caiyun().

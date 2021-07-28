@@ -40,7 +40,7 @@ setup(
         "Programming Language :: Python :: 3.9",
     ],
     keywords=['translate','translator','fanyi', 'translate_html',
-              'Google','Yandex','Bing','Baidu','Alibaba','Tencent','Youdao','Sogou','Deepl'],
+              'Google','Yandex','Bing','Baidu','Alibaba','Tencent','Youdao','Sogou','Deepl', 'Caiyun'],
     install_requires=[
         'requests>=2.25.1',
         'PyExecJS>=1.5.1',

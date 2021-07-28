@@ -39,6 +39,7 @@ import re
 import sys
 import time
 import json
+import base64
 import random
 import urllib.parse
 import hashlib
@@ -929,6 +930,124 @@ class Sogou(Tse):
         return data if is_detail_result else data['data']['translate']['dit']
 
 
+class Caiyun(Tse):
+    def __init__(self):
+        super().__init__()
+        self.host_url = 'https://fanyi.caiyunapp.com'
+        self.api_url = 'https://api.interpreter.caiyunai.com/v1/translator'
+        self.get_tk_url = 'https://fanyi.caiyunapp.com/static/js/app.1312348c1a3d00422dd1.js'
+        self.get_jwt_url = 'https://api.interpreter.caiyunai.com/v1/user/jwt/generate'
+        self.host_headers = self.get_headers(self.host_url, if_api=False, if_referer_for_host=True)
+        self.api_headers = self.get_headers(self.host_url, if_api=True, if_ajax_for_api=False, if_json_for_api=True)
+        self.language_map = None
+        self.browser_pool = [
+            'd8bab270cec5dc600525d424be1da0bb',
+            '2c011fd3dbab6f3f763c5e7406317fdf',
+            '74231a3a95c91c2fa8eba3082a8cc4d6'
+        ]
+        self.browser_id = random.choice(self.browser_pool)
+        self.tk = None
+        self.jwt = None
+        self.decrypt_dictionary = self.crypt(if_de=True)
+        self.query_count = 0
+        self.output_zh = 'zh'
+
+    def get_language_map(self, ss, proxies):
+        js_html = ss.get(self.get_tk_url, headers=self.host_headers, proxies=proxies).text
+        lang_str = re.compile('Ai={(.*?)},').search(js_html).group()[3:-1]
+        return execjs.eval(lang_str)
+
+    def get_tk(self, ss, proxies):
+        js_html = ss.get(self.get_tk_url, headers=self.host_headers, proxies=proxies).text
+        return re.compile('t.headers\["X-Authorization"\]="(.*?)",').findall(js_html)[0]
+
+    def get_jwt(self, browser_id, api_headers, ss, proxies):
+        data = {"browser_id": browser_id}
+        _ = ss.options(self.get_jwt_url, headers=self.host_headers, proxies=proxies)
+        return ss.post(self.get_jwt_url, headers=api_headers, json=data, proxies=proxies).json()['jwt']
+
+    def crypt(self, if_de=True):
+        normal_key = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz' + '0123456789' + '=.+-_/'
+        cipher_key = 'NOPQRSTUVWXYZABCDEFGHIJKLMnopqrstuvwxyzabcdefghijklm' + '0123456789' + '=.+-_/'
+        if if_de:
+            return {k: v for k, v in zip(cipher_key, normal_key)}
+        return {v: k for k, v in zip(cipher_key, normal_key)}
+
+    def encrypt(self, plain_text):
+        encrypt_dictionary = self.crypt(if_de=False)
+        _cipher_text = base64.b64encode(plain_text.encode()).decode()
+        return ''.join(list(map(lambda k: encrypt_dictionary[k], _cipher_text)))
+
+    def decrypt(self, cipher_text):
+        _ciphertext = ''.join(list(map(lambda k: self.decrypt_dictionary[k], cipher_text)))
+        return base64.b64decode(_ciphertext).decode()
+
+    # @Tse.time_stat
+    def caiyun_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str, dict]:
+        """
+        https://fanyi.caiyunapp.com
+        :param query_text: str, must.
+        :param from_language: str, default 'auto'.
+        :param to_language: str, default 'en'.
+        :param **kwargs:
+                :param professional_field: str, default None, choose from ("medicine","law","machinery")
+                :param if_ignore_limit_of_length: boolean, default False.
+                :param is_detail_result: boolean, default False.
+                :param proxies: dict, default None.
+                :param sleep_seconds: float, default `random.random()`.
+        :return: str or dict
+        """
+        use_domain = kwargs.get('professional_field', None)
+        if use_domain:
+            assert use_domain in ("medicine","law","machinery")
+        is_detail_result = kwargs.get('is_detail_result', False)
+        proxies = kwargs.get('proxies', None)
+        sleep_seconds = kwargs.get('sleep_seconds', random.random())
+        if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        if not query_text:
+            return ''
+
+        with requests.Session() as ss:
+            _ = ss.get(self.host_url, headers=self.host_headers, proxies=proxies)
+            if not self.language_map:
+                self.language_map = self.get_language_map(ss, proxies)
+            from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
+            self.tk = self.get_tk(ss, proxies)
+            self.api_headers.update({
+                "app-name": "xy",
+                "device-id": "",
+                "os-type": "web",
+                "os-version": "",
+                "version": "1.8.0",
+                "X-Authorization": self.tk,
+            })
+            self.jwt = self.get_jwt(self.browser_id, self.api_headers, ss, proxies)
+            self.api_headers.update({"T-Authorization": self.jwt})
+            form_data = {
+                "browser_id": self.browser_id,
+                "cached": "true",
+                "dict": "true",
+                "media": "text",
+                "os_type": "web",
+                "replaced": "true",
+                "request_id": "web_fanyi",
+                "source": query_text,
+                "trans_type": f"{from_language}2{to_language}",
+            }
+            if use_domain:
+                form_data.update({"dict_name": use_domain, "use_common_dict": "true"})
+            _ = ss.options(self.api_url, headers=self.host_headers, proxies=proxies)
+            r = ss.post(self.api_url, headers=self.api_headers, json=form_data, proxies=proxies)
+            r.raise_for_status()
+            data = r.json()
+        time.sleep(sleep_seconds)
+        self.query_count += 1
+        self.api_headers.pop('T-Authorization')
+        data['target'] = self.decrypt(data['target'])
+        return data if is_detail_result else data['target']
+
+
 class Deepl(Tse):
     def __init__(self):
         super().__init__()
@@ -1124,6 +1243,8 @@ _baidu = Baidu()
 baidu = _baidu.baidu_api
 _bing = Bing()
 bing = _bing.bing_api
+_caiyun = Caiyun()
+caiyun = _caiyun.caiyun_api
 _deepl = Deepl()
 deepl = _deepl.deepl_api
 # _google = GoogleV1()
