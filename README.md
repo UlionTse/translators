@@ -12,7 +12,7 @@
 
 * * *
 
-**Translators** is a library which aims to bring **free, multiple, enjoyable** translation to individuals and students in Python. It based on the translation interface of Google, Yandex, Microsoft(Bing), Baidu, Alibaba, Tencent, NetEase(Youdao), Sogou, Deepl, etc.   
+**Translators** is a library which aims to bring **free, multiple, enjoyable** translation to individuals and students in Python. It based on the translation interface of Google, Yandex, Microsoft(Bing), Baidu, Alibaba, Tencent, NetEase(Youdao), Sogou, Deepl, Caiyun, etc.   
 
 The old version is called **translate-api** ![downloads](https://pepy.tech/badge/translate-api), and it is updated synchronously now.
 
@@ -90,6 +90,7 @@ print(ts._google.language_map)
 # professional field
 print(ts.alibaba(wyw_text, professional_field='general')) # ("general","message","offer")
 print(ts.baidu(wyw_text, professional_field='common')) # ('common','medicine','electronics','mechanics')
+print(ts.caiyun(wyw_text, from_language='zh', professional_field=None)) # ("medicine","law","machinery")
 
 # property
 rs = [ts.tencent(x) for x in [wyw_text, chs_text]]
@@ -147,6 +148,7 @@ help(ts.google)
 | Youdao     | 14                       | support more languages                                       |
 | Alibaba    | 12                       | support more languages, support professional field           |
 | Deepl      | 24                       | high quality to translate but response slowly, unstable      |
+| Caiyun     | 6                        | high quality to translate but response slowly                |
 
 
 
