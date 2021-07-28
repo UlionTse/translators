@@ -148,7 +148,7 @@ help(ts.google)
 | Youdao     | 14                       | support more languages                                       |
 | Alibaba    | 12                       | support more languages, support professional field           |
 | Deepl      | 24                       | high quality to translate but response slowly, unstable      |
-| Caiyun     | 6                        | high quality to translate but response slowly                |
+| Caiyun     | 6                        | high quality to translate but response slowly, support professional field |
 
 
 
