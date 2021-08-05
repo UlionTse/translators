@@ -1,4 +1,4 @@
-__version__ = "4.9.1"
+__version__ = "4.9.4"
 __author__ = "UlionTse"
 
 from translators.apis import alibaba, baidu, bing, caiyun, deepl, google, sogou, tencent, yandex, youdao

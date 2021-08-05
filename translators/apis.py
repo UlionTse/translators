@@ -237,9 +237,9 @@ class GoogleV1(Tse):
         a %= int(1E6)
         return '{}.{}'.format(a, a ^ b)
 
-    def get_language_map(self,host_html,ss,proxies):
+    def get_language_map(self, host_html, ss, timeout, proxies):
         while 'source_code_name:' not in host_html:
-            host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
+            host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             time.sleep(0.01)
 
         lang_list_str = re.compile("source_code_name:\[(.*?)\],").findall(host_html)[0]
@@ -247,9 +247,9 @@ class GoogleV1(Tse):
         lang_list = [x['code'] for x in eval(lang_list_str) if x['code'] != 'auto']
         return {}.fromkeys(lang_list,lang_list)
 
-    def get_tkk(self,host_html,ss,proxies):
+    def get_tkk(self, host_html, ss, timeout, proxies):
         while 'tkk:' not in host_html:
-            host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
+            host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             time.sleep(0.01)
         return re.compile("tkk:'(.*?)'").findall(host_html)[0]
 
@@ -264,6 +264,7 @@ class GoogleV1(Tse):
                 :param if_use_cn_host: boolean, default None.
                 :param if_ignore_limit_of_length: boolean, default False.
                 :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default `random.random()`.
         :return: str or list
@@ -273,6 +274,7 @@ class GoogleV1(Tse):
         self.host_url = self.cn_host_url if use_cn_condition else self.en_host_url
         self.host_headers = self.get_headers(self.cn_host_url, if_api=False)
         is_detail_result = kwargs.get('is_detail_result', False)
+        timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
@@ -281,19 +283,19 @@ class GoogleV1(Tse):
             return ''
 
         with requests.Session() as ss:
-            host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
+            host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             if not self.language_map:
-                 self.language_map = self.get_language_map(host_html,ss,proxies)
+                 self.language_map = self.get_language_map(host_html, ss, timeout, proxies)
             from_language,to_language = self.check_language(from_language,to_language,self.language_map,output_zh=self.output_zh)
 
             if not self.tkk:
-                self.tkk = self.get_tkk(host_html,ss,proxies)
+                self.tkk = self.get_tkk(host_html, ss, timeout, proxies)
 
             tk = self.acquire(query_text, self.tkk)
             self.api_url = (self.host_url + '/translate_a/single?client={0}&sl={1}&tl={2}&hl=zh-CN&dt=at&dt=bd&dt=ex'
                 + '&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&source=bh&ssel=0&tsel=0&kc=1&tk='
                 + str(tk) + '&q=' + urllib.parse.quote(query_text)).format('webapp', from_language,to_language)  # [t,webapp]
-            r = ss.get(self.api_url, headers=self.host_headers, proxies=proxies)
+            r = ss.get(self.api_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             r.raise_for_status()
             data = r.json()
         time.sleep(sleep_seconds)
@@ -346,6 +348,7 @@ class GoogleV2(Tse):
                 :param if_use_cn_host: boolean, default None.
                 :param if_ignore_limit_of_length: boolean, default False.
                 :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default `random.random()`.
         :return: str or list
@@ -356,6 +359,7 @@ class GoogleV2(Tse):
         self.host_headers = self.get_headers(self.cn_host_url, if_api=False)
         self.api_headers = self.get_headers(self.cn_host_url, if_api=True, if_referer_for_host=True, if_ajax_for_api=True)
         is_detail_result = kwargs.get('is_detail_result', False)
+        timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
@@ -375,7 +379,8 @@ class GoogleV2(Tse):
             from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
 
             rpc_data = self.get_rpc(query_text, from_language, to_language)
-            r = ss.post(self.api_url, headers=self.api_headers, data=urllib.parse.urlencode(rpc_data), proxies=proxies)
+            rpc_data = urllib.parse.urlencode(rpc_data)
+            r = ss.post(self.api_url, headers=self.api_headers, data=rpc_data, timeout=timeout, proxies=proxies)
             r.raise_for_status()
             json_data = json.loads(r.text[6:])
             data = json.loads(json_data[0][2])
@@ -410,13 +415,14 @@ class Baidu(Tse):
         self.query_count = 0
         self.output_zh = 'zh'
 
-    def get_sign_html(self, ss, host_html, proxies):
+    def get_sign_html(self, ss, host_html, timeout, proxies):
         try:
-            self.get_sign_url = re.compile(self.get_sign_pattern).search(host_html).group(0)
-            r = ss.get(self.get_sign_url, headers=self.host_headers, proxies=proxies)
+            if not self.get_sign_url:
+                self.get_sign_url = re.compile(self.get_sign_pattern).search(host_html).group(0)
+            r = ss.get(self.get_sign_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             r.raise_for_status()
         except:
-            r = ss.get(self.get_sign_url, headers=self.host_headers, proxies=proxies)
+            r = ss.get(self.get_sign_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
         return r.text
 
     def get_sign(self, sign_html, ts_text, gtk):
@@ -454,6 +460,7 @@ class Baidu(Tse):
                 :param professional_field: str, default 'common'. Choose from ('common', 'medicine', 'electronics', 'mechanics')
                 :param if_ignore_limit_of_length: boolean, default False.
                 :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default `random.random()`.
         :return: str or dict
@@ -462,6 +469,7 @@ class Baidu(Tse):
         use_domain = kwargs.get('professional_field', 'common')
         assert use_domain in ('common', 'medicine', 'electronics', 'mechanics')
         is_detail_result = kwargs.get('is_detail_result', False)
+        timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
@@ -471,7 +479,7 @@ class Baidu(Tse):
     
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
-            sign_html = self.get_sign_html(ss, host_html, proxies)
+            sign_html = self.get_sign_html(ss, host_html, timeout, proxies)
 
             self.host_info = self.get_host_info(host_html, sign_html, query_text)
             self.new_bdtk = {"baidu_id": ss.cookies.get("BAIDUID"), "token": self.host_info.get("token")}
@@ -480,7 +488,7 @@ class Baidu(Tse):
             self.api_headers.update({"cookie": "BAIDUID={};".format(self.bdtk['baidu_id'])})
 
             if from_language == 'auto':
-                res = ss.post(self.langdetect_url, headers=self.api_headers, data={"query": query_text}, proxies=proxies)
+                res = ss.post(self.langdetect_url, headers=self.api_headers, data={"query": query_text}, timeout=timeout, proxies=proxies)
                 from_language = res.json()['lan']
             
             # param_data = {"from": from_language, "to": to_language}
@@ -495,7 +503,7 @@ class Baidu(Tse):
                 "domain": use_domain,
             }
             form_data = urllib.parse.urlencode(form_data).encode('utf-8')
-            r = ss.post(self.api_url, headers=self.api_headers, data=form_data, proxies=proxies)
+            r = ss.post(self.api_url, headers=self.api_headers, data=form_data, timeout=timeout, proxies=proxies)
             r.raise_for_status()
             data = r.json()
         time.sleep(sleep_seconds)
@@ -526,13 +534,14 @@ class Youdao(Tse):
         lang_map.update({'zh-CHS': list(lang_map.keys())})
         return lang_map
 
-    def get_sign_key(self, ss, host_html, proxies):
+    def get_sign_key(self, ss, host_html, timeout, proxies):
         try:
-            self.get_new_sign_url = re.compile(self.get_sign_pattern).search(host_html).group(0)
-            r = ss.get(self.get_new_sign_url, headers=self.host_headers, proxies=proxies)
+            if not self.get_new_sign_url:
+                self.get_new_sign_url = re.compile(self.get_sign_pattern).search(host_html).group(0)
+            r = ss.get(self.get_new_sign_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             r.raise_for_status()
         except:
-            r = ss.get(self.get_old_sign_url, headers=self.host_headers, proxies=proxies)
+            r = ss.get(self.get_old_sign_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
         sign = re.compile('n.md5\("fanyideskweb"\+e\+i\+"(.*?)"\)').findall(r.text)
         return sign[0] if sign and sign != [''] else "Tbh5E8=q6U3EXe+&L[4c@" #v1.0.31
 
@@ -570,11 +579,13 @@ class Youdao(Tse):
         :param **kwargs:
                 :param if_ignore_limit_of_length: boolean, default False.
                 :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default `random.random()`.
         :return: str or dict
         """
         is_detail_result = kwargs.get('is_detail_result', False)
+        timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
@@ -586,12 +597,12 @@ class Youdao(Tse):
             host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
             if not self.language_map:
                  self.language_map = self.get_language_map(host_html)
-            sign_key = self.get_sign_key(ss, host_html, proxies)
+            sign_key = self.get_sign_key(ss, host_html, timeout, proxies)
             from_language, to_language = self.check_language(from_language, to_language, self.language_map,output_zh=self.output_zh)
             from_language, to_language = ('auto','auto') if from_language=='auto' else (from_language,to_language)
 
             form = self.get_form(query_text, from_language, to_language, sign_key)
-            r = ss.post(self.api_url, data=form, headers=self.api_headers, proxies=proxies)
+            r = ss.post(self.api_url, data=form, headers=self.api_headers, timeout=timeout, proxies=proxies)
             r.raise_for_status()
             data = r.json()
             if data['errorCode'] == 40:
@@ -617,14 +628,16 @@ class Tencent(Tse):
         self.query_count = 0
         self.output_zh = 'zh'
  
-    def get_language_map(self, ss, language_url, proxies):
-        r = ss.get(language_url,headers=self.host_headers,proxies=proxies)
+    def get_language_map(self, ss, language_url, timeout, proxies):
+        r = ss.get(language_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
         r.raise_for_status()
         lang_map_str = re.compile(pattern='C={(.*?)}|languagePair = {(.*?)}', flags=re.S).search(r.text).group(0) #C=
         return execjs.get().eval(lang_map_str)
 
-    def get_qt(self):
-        return requests.post(self.get_qt_url, headers=self.qt_headers, json=self.qtv_qtk).json()
+    def get_qt(self, ss, timeout, proxies, if_session=False):
+        if if_session:
+            return ss.post(self.get_qt_url, headers=self.qt_headers, json=self.qtv_qtk, timeout=timeout, proxies=proxies).json()
+        return requests.post(self.get_qt_url, headers=self.qt_headers, json=self.qtv_qtk, timeout=timeout, proxies=proxies).json()
 
     # @Tse.time_stat
     def tencent_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
@@ -636,11 +649,13 @@ class Tencent(Tse):
         :param **kwargs:
                 :param if_ignore_limit_of_length: boolean, default False.
                 :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default `random.random()`.
         :return: str or dict
         """
         is_detail_result = kwargs.get('is_detail_result', False)
+        timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
@@ -649,11 +664,11 @@ class Tencent(Tse):
             return ''
 
         with requests.Session() as ss:
-            _ = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
+            _ = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             if not self.language_map:
-                self.language_map = self.get_language_map(ss,self.get_language_url, proxies)
+                self.language_map = self.get_language_map(ss, self.get_language_url, timeout, proxies)
             from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
-            self.qtv_qtk = self.get_qt()
+            self.qtv_qtk = self.get_qt(ss, timeout, proxies, if_session=False)
             form_data = {
                 'source': from_language,
                 'target': to_language,
@@ -664,7 +679,7 @@ class Tencent(Tse):
                 'randstr': '',
                 'sessionUuid': 'translate_uuid' + str(int(time.time()*1000)),
             }
-            r = ss.post(self.api_url, headers=self.api_headers, data=form_data,proxies=proxies)
+            r = ss.post(self.api_url, headers=self.api_headers, data=form_data, timeout=timeout, proxies=proxies)
             r.raise_for_status()
             data = r.json()
         time.sleep(sleep_seconds)
@@ -705,9 +720,9 @@ class Alibaba(Tse):
             o += a
         return o[:42]
 
-    def get_language_map(self, ss, biz_type, dmtrack_pageid, proxies):
+    def get_language_map(self, ss, biz_type, dmtrack_pageid, timeout, proxies):
         def _get_lang(language_url, params=None):
-            language_dict = ss.get(language_url, params=params, headers=self.host_headers, proxies=proxies).json()
+            language_dict = ss.get(language_url, params=params, headers=self.host_headers, timeout=timeout, proxies=proxies).json()
             language_map = dict(map(lambda x: x, [(x['sourceLuange'], x['targetLanguages']) for x in language_dict['languageMap']]))
             return language_map
 
@@ -728,6 +743,7 @@ class Alibaba(Tse):
                 :param professional_field: str, default 'message', choose from ("general","message","offer")
                 :param if_ignore_limit_of_length: boolean, default False.
                 :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default `random.random()`.
         :return: str or dict
@@ -735,6 +751,7 @@ class Alibaba(Tse):
         use_domain = kwargs.get('professional_field', 'message')
         assert use_domain in ("general","message","offer")
         is_detail_result = kwargs.get('is_detail_result', False)
+        timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
@@ -743,10 +760,10 @@ class Alibaba(Tse):
             return ''
         
         with requests.Session() as ss:
-            host_response = ss.get(self.host_url, headers=self.host_headers, proxies=proxies)
+            host_response = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             dmtrack_pageid = self.get_dmtrack_pageid(host_response)
             if not self.language_map:
-                 self.language_map = self.get_language_map(ss, use_domain, dmtrack_pageid, proxies)
+                 self.language_map = self.get_language_map(ss, use_domain, dmtrack_pageid, timeout, proxies)
             from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
             form_data = {
                 "srcLanguage": from_language,
@@ -757,7 +774,7 @@ class Alibaba(Tse):
                 "bizType": use_domain,
             }
             params = {"dmtrack_pageid":dmtrack_pageid}
-            r = ss.post(self.api_url,headers=self.api_headers,data=form_data,params=params,proxies=proxies)
+            r = ss.post(self.api_url, headers=self.api_headers, params=params, data=form_data, timeout=timeout, proxies=proxies)
             r.raise_for_status()
             data = r.json()
         time.sleep(sleep_seconds)
@@ -809,6 +826,7 @@ class Bing(Tse):
                 :param if_use_cn_host: boolean, default None.
                 :param if_ignore_limit_of_length: boolean, default False.
                 :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default `random.random()`.
         :return: str or list
@@ -819,6 +837,7 @@ class Bing(Tse):
         self.host_headers = self.get_headers(self.host_url, if_api=False)
         self.api_headers = self.get_headers(self.host_url, if_api=True)
         is_detail_result = kwargs.get('is_detail_result', False)
+        timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
@@ -827,7 +846,7 @@ class Bing(Tse):
             return ''
     
         with requests.Session() as ss:
-            host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
+            host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             self.host_info = self.get_host_info(host_html)
 
             if not self.language_map:
@@ -845,7 +864,7 @@ class Bing(Tse):
                 'to': to_language,
             }
             form_data.update(self.tk)
-            r = ss.post(self.api_url, headers=self.host_headers, data=form_data, proxies=proxies)
+            r = ss.post(self.api_url, headers=self.host_headers, data=form_data, timeout=timeout, proxies=proxies)
             r.raise_for_status()
             data = r.json()
         time.sleep(sleep_seconds)
@@ -857,9 +876,11 @@ class Sogou(Tse):
     def __init__(self):
         super().__init__()
         self.host_url = 'https://fanyi.sogou.com'
-        # self.api_url = 'https://fanyi.sogou.com/reventondc/translateV3'
+        # self.old_api_url = 'https://fanyi.sogou.com/reventondc/translateV3'
         self.api_url = 'https://fanyi.sogou.com/api/transpc/text/result'
         self.get_language_url = 'https://dlweb.sogoucdn.com/translate/pc/static/js/app.7016e0df.js'
+        # self.get_language_pattern = '//dlweb.sogoucdn.com/translate/pc/static/js/app.(.*?).js'
+        # self.get_language_url = None
         self.host_headers = self.get_headers(self.host_url, if_api=False)
         self.api_headers = self.get_headers(self.host_url, if_api=True)
         self.language_map = None
@@ -867,8 +888,8 @@ class Sogou(Tse):
         self.query_count = 0
         self.output_zh = 'zh-CHS'
     
-    def get_language_map(self, ss, get_language_url, proxies):
-        lang_html = ss.get(get_language_url,headers=self.host_headers,proxies=proxies).text
+    def get_language_map(self, ss, get_language_url, timeout, proxies):
+        lang_html = ss.get(get_language_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
         lang_list_str = re.compile('"ALL":\[(.*?)\]').findall(lang_html)[0]
         lang_list = execjs.get().eval('[' + lang_list_str + ']')
         lang_list = [x['lang'] for x in lang_list]
@@ -904,11 +925,13 @@ class Sogou(Tse):
         :param **kwargs:
                 :param if_ignore_limit_of_length: boolean, default False.
                 :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default `random.random()`.
         :return: str or dict
         """
         is_detail_result = kwargs.get('is_detail_result', False)
+        timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
@@ -917,12 +940,15 @@ class Sogou(Tse):
             return ''
         
         with requests.Session() as ss:
-            _ = ss.get(self.host_url, headers=self.host_headers, proxies=proxies)
+            host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
+            if not self.get_language_url:
+                self.get_language_url = 'https:' + re.compile(self.get_language_pattern).search(host_html).group()
             if not self.language_map:
-                 self.language_map = self.get_language_map(ss,self.get_language_url,proxies)
+                self.language_map = self.get_language_map(ss, self.get_language_url, timeout, proxies)
+
             from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
             self.form_data = self.get_form(query_text, from_language, to_language)
-            r = ss.post(self.api_url, headers=self.api_headers, data=self.form_data, proxies=proxies)
+            r = ss.post(self.api_url, headers=self.api_headers, data=self.form_data, timeout=timeout, proxies=proxies)
             r.raise_for_status()
             data = r.json()
         time.sleep(sleep_seconds)
@@ -935,7 +961,9 @@ class Caiyun(Tse):
         super().__init__()
         self.host_url = 'https://fanyi.caiyunapp.com'
         self.api_url = 'https://api.interpreter.caiyunai.com/v1/translator'
-        self.get_tk_url = 'https://fanyi.caiyunapp.com/static/js/app.1312348c1a3d00422dd1.js'
+        # self.old_get_tk_url = 'https://fanyi.caiyunapp.com/static/js/app.1312348c1a3d00422dd1.js'
+        self.get_tk_pattern = '/static/js/app.(.*?).js'
+        self.get_tk_url = None
         self.get_jwt_url = 'https://api.interpreter.caiyunai.com/v1/user/jwt/generate'
         self.host_headers = self.get_headers(self.host_url, if_api=False, if_referer_for_host=True)
         self.api_headers = self.get_headers(self.host_url, if_api=True, if_ajax_for_api=False, if_json_for_api=True)
@@ -952,19 +980,19 @@ class Caiyun(Tse):
         self.query_count = 0
         self.output_zh = 'zh'
 
-    def get_language_map(self, ss, proxies):
-        js_html = ss.get(self.get_tk_url, headers=self.host_headers, proxies=proxies).text
+    def get_language_map(self, ss, timeout, proxies):
+        js_html = ss.get(self.get_tk_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
         lang_str = re.compile('Ai={(.*?)},').search(js_html).group()[3:-1]
         return execjs.eval(lang_str)
 
-    def get_tk(self, ss, proxies):
-        js_html = ss.get(self.get_tk_url, headers=self.host_headers, proxies=proxies).text
+    def get_tk(self, ss, timeout, proxies):
+        js_html = ss.get(self.get_tk_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
         return re.compile('t.headers\["X-Authorization"\]="(.*?)",').findall(js_html)[0]
 
-    def get_jwt(self, browser_id, api_headers, ss, proxies):
+    def get_jwt(self, browser_id, api_headers, ss, timeout, proxies):
         data = {"browser_id": browser_id}
-        _ = ss.options(self.get_jwt_url, headers=self.host_headers, proxies=proxies)
-        return ss.post(self.get_jwt_url, headers=api_headers, json=data, proxies=proxies).json()['jwt']
+        _ = ss.options(self.get_jwt_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+        return ss.post(self.get_jwt_url, headers=api_headers, json=data, timeout=timeout, proxies=proxies).json()['jwt']
 
     def crypt(self, if_de=True):
         normal_key = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz' + '0123456789' + '=.+-_/'
@@ -993,6 +1021,7 @@ class Caiyun(Tse):
                 :param professional_field: str, default None, choose from ("medicine","law","machinery")
                 :param if_ignore_limit_of_length: boolean, default False.
                 :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default `random.random()`.
         :return: str or dict
@@ -1001,6 +1030,7 @@ class Caiyun(Tse):
         if use_domain:
             assert use_domain in ("medicine","law","machinery")
         is_detail_result = kwargs.get('is_detail_result', False)
+        timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
@@ -1009,11 +1039,14 @@ class Caiyun(Tse):
             return ''
 
         with requests.Session() as ss:
-            _ = ss.get(self.host_url, headers=self.host_headers, proxies=proxies)
+            host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
+            if not self.get_tk_url:
+                self.get_tk_url = self.host_url + re.compile(self.get_tk_pattern).search(host_html).group()
             if not self.language_map:
-                self.language_map = self.get_language_map(ss, proxies)
+                self.language_map = self.get_language_map(ss, timeout, proxies)
+
             from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
-            self.tk = self.get_tk(ss, proxies)
+            self.tk = self.get_tk(ss, timeout, proxies)
             self.api_headers.update({
                 "app-name": "xy",
                 "device-id": "",
@@ -1022,7 +1055,7 @@ class Caiyun(Tse):
                 "version": "1.8.0",
                 "X-Authorization": self.tk,
             })
-            self.jwt = self.get_jwt(self.browser_id, self.api_headers, ss, proxies)
+            self.jwt = self.get_jwt(self.browser_id, self.api_headers, ss, timeout, proxies)
             self.api_headers.update({"T-Authorization": self.jwt})
             form_data = {
                 "browser_id": self.browser_id,
@@ -1037,8 +1070,8 @@ class Caiyun(Tse):
             }
             if use_domain:
                 form_data.update({"dict_name": use_domain, "use_common_dict": "true"})
-            _ = ss.options(self.api_url, headers=self.host_headers, proxies=proxies)
-            r = ss.post(self.api_url, headers=self.api_headers, json=form_data, proxies=proxies)
+            _ = ss.options(self.api_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+            r = ss.post(self.api_url, headers=self.api_headers, json=form_data, timeout=timeout, proxies=proxies)
             r.raise_for_status()
             data = r.json()
         time.sleep(sleep_seconds)
@@ -1071,7 +1104,7 @@ class Deepl(Tse):
         lang_list = list(set([x.split('-')[0] for x in lang_list if 'auto' not in x]))
         return {}.fromkeys(lang_list, lang_list)
 
-    def split_sentences(self, ss, query_text, from_language, to_language, proxies):
+    def split_sentences(self, ss, query_text, from_language, to_language, timeout, proxies):
         params = {'method': 'LMT_split_into_sentences'}
         data = {
             'id': self.request_id + 2 * self.query_count,
@@ -1085,7 +1118,7 @@ class Deepl(Tse):
             },
         }
         data.update(params)
-        r = ss.post(self.api_url, params=params, json=data, headers=self.api_headers, proxies=proxies)
+        r = ss.post(self.api_url, params=params, json=data, headers=self.api_headers, timeout=timeout, proxies=proxies)
         r.raise_for_status()
         data = r.json()
         return ss, data['result']['splitted_texts'][0]
@@ -1130,11 +1163,13 @@ class Deepl(Tse):
         :param **kwargs:
                 :param if_ignore_limit_of_length: boolean, default False.
                 :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default `random.random()`.
         :return: str or dict
         """
         is_detail_result = kwargs.get('is_detail_result', False)
+        timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
@@ -1143,7 +1178,7 @@ class Deepl(Tse):
             return ''
 
         with requests.Session() as ss:
-            host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
+            host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             if not self.language_map:
                  self.language_map = self.get_language_map(host_html)
             from_language, to_language = self.check_language(from_language, to_language, language_map=self.language_map,
@@ -1151,9 +1186,9 @@ class Deepl(Tse):
             from_language = from_language.upper() if from_language != 'auto' else from_language
             to_language = to_language.upper() if to_language != 'auto' else to_language
 
-            ss, sentences = self.split_sentences(ss, query_text, from_language, to_language, proxies)
+            ss, sentences = self.split_sentences(ss, query_text, from_language, to_language, timeout, proxies)
             params, form_data = self.context_sentences_param(sentences, from_language, to_language)
-            r = ss.post(self.api_url, params=params, json=form_data, headers=self.api_headers, proxies=proxies)
+            r = ss.post(self.api_url, params=params, json=form_data, headers=self.api_headers, timeout=timeout, proxies=proxies)
             r.raise_for_status()
             data = r.json()
         time.sleep(sleep_seconds)
@@ -1181,9 +1216,9 @@ class Yandex(Tse):
         lang_dict = eval('{' + lang_str[0] + '}')
         return {}.fromkeys(lang_dict.keys(), lang_dict.keys())
 
-    def detect_language(self, ss, query_text, sid, proxies):
+    def detect_language(self, ss, query_text, sid, timeout, proxies):
         params = {'sid': sid, 'srv': 'tr-text', 'text': query_text, 'hint': 'zh,en', 'options': 1,}
-        r = ss.get(self.detect_language_url, params=params, headers=self.host_headers, proxies=proxies)
+        r = ss.get(self.detect_language_url, params=params, headers=self.host_headers, timeout=timeout, proxies=proxies)
         r.raise_for_status()
         return r.json().get('lang')
 
@@ -1197,11 +1232,13 @@ class Yandex(Tse):
         :param **kwargs:
                 :param if_ignore_limit_of_length: boolean, default False.
                 :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default `random.random()`.
         :return: str or dict
         """
         is_detail_result = kwargs.get('is_detail_result', False)
+        timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
@@ -1210,7 +1247,7 @@ class Yandex(Tse):
             return ''
 
         with requests.Session() as ss:
-            host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
+            host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             if not self.sid:
                 sid_find = re.compile("SID: '(.*?)',").findall(host_html)
                 self.sid = sid_find[0] if sid_find else '3d58bd71.5f49c293.93b157d0.74722d74657874'
@@ -1218,7 +1255,7 @@ class Yandex(Tse):
                 self.language_map = self.get_language_map(host_html)
 
             from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
-            from_language = self.detect_language(ss, query_text, self.sid, proxies) if from_language=='auto' else from_language
+            from_language = self.detect_language(ss, query_text, self.sid, timeout, proxies) if from_language=='auto' else from_language
             params = {
                 'id': f'{self.sid}-{self.query_count}-0',
                 'lang': f'{from_language}-{to_language}',
@@ -1227,7 +1264,7 @@ class Yandex(Tse):
                 'format': 'text'
             }
             form_data = {'text': query_text, 'options': 4}
-            r = ss.post(self.api_url,params=params,data=form_data,headers=self.api_headers,proxies=proxies)
+            r = ss.post(self.api_url, headers=self.api_headers, params=params, data=form_data, timeout=timeout, proxies=proxies)
             r.raise_for_status()
             data = r.json()
         time.sleep(sleep_seconds)
@@ -1269,6 +1306,10 @@ def translate_html(html_text:str, to_language:str='en', translator:Callable='aut
     :param to_language: str, eg: 'en'.
     :param translator: translator, default 'auto', means ts.google
     :param n_jobs: int, default -1, means os.cpu_cnt().
+    :param **kwargs:
+        :param if_ignore_limit_of_length: boolean, default False.
+        :param timeout: float, default None.
+        :param proxies: dict, default None.
     :return: str
     """
     if kwargs:

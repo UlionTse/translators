@@ -186,3 +186,7 @@ fix `request_server_region_info`, https -> http, merge user `dadas190`.
 
 4.9.1
 add caiyun().
+
+4.9.4
+fix `app.().js` changed.
+allow setting timeout. #47

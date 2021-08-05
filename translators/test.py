@@ -1,8 +1,7 @@
 # coding=utf-8
 # author=UlionTse
 
-import loguru
-from translators.apis import *
+from apis import *
 
 
 query_text1 = '季姬寂，集鸡，鸡即棘鸡。棘鸡饥叽，季姬及箕稷济鸡。👍👍👍'
@@ -59,15 +58,17 @@ def test0():
 @loguru.logger.catch
 def test1():
     for query_text in [query_text1, query_text2, query_text3]:
-        print(alibaba(query_text))
-        print(baidu(query_text))
-        print(bing(query_text))
-        print(deepl(query_text))
-        print(google(query_text))
-        print(sogou(query_text))
-        print(tencent(query_text))
-        print(yandex(query_text))
-        print(youdao(query_text))
+        print('alibaba:\n', alibaba(query_text))
+        print('baidu:\n', baidu(query_text))
+        print('bing:\n', bing(query_text))
+        print('caiyun:\n', caiyun(query_text, 'zh'))
+        print('deepl:\n', deepl(query_text))
+        print('google:\n', google(query_text))
+        print('sogou:\n', sogou(query_text)) #captcha
+        print('tencent:\n', tencent(query_text))
+        print('yandex:\n', yandex(query_text))
+        print('youdao:\n', youdao(query_text))
+
 
 
 if __name__ == "__main__":
