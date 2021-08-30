@@ -113,6 +113,13 @@ class Tse:
         return from_language,to_language
 
     @staticmethod
+    def make_temp_language_map(from_language, to_language):
+        warnings.warn('Did not get a complete language map. And do not use `from_language="auto"`.')
+        assert from_language != 'auto' and to_language != 'auto' and from_language != to_language
+        lang_list = [from_language, to_language]
+        return {}.fromkeys(lang_list, lang_list)
+
+    @staticmethod
     def check_query_text(query_text, if_ignore_limit_of_length=False):
         if not isinstance(query_text, str):
             raise TranslatorError('query_text is not string.')
@@ -328,10 +335,6 @@ class GoogleV2(Tse):
         lang_list = sorted(list(set(et.xpath('//*/@data-language-code'))))
         return {}.fromkeys(lang_list, lang_list)
 
-    def make_temp_language_map(self, from_language, to_language):
-        lang_list = list(set([from_language, to_language]))
-        return {}.fromkeys(lang_list, lang_list)
-
     def get_info(self, host_html):
         data_str = re.compile(r'window.WIZ_global_data = (.*?);</script>').findall(host_html)[0]
         data = execjs.get().eval(data_str)
@@ -374,7 +377,6 @@ class GoogleV2(Tse):
                 self.language_map = self.get_language_map(host_html)
             if not self.language_map:
                 delete_temp_language_map_label += 1
-                warnings.warn('Did not get a complete language map.')
                 self.language_map = self.make_temp_language_map(from_language, to_language)
             from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
 
@@ -387,7 +389,6 @@ class GoogleV2(Tse):
 
         if delete_temp_language_map_label != 0:
             self.language_map = None
-
         time.sleep(sleep_seconds)
         self.query_count += 1
         return data if is_detail_result else ''.join([x[0] for x in data[1][0][0][5]])
@@ -1088,6 +1089,7 @@ class Deepl(Tse):
         self.api_url = 'https://www2.deepl.com/jsonrpc'
         self.host_headers = self.get_headers(self.host_url, if_api=False)
         self.api_headers = self.get_headers(self.host_url, if_api=True, if_ajax_for_api=False, if_json_for_api=True)
+        self.api_headers.update({'TE': 'trailers'})
         self.request_id = random.randrange(100,10000) * 10000 + 5
         self.language_map = None
         self.query_count = 0
@@ -1104,34 +1106,37 @@ class Deepl(Tse):
         lang_list = list(set([x.split('-')[0] for x in lang_list if 'auto' not in x]))
         return {}.fromkeys(lang_list, lang_list)
 
-    def split_sentences(self, ss, query_text, from_language, to_language, timeout, proxies):
+    def split_sentences_param(self, query_text, from_language):
         params = {'method': 'LMT_split_into_sentences'}
         data = {
-            'id': self.request_id + 2 * self.query_count,
+            'id': self.request_id + 0,
             'jsonrpc': '2.0',
             'params': {
                 'texts': [query_text],
                 'lang': {
                     'lang_user_selected': from_language,
-                    'user_preferred_langs': [] if from_language=='auto' else [to_language, from_language],
+                    'preference':{
+                        'weight': {},
+                        'default': 'default',
+                    },
                 },
             },
         }
         data.update(params)
-        r = ss.post(self.api_url, params=params, json=data, headers=self.api_headers, timeout=timeout, proxies=proxies)
-        r.raise_for_status()
-        data = r.json()
-        return ss, data['result']['splitted_texts'][0]
+        return params, data
 
     def context_sentences_param(self, sentences, from_language, to_language):
         sentences = [''] + sentences + ['']
         params = {'method': 'LMT_handle_jobs'}
         data = {
-            'id': self.request_id + 2 * self.query_count + 1,
+            'id': self.request_id + 1,
             'jsonrpc':' 2.0',
             'params': {
                 'priority': 1, #-1 if 'quality': 'fast'
-                'commonJobParams': {},
+                'commonJobParams': {
+                    'regionalVariant': 'en-US',
+                    'formality': None,
+                },
                 'timestamp': int(time.time()*1000),
                 'jobs': [
                     {
@@ -1140,11 +1145,14 @@ class Deepl(Tse):
                         'raw_en_sentence': sentences[i],
                         'raw_en_context_before': [sentences[i-1]] if sentences[i-1] else [],
                         'raw_en_context_after': [sentences[i+1]] if sentences[i+1] else [],
-                        'preferred_num_beams': 1 if len(sentences)>3 else 4, # 1 if two sentences else 4
+                        'preferred_num_beams': 1 if len(sentences)>=2 else 4, # 1 if two sentences else 4
                     } for i in range(1,len(sentences)-1)
                 ],
                 'lang': {
-                    'user_preferred_langs': [to_language, from_language],
+                    'preference':{
+                        'weight': {},
+                        'default': 'default',
+                    },
                     'source_lang_computed': from_language,
                     'target_lang': to_language,
                 },
@@ -1174,23 +1182,37 @@ class Deepl(Tse):
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
         query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        delete_temp_language_map_label = 0
         if not query_text:
             return ''
 
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             if not self.language_map:
-                 self.language_map = self.get_language_map(host_html)
+                self.language_map = self.get_language_map(host_html)
+            if not self.language_map:
+                delete_temp_language_map_label += 1
+                self.language_map = self.make_temp_language_map(from_language, to_language)
             from_language, to_language = self.check_language(from_language, to_language, language_map=self.language_map,
                                                              output_zh=self.output_zh, output_auto='auto')
             from_language = from_language.upper() if from_language != 'auto' else from_language
             to_language = to_language.upper() if to_language != 'auto' else to_language
 
-            ss, sentences = self.split_sentences(ss, query_text, from_language, to_language, timeout, proxies)
-            params, form_data = self.context_sentences_param(sentences, from_language, to_language)
-            r = ss.post(self.api_url, params=params, json=form_data, headers=self.api_headers, timeout=timeout, proxies=proxies)
-            r.raise_for_status()
-            data = r.json()
+            ss_params, ss_data = self.split_sentences_param(query_text, from_language)
+            _ = ss.options(self.api_url, params=ss_params, headers=self.api_headers, timeout=timeout, proxies=proxies)
+            r_ss = ss.post(self.api_url, params=ss_params, json=ss_data, headers=self.api_headers, timeout=timeout, proxies=proxies)
+            r_ss.raise_for_status()
+            ss_data = r_ss.json()
+            ss_sentences = ss_data['result']['splitted_texts'][0]
+
+            cs_params, cs_data = self.context_sentences_param(ss_sentences, from_language, to_language)
+            _ = ss.options(self.api_url, params=cs_params, headers=self.api_headers, timeout=timeout, proxies=proxies)
+            r_cs = ss.post(self.api_url, params=cs_params, json=cs_data, headers=self.api_headers, timeout=timeout, proxies=proxies)
+            r_cs.raise_for_status()
+            data = r_cs.json()
+
+        if delete_temp_language_map_label != 0:
+            self.language_map = None
         time.sleep(sleep_seconds)
         self.query_count += 1
         return data if is_detail_result else ''.join(item['beams'][0]['postprocessed_sentence'] for item in data['result']['translations'])
