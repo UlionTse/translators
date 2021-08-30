@@ -190,3 +190,6 @@ add caiyun().
 4.9.4
 fix `app.().js` changed.
 allow setting timeout. #47
+
+4.9.5
+fix deepl(). The job of fixing `get_language_map()` is user `BingLingGroup`'s merged.
