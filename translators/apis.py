@@ -1095,11 +1095,6 @@ class Deepl(Tse):
         self.query_count = 0
         self.output_zh = 'zh'
 
-    # def get_language_map(self, host_html):
-    #     lang_list = lxml.etree.HTML(host_html).xpath('//*[@dl-test="language-selector"]//@value')
-    #     lang_list = set(map(lambda x: x.strip('/').split('/')[0][:2], lang_list)) #[pt-PT, pt-BR] --> pt
-    #     return {}.fromkeys(lang_list, lang_list)
-
     def get_language_map(self, host_html):
         pattern = '//*[@dl-test="language-selector"]//option[@value]/@value'
         lang_list = lxml.etree.HTML(host_html).xpath(pattern)
