@@ -1101,9 +1101,9 @@ class Deepl(Tse):
     #     return {}.fromkeys(lang_list, lang_list)
 
     def get_language_map(self, host_html):
-        pattern = '//*[@dl-test="doctrans-upload-lang-select"]//@dl-lang'
+        pattern = '//*[@dl-test="language-selector"]//option[@value]/@value'
         lang_list = lxml.etree.HTML(host_html).xpath(pattern)
-        lang_list = list(set([x.split('-')[0] for x in lang_list if 'auto' not in x]))
+        lang_list = list(set([x.split('/')[1] for x in lang_list if 'auto' not in x]))
         return {}.fromkeys(lang_list, lang_list)
 
     def split_sentences_param(self, query_text, from_language):
