@@ -40,9 +40,9 @@ setup(
         "Programming Language :: Python :: 3.9",
     ],
     keywords=['translate','translator','fanyi', 'translate_html',
-              'Google','Yandex','Bing','Baidu','Alibaba','Tencent','Youdao','Sogou','Deepl', 'Caiyun'],
+              'Google','Yandex','Bing','Baidu','Alibaba','Tencent','Youdao','Sogou','Deepl', 'Caiyun', 'Argos'],
     install_requires=[
-        'requests>=2.25.1',
+        'requests>=2.26.0',
         'PyExecJS>=1.5.1',
         'lxml>=4.5.0',
         'loguru>=0.4.1',

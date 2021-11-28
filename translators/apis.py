@@ -120,19 +120,20 @@ class Tse:
         return {}.fromkeys(lang_list, lang_list)
 
     @staticmethod
-    def check_query_text(query_text, if_ignore_limit_of_length=False):
+    def check_query_text(query_text, if_ignore_limit_of_length=False, limit_of_length=5000):
         if not isinstance(query_text, str):
             raise TranslatorError('query_text is not string.')
         query_text = query_text.strip()
         if not query_text:
             return ''
         length = len(query_text)
-        if length > 5000 and not if_ignore_limit_of_length:
+        if length > limit_of_length and not if_ignore_limit_of_length:
             raise TranslatorError('The length of the text to be translated exceeds the limit.')
         else:
-            if length > 5000:
+            if length > limit_of_length:
                 warnings.warn(f'The translation ignored the excess[above 5000]. Length of `query_text` is {length}.')
-            return query_text
+                return query_text[:limit_of_length]
+        return query_text
 
 
 class TranslatorSeverRegion:
@@ -160,7 +161,7 @@ class TranslatorSeverRegion:
             warnings.warn('Unable to find server backend.\n')
             country = input('Please input your server region need to visit:\neg: [England, China, ...]\n')
             sys.stderr.write(f'Using {country} server backend.\n')
-            return {'country': country, 'countryCode': 'CN' if country=='China' else 'EN'}
+            return {'country': country, 'countryCode': 'CN' if country == 'China' else 'EN'}
 
 
 class TranslatorError(Exception):
@@ -286,8 +287,6 @@ class GoogleV1(Tse):
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
         query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
-        if not query_text:
-            return ''
 
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -368,8 +367,6 @@ class GoogleV2(Tse):
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
         query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
         delete_temp_language_map_label = 0
-        if not query_text:
-            return ''
 
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
@@ -475,8 +472,6 @@ class Baidu(Tse):
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
         query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
-        if not query_text:
-            return ''
     
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
@@ -591,8 +586,6 @@ class Youdao(Tse):
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
         query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
-        if not query_text:
-            return ''
 
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
@@ -661,8 +654,6 @@ class Tencent(Tse):
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
         query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
-        if not query_text:
-            return ''
 
         with requests.Session() as ss:
             _ = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -757,8 +748,6 @@ class Alibaba(Tse):
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
         query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
-        if not query_text:
-            return ''
         
         with requests.Session() as ss:
             host_response = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
@@ -843,8 +832,6 @@ class Bing(Tse):
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
         query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
-        if not query_text:
-            return ''
     
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -937,11 +924,9 @@ class Sogou(Tse):
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
         query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
-        if not query_text:
-            return ''
         
         with requests.Session() as ss:
-            host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
+            _ = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             # if not self.get_language_url:
             #     self.get_language_url = 'https:' + re.compile(self.get_language_pattern).search(host_html).group() # TODO
             if not self.language_map:
@@ -983,8 +968,10 @@ class Caiyun(Tse):
 
     def get_language_map(self, ss, timeout, proxies):
         js_html = ss.get(self.get_tk_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
-        lang_str = re.compile('Ai={(.*?)},').search(js_html).group()[3:-1]
-        return execjs.eval(lang_str)
+        # lang_str = re.compile('Ai={(.*?)},').search(js_html).group()[3:-1]
+        lang_str = re.compile('lang:{(.*?)},').search(js_html).group()[5:-1]
+        lang_list = list(execjs.eval(lang_str).keys())
+        return {}.fromkeys(lang_list, lang_list)
 
     def get_tk(self, ss, timeout, proxies):
         js_html = ss.get(self.get_tk_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -1029,15 +1016,13 @@ class Caiyun(Tse):
         """
         use_domain = kwargs.get('professional_field', None)
         if use_domain:
-            assert use_domain in ("medicine","law","machinery")
+            assert use_domain in ("medicine", "law", "machinery")
         is_detail_result = kwargs.get('is_detail_result', False)
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
         query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
-        if not query_text:
-            return ''
 
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -1178,8 +1163,6 @@ class Deepl(Tse):
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
         query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
         delete_temp_language_map_label = 0
-        if not query_text:
-            return ''
 
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -1260,8 +1243,6 @@ class Yandex(Tse):
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
         query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
-        if not query_text:
-            return ''
 
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -1289,10 +1270,86 @@ class Yandex(Tse):
         return data if is_detail_result else data['text'][0]
 
 
+class Argos(Tse):
+    def __init__(self):
+        super().__init__()
+        self.host_url = 'https://translate.argosopentech.com'
+        self.api_url = f'{self.host_url}/translate'
+        self.language_url = f'{self.host_url}/languages'
+        self.host_headers = self.get_headers(self.host_url, if_api=False, if_ajax_for_api=False)
+        self.api_headers = self.get_headers(self.host_url, if_api=True, if_ajax_for_api=False, if_json_for_api=True)
+        self.language_headers = self.get_headers(self.host_url, if_api=False, if_json_for_api=True)
+        self.host_pool = ['https://translate.argosopentech.com', 'https://libretranslate.de',
+                          'https://translate.astian.org', 'https://translate.mentality.rip',
+                          'https://translate.api.skitzen.com', 'https://trans.zillyhuhn.com']
+        self.language_map = None
+        self.query_count = 0
+        self.output_zh = 'zh'
+
+    def get_language_map(self, lang_url, ss, headers, timeout, proxies):
+        # et = lxml.etree.HTML(host_html)
+        # lang_list = sorted(list(set(et.xpath('//*/select/option/@value'))))
+        lang_list = ss.get(lang_url, headers=headers, timeout=timeout, proxies=proxies).json()
+        lang_list = sorted([lang['code'] for lang in lang_list])
+        return {}.fromkeys(lang_list, lang_list)
+
+    def argos_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
+        """
+        https://translate.argosopentech.com
+        :param query_text: str, must.
+        :param from_language: str, default 'auto'.
+        :param to_language: str, default 'en'.
+        :param **kwargs:
+                :param reset_host_url: str, default None.
+                :param if_ignore_limit_of_length: boolean, default False.
+                :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
+                :param proxies: dict, default None.
+                :param sleep_seconds: float, default `random.random()`.
+        :return: str or dict
+        """
+        reset_host_url = kwargs.get('reset_host_url', None)
+        if reset_host_url and reset_host_url != self.host_url:
+            assert reset_host_url in self.host_pool, f'`reset_host_url` not in `host_pool`: {self.host_pool}'
+            self.host_url = reset_host_url
+            self.api_url = f'{self.host_url}/translate'
+            self.language_url = f'{self.host_url}/languages'
+
+        is_detail_result = kwargs.get('is_detail_result', False)
+        timeout = kwargs.get('timeout', None)
+        proxies = kwargs.get('proxies', None)
+        sleep_seconds = kwargs.get('sleep_seconds', random.random())
+        if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        delete_temp_language_map_label = 0
+
+        with requests.Session() as ss:
+            _ = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
+            if not self.language_map:
+                self.language_map = self.get_language_map(self.language_url, ss, self.language_headers, timeout, proxies)
+            if not self.language_map:
+                delete_temp_language_map_label += 1
+                self.language_map = self.make_temp_language_map(from_language, to_language)
+
+            from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
+            form_data = {'q': query_text, 'source': from_language, 'target': to_language, 'format': 'text'}
+            r = ss.post(self.api_url, headers=self.api_headers, json=form_data, timeout=timeout, proxies=proxies)
+            r.raise_for_status()
+            data = r.json()
+
+        if delete_temp_language_map_label != 0:
+            self.language_map = None
+        time.sleep(sleep_seconds)
+        self.query_count += 1
+        return data if is_detail_result else data['translatedText']
+
+
 REQUEST_SERVER_REGION_INFO = TranslatorSeverRegion().request_server_region_info
 
 _alibaba = Alibaba()
 alibaba = _alibaba.alibaba_api
+_argos = Argos()
+argos = _argos.argos_api
 _baidu = Baidu()
 baidu = _baidu.baidu_api
 _bing = Bing()
@@ -1312,7 +1369,6 @@ _yandex = Yandex()
 yandex = _yandex.yandex_api
 _youdao = Youdao()
 youdao = _youdao.youdao_api
-
 
 
 @Tse.time_stat
@@ -1335,7 +1391,7 @@ def translate_html(html_text:str, to_language:str='en', translator:Callable='aut
     kwargs.update({'sleep_seconds': 0})
 
     n_jobs = os.cpu_count() if n_jobs <= 0 else n_jobs
-    translator = google if translator=='auto' else translator
+    translator = google if translator == 'auto' else translator
 
     pattern = re.compile(r"(?:^|(?<=>))([\s\S]*?)(?:(?=<)|$)") #TODO: <code></code> <div class="codetext notranslate">
     sentence_list = set(pattern.findall(html_text))

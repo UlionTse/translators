@@ -59,6 +59,7 @@ def test0():
 def test1():
     for query_text in [query_text1, query_text2, query_text3]:
         print('alibaba:\n', alibaba(query_text))
+        print('argos:\n', argos(query_text))
         print('baidu:\n', baidu(query_text))
         print('bing:\n', bing(query_text))
         print('caiyun:\n', caiyun(query_text, 'zh'))

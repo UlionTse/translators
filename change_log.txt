@@ -179,8 +179,6 @@ fix google() can’t get a complete language map.
 delete temp_language_map
 fix `request_server_region_info`，can `input`.
 
-New beginning！
-
 4.8.1
 fix `request_server_region_info`, https -> http, merge user `dadas190`.
 
@@ -193,3 +191,7 @@ allow setting timeout. #47
 
 4.9.5
 fix deepl(). The job of fixing `get_language_map()` is user `BingLingGroup`'s merged.
+
+4.9.6
+add argos().
+fix caiyun(), update to correct resolution of "getting a change in lang's network address causing content parsing errors".
