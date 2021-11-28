@@ -10,7 +10,7 @@ This module is designed to help students and individuals with translation servic
 For commercial use, please purchase API services from translation suppliers.
 
 Don't make high frequency requests!
-Enterprises provide free services, we should remain grateful, not cause trouble.
+Enterprises provide free services, we should be grateful instead of making trouble.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -942,8 +942,8 @@ class Sogou(Tse):
         
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
-            if not self.get_language_url:
-                self.get_language_url = 'https:' + re.compile(self.get_language_pattern).search(host_html).group()
+            # if not self.get_language_url:
+            #     self.get_language_url = 'https:' + re.compile(self.get_language_pattern).search(host_html).group() # TODO
             if not self.language_map:
                 self.language_map = self.get_language_map(ss, self.get_language_url, timeout, proxies)
 
@@ -1210,7 +1210,7 @@ class Deepl(Tse):
             self.language_map = None
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return data if is_detail_result else ''.join(item['beams'][0]['postprocessed_sentence'] for item in data['result']['translations'])
+        return data if is_detail_result else ' '.join(item['beams'][0]['postprocessed_sentence'] for item in data['result']['translations'])
 
 
 class Yandex(Tse):
