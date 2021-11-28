@@ -1376,14 +1376,14 @@ def translate_html(html_text:str, to_language:str='en', translator:Callable='aut
     """
     Translate the displayed content of html without changing the html structure.
     :param html_text: str, html format.
-    :param to_language: str, eg: 'en'.
-    :param translator: translator, default 'auto', means ts.google
+    :param to_language: str, default: 'en'.
+    :param translator: translator, default 'auto', means ts.bing
     :param n_jobs: int, default -1, means os.cpu_cnt().
     :param **kwargs:
         :param if_ignore_limit_of_length: boolean, default False.
         :param timeout: float, default None.
         :param proxies: dict, default None.
-    :return: str
+    :return: str, html format.
     """
     if kwargs:
         for param in ('query_text', 'to_language','is_detail_result'):
@@ -1391,7 +1391,7 @@ def translate_html(html_text:str, to_language:str='en', translator:Callable='aut
     kwargs.update({'sleep_seconds': 0})
 
     n_jobs = os.cpu_count() if n_jobs <= 0 else n_jobs
-    translator = google if translator == 'auto' else translator
+    translator = bing if translator == 'auto' else translator
 
     pattern = re.compile(r"(?:^|(?<=>))([\s\S]*?)(?:(?=<)|$)") #TODO: <code></code> <div class="codetext notranslate">
     sentence_list = set(pattern.findall(html_text))

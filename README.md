@@ -100,7 +100,7 @@ print(ts._tencent.query_count)
 print(dir(ts._tencent))
 
 # requests
-print(ts.youdao(wyw_text, sleep_seconds=5, proxies={}))
+print(ts.youdao(wyw_text, sleep_seconds=5, timeout=None, proxies=None))
 
 # host service
 print(ts.google(wyw_text, if_use_cn_host=True))
@@ -113,6 +113,7 @@ print(ts.sogou(wyw_text, is_detail_result=True))
 print(ts.translate_html(html_text, translator=ts.google, to_language='en', n_jobs=-1))
 
 # others
+print(ts._argos.host_pool)
 print(ts.argos(wyw_text, reset_host_url=None))
       
 # help
