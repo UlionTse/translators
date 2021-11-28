@@ -12,7 +12,7 @@
 
 * * *
 
-**Translators** is a library which aims to bring **free, multiple, enjoyable** translation to individuals and students in Python. It based on the translation interface of Google, Yandex, Microsoft(Bing), Baidu, Alibaba, Tencent, NetEase(Youdao), Sogou, Deepl, Caiyun, etc.   
+**Translators** is a library which aims to bring **free, multiple, enjoyable** translation to individuals and students in Python. It based on the translation interface of Google, Yandex, Microsoft(Bing), Baidu, Alibaba, Tencent, NetEase(Youdao), Sogou, Deepl, Caiyun, Argos, etc.   
 
 The old version is called **translate-api** ![downloads](https://pepy.tech/badge/translate-api), and it is updated synchronously now.
 
@@ -29,6 +29,7 @@ The old version is called **translate-api** ![downloads](https://pepy.tech/badge
     - [Host](#Host)
     - [Detail Result](#Detail-Result)
     - [Translate HTML](#translate-html)
+    - [Others](#others)
     - [Help](#Help)
 - [Issues]()
     - [Linux Runtime Environment](#linux-runtime-environment)
@@ -110,6 +111,9 @@ print(ts.sogou(wyw_text, is_detail_result=True))
       
 # translate html
 print(ts.translate_html(html_text, translator=ts.google, to_language='en', n_jobs=-1))
+
+# others
+print(ts.argos(wyw_text, reset_host_url=None))
       
 # help
 help(ts.google)
