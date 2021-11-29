@@ -388,7 +388,7 @@ class GoogleV2(Tse):
             self.language_map = None
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return data if is_detail_result else ''.join([x[0] for x in data[1][0][0][5]])
+        return data if is_detail_result else ' '.join([x[0] for x in data[1][0][0][5]])
 
 
 class Baidu(Tse):
@@ -604,7 +604,7 @@ class Youdao(Tse):
                                 'please specify parameters of `from_language` or `to_language`.')
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return data if is_detail_result else ''.join(item['tgt'] if item['tgt'] else '\n' for result in data['translateResult'] for item in result)
+        return data if is_detail_result else ' '.join(item['tgt'] if item['tgt'] else '\n' for result in data['translateResult'] for item in result)
 
 
 class Tencent(Tse):
@@ -676,7 +676,7 @@ class Tencent(Tse):
             data = r.json()
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return data if is_detail_result else ''.join(item['targetText'] for item in data['translate']['records'])
+        return data if is_detail_result else ''.join(item['targetText'] for item in data['translate']['records']) # auto whitespace
 
 
 class Alibaba(Tse):

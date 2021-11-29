@@ -192,6 +192,7 @@ allow setting timeout. #47
 4.9.5
 fix deepl(). The job of fixing `get_language_map()` is user `BingLingGroup`'s merged.
 
-4.9.6
+4.10.0
 add argos().
 fix caiyun(), update to correct resolution of "getting a change in lang's network address causing content parsing errors".
+fix whitespace of output.
