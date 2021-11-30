@@ -148,21 +148,21 @@ help(ts.google)
 
 ### Features
 
-| Translator | Logo                                                         | Number of Supported Languages | Related Companies                                            |
-| ---------- | ------------------------------------------------------------ | ----------------------------- | ------------------------------------------------------------ |
-| Iciba      | <img src="https://cdn.iciba.com/www/img/www/favicon.ico" alt="Iciba" style="zoom:90%;" /> | 187                           | <img src="https://cdn.freelogovectors.net/wp-content/uploads/2020/08/kingsoft-logo-768x284.png" alt="kingsoft" style="zoom:5%;" /> <img src="https://s01.mifile.cn/favicon.ico" alt="xiaomi" style="zoom:55%;" /> |
-| Google     | <img src="https://src.onlinedown.net/images/pc_imges/pc_12/592f50d55c52d403401496273109.jpg" alt="Google" style="zoom:3%;" /> | 108                           | <img src="https://tse3-mm.cn.bing.net/th/id/OIP-C.j0u9QN1I3q0nHG22Mw_3NAHaCa?pid=ImgDet&rs=1" alt="google" style="zoom:8%;" /> |
-| Yandex     | <img src="https://tse1-mm.cn.bing.net/th/id/R-C.e69b256090b9e7799dfba045e2f6b96c?rik=uvUP9IT0tEI0Zw&riu=http%3a%2f%2fwww.velior.ru%2fwp-content%2fuploads%2f2018%2f10%2fYandex_Translate_logo.jpg&ehk=JpAznmlBlF7LzVcn6jB0MZ5awby%2frqbftUE5vi%2fZ48U%3d&risl=&pid=ImgRaw&r=0" alt="Yandex" style="zoom:7%;" /> | 99                            | <img src="https://pluspng.com/img-png/yandex-logo-png-yandex-toloka-le-para-kazan-n-446.png" alt="yandex" style="zoom:10%;" /> |
-| Bing       | <img src="https://cn.bing.com/sa/simg/favicon-2x.ico" alt="Bing" style="zoom:100%;" /> | 77                            | <img src="https://tse4-mm.cn.bing.net/th/id/OIP-C.TIsyVXdw7L69yBk-4Wh7xQHaHa?pid=ImgDet&rs=1" alt="micorsoft" style="zoom:5%;" /> |
-| Iflytek    | ![Iflytek](https://saas.xfyun.cn/static/favicon.ico)         | 70                            | <img src="https://www.tuexperto.com/wp-content/uploads/2019/10/iflytek-logo-highres.jpg" alt="iflytek" style="zoom:4%;" /> |
-| Sogou      | <img src="https://dlweb.sogoucdn.com/translate/favicon.ico?v=20180424" alt="Sogou" style="zoom:90%;" /> | 61                            | <img src="https://cdn.freelogovectors.net/wp-content/uploads/2020/08/sogou-logo.png" alt="sogou" style="zoom:5%;" /> <img src="https://aktienfinder.net/blog/wp-content/uploads/2020/05/Tencent-Logo-1.png" alt="tencent" style="zoom:4%;" /> |
-| Baidu      | <img src="https://fanyi-cdn.cdn.bcebos.com/static/translation/widget/footer/Products/img/product-desktop@2x_c85778a.png" alt="Baidu" style="zoom:33%;" /> | 28                            | <img src="https://dwglogo.com/wp-content/uploads/2015/11/1050px-Baidu-Vector-Logo.png" alt="baidu" style="zoom:5%;" /> |
-| Deepl      | <img src="https://static.deepl.com/img/logo/DeepL_Logo_darkBlue_v2.svg" alt="Deepl" style="zoom:50%;" /> | 24                            | <img src="https://perskinn.com.tw/wp-content/uploads/2018/12/DeepL-Logo.png" alt="deepl" style="zoom:2.5%;" /> |
-| Tencent    | <img src="https://pic3.zhimg.com/v2-33315142cbc6d848b5a191188f2dd855_xl.jpg" alt="Tencent" style="zoom:12%;" /> | 17                            | <img src="https://aktienfinder.net/blog/wp-content/uploads/2020/05/Tencent-Logo-1.png" alt="tencent" style="zoom:5%;" /> |
-| Argos      | <img src="https://www.argosopentech.com/static/main_site/img/argos_translate.png" alt="Argos" style="zoom:3%;" /> | 17                            | <img src="https://www.argosopentech.com/static/main_site/img/logo_full_small.png" alt="argos" style="zoom:25%;" /> |
-| Youdao     | <img src="https://shared.ydstatic.com/images/favicon.ico" alt="Youdao" style="zoom:150%;" /> | 14                            | <img src="https://static.miraheze.org/crappygameswiki/thumb/d/d5/Netease_logo_cropped.png/330px-Netease_logo_cropped.png" alt="netease" style="zoom:25%;" /> |
-| Alibaba    | <img src="https://img.alicdn.com/tfs/TB1gjhSkAOWBuNjSsppXXXPgpXa-48-48.ico" alt="Alibaba" style="zoom:50%;" /> | 12                            | <img src="https://banner2.cleanpng.com/20180525/bhe/kisspng-alibaba-group-nyse-baba-company-e-commerce-stock-5b089e4a913479.7435506515272914665948.jpg" alt="alibaba" style="zoom:6%;" /> |
-| Caiyun     | <img src="https://www.caiyunapp.com/imgs/xiaoyilogo.png" alt="Caiyun" style="zoom:25%;" /> | 6                             | <img src="https://caiyunapp.github.io/caiyun-eng-blog/images/whoami/avatar.png" alt="caiyunapp" style="zoom:15%;" /> |
+| Translator | Number of Supported Languages | Advantage                                                    |
+| ---------- | ----------------------------- | ------------------------------------------------------------ |
+| Iciba      | 187                           | support the most languages in the world                      |
+| Google     | 108                           | support more languages in the world                          |
+| Yandex     | 99                            | support more languages in the world, support word to emoji   |
+| Bing       | 77                            | support more languages in the world                          |
+| Iflytek    | 70                            | support more languages in the world                          |
+| Sogou      | 61                            | support more languages in the world                          |
+| Baidu      | 28                            | support main languages, support professional field           |
+| Deepl      | 24                            | high quality to translate but response slowly                |
+| Tencent    | 17                            | support main languages                                       |
+| Argos      | 17                            | support main languages , open-source                         |
+| Youdao     | 14                            | support main languages, high quality                         |
+| Alibaba    | 12                            | support main languages, support professional field           |
+| Caiyun     | 6                             | high quality to translate but response slowly, support professional field |
 
 
 

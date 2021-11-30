@@ -1054,6 +1054,8 @@ class Caiyun(Tse):
                 "source": query_text,
                 "trans_type": f"{from_language}2{to_language}",
             }
+            if from_language == 'auto':
+                form_data.update({'detect': 'true'})
             if use_domain:
                 form_data.update({"dict_name": use_domain, "use_common_dict": "true"})
             _ = ss.options(self.api_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
@@ -1344,6 +1346,149 @@ class Argos(Tse):
         return data if is_detail_result else data['translatedText']
 
 
+class Iciba(Tse):
+    def __init__(self):
+        super().__init__()
+        self.host_url = 'https://www.iciba.com/fy'
+        self.api_url = 'https://ifanyi.iciba.com/index.php'
+        self.host_headers = self.get_headers(self.host_url, if_api=False, if_ajax_for_api=False)
+        self.api_headers = self.get_headers(self.host_url, if_api=True, if_ajax_for_api=True, if_json_for_api=False)
+        self.language_headers = self.get_headers(self.host_url, if_api=False, if_json_for_api=True)
+        self.language_map = None
+        self.query_count = 0
+        self.output_zh = 'zh'
+
+    def get_language_map(self, api_url, ss, headers, timeout, proxies):
+        params = {'c': 'trans', 'm': 'getLanguage', 'q': 0, 'type': 'en', 'str': ''}
+        dd = ss.get(api_url, params=params, headers=headers, timeout=timeout, proxies=proxies).json()
+        lang_list = sorted(list(set([lang for d in dd for lang in dd[d]])))
+        return {}.fromkeys(lang_list, lang_list)
+
+    def iciba_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
+        """
+        https://www.iciba.com/fy
+        :param query_text: str, must.
+        :param from_language: str, default 'auto'.
+        :param to_language: str, default 'en'.
+        :param **kwargs:
+                :param if_ignore_limit_of_length: boolean, default False.
+                :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
+                :param proxies: dict, default None.
+                :param sleep_seconds: float, default `random.random()`.
+        :return: str or dict
+        """
+        is_detail_result = kwargs.get('is_detail_result', False)
+        timeout = kwargs.get('timeout', None)
+        proxies = kwargs.get('proxies', None)
+        sleep_seconds = kwargs.get('sleep_seconds', random.random())
+        if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        delete_temp_language_map_label = 0
+
+        with requests.Session() as ss:
+            _ = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+            if not self.language_map:
+                self.language_map = self.get_language_map(self.api_url, ss, self.language_headers, timeout, proxies)
+            if not self.language_map:
+                delete_temp_language_map_label += 1
+                self.language_map = self.make_temp_language_map(from_language, to_language)
+            from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
+
+            sign = hashlib.md5(f"6key_cibaifanyicjbysdlove1{query_text}".encode()).hexdigest()[:16]
+            params = {'c': 'trans', 'm': 'fy', 'client': 6, 'auth_user': 'key_ciba', 'sign': sign}
+            form_data = {'from': from_language, 'to': to_language, 'q': query_text}
+            r = ss.post(self.api_url, headers=self.api_headers, params=params, data=form_data, timeout=timeout, proxies=proxies)
+            r.raise_for_status()
+            data = r.json()
+
+        if delete_temp_language_map_label != 0:
+            self.language_map = None
+        time.sleep(sleep_seconds)
+        self.query_count += 1
+        return data if is_detail_result else data['content']['out']
+
+
+class Iflytek(Tse):
+    def __init__(self):
+        super().__init__()
+        self.host_url = 'https://saas.xfyun.cn/translate?tabKey=text'
+        self.api_url = 'https://saas.xfyun.cn/ai-application/trans/its'
+        self.old_language_url = 'https://saas.xfyun.cn/_next/static/nm6eUaYRIwR8O8PcfxpxX/pages/translate.js'
+        self.language_url_pattern = 'https://saas.xfyun.cn/_next/static/(.*?)/pages/translate.js'
+        self.language_url = None
+        self.cookies_url = 'https://sso.xfyun.cn//SSOService/login/getcookies'
+        self.info_url = 'https://saas.xfyun.cn/ai-application/user/info'
+        self.host_headers = self.get_headers(self.host_url, if_api=False)
+        self.api_headers = self.get_headers(self.host_url, if_api=True)
+        self.language_map = None
+        self.query_count = 0
+        self.output_zh = 'cn'
+
+    def get_language_map(self, host_html, ss, headers, timeout, proxies):
+        try:
+            r = ss.get(self.old_language_url, headers=headers, timeout=timeout, proxies=proxies)
+            r.raise_for_status()
+        except:
+            if not self.language_url:
+                self.language_url = re.compile(self.language_url_pattern).search(host_html).group(0)
+            r = ss.get(self.language_url, headers=headers, timeout=timeout, proxies=proxies)
+
+        js_html = r.text
+        lang_str = re.compile('languageList:{(.*?)}').search(js_html).group()[13:]
+        lang_list = sorted(list(execjs.eval(lang_str).keys()))
+        return {}.fromkeys(lang_list, lang_list)
+
+    def iflytek_api(self, query_text:str, from_language:str='zh', to_language:str='en', **kwargs) -> Union[str,dict]:
+        """
+        https://saas.xfyun.cn/translate?tabKey=text
+        :param query_text: str, must.
+        :param from_language: str, default 'zh', unsupported 'auto'.
+        :param to_language: str, default 'en'.
+        :param **kwargs:
+                :param if_ignore_limit_of_length: boolean, default False.
+                :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
+                :param proxies: dict, default None.
+                :param sleep_seconds: float, default `random.random()`.
+        :return: str or dict
+        """
+        is_detail_result = kwargs.get('is_detail_result', False)
+        timeout = kwargs.get('timeout', None)
+        proxies = kwargs.get('proxies', None)
+        sleep_seconds = kwargs.get('sleep_seconds', random.random())
+        if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        delete_temp_language_map_label = 0
+        assert from_language != 'auto', 'unsupported [from_language=auto] with [iflytek] !'
+
+        with requests.Session() as ss:
+            host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
+            _ = ss.get(self.cookies_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+            _ = ss.get(self.info_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+            if not self.language_map:
+                self.language_map = self.get_language_map(host_html, ss, self.host_headers, timeout, proxies)
+            if not self.language_map:
+                delete_temp_language_map_label += 1
+                self.language_map = self.make_temp_language_map(from_language, to_language)
+            from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
+
+            cookie_dict = ss.cookies.get_dict()
+            self.api_headers.update({'Cookie': f'_wafuid={cookie_dict["_wafuid"]}; di_c_mti={cookie_dict["SESSION"]}'})
+
+            cipher_query_text = base64.b64encode(query_text.encode()).decode()
+            form_data = {'from': from_language, 'to': to_language, 'text': cipher_query_text}
+            r = ss.post(self.api_url, headers=self.api_headers, data=form_data, timeout=timeout, proxies=proxies)
+            r.raise_for_status()
+            data = r.json()
+
+        if delete_temp_language_map_label != 0:
+            self.language_map = None
+        time.sleep(sleep_seconds)
+        self.query_count += 1
+        return data if is_detail_result else data['data']['result']['trans_result']['dst']
+
+
 REQUEST_SERVER_REGION_INFO = TranslatorSeverRegion().request_server_region_info
 
 _alibaba = Alibaba()
@@ -1361,6 +1506,10 @@ deepl = _deepl.deepl_api
 # _google = GoogleV1()
 _google = GoogleV2()
 google = _google.google_api
+_iciba = Iciba()
+iciba = _iciba.iciba_api
+_iflytek = Iflytek()
+iflytek = _iflytek.iflytek_api
 _sogou = Sogou()
 sogou = _sogou.sogou_api
 _tencent = Tencent()
@@ -1386,7 +1535,7 @@ def translate_html(html_text:str, to_language:str='en', translator:Callable='aut
     :return: str, html format.
     """
     if kwargs:
-        for param in ('query_text', 'to_language','is_detail_result'):
+        for param in ('query_text', 'to_language', 'is_detail_result'):
             assert param not in kwargs, f'{param} should not be in `**kwargs`.'
     kwargs.update({'sleep_seconds': 0})
 

@@ -13,7 +13,7 @@ AUTHOR_EMAIL = "shinalone@outlook.com"
 URL = "https://github.com/uliontse/translators"
 VERSION = __import__(PACKAGE).__version__
 
-with open('README.md','r',encoding='utf-8') as file:
+with open('README.md', 'r', encoding='utf-8') as file:
     long_description = file.read()
 
 setup(
@@ -39,8 +39,8 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
     ],
-    keywords=['translate','translator','fanyi', 'translate_html',
-              'Google','Yandex','Bing','Baidu','Alibaba','Tencent','Youdao','Sogou','Deepl', 'Caiyun', 'Argos'],
+    keywords=['translate', 'translator', 'fanyi', 'translate_html', 'Google', 'Yandex', 'Bing',
+              'Baidu', 'Alibaba', 'Tencent', 'Youdao', 'Sogou', 'Iciba', 'Iflytek', 'Deepl', 'Caiyun', 'Argos'],
     install_requires=[
         'requests>=2.26.0',
         'PyExecJS>=1.5.1',
