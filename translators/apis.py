@@ -1116,7 +1116,8 @@ class Deepl(Tse):
             'params': {
                 'priority': 1, #-1 if 'quality': 'fast'
                 'commonJobParams': {
-                    'regionalVariant': 'en-US',
+                    # 'regionalVariant': 'en-US',
+                    'browserType': 1,
                     'formality': None,
                 },
                 'timestamp': int(time.time()*1000),
@@ -1127,7 +1128,7 @@ class Deepl(Tse):
                         'raw_en_sentence': sentences[i],
                         'raw_en_context_before': [sentences[i-1]] if sentences[i-1] else [],
                         'raw_en_context_after': [sentences[i+1]] if sentences[i+1] else [],
-                        'preferred_num_beams': 1 if len(sentences)>=2 else 4, # 1 if two sentences else 4
+                        'preferred_num_beams': 1 if len(sentences)>=4 else 4, # 1 if two sentences else 4, len>=2+2
                     } for i in range(1,len(sentences)-1)
                 ],
                 'lang': {
