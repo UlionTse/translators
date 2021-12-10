@@ -201,3 +201,7 @@ fix whitespace of output.
 add iciba().
 add iflytek().
 fix caiyun() about `auto` error.
+
+4.11.1
+update README.md
+update deepl()
