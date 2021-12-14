@@ -205,3 +205,7 @@ fix caiyun() about `auto` error.
 4.11.1
 update README.md
 update deepl()
+
+4.11.2
+stronger google() about `consent.google.com`, merged from mercuree. #57
+add param `reset_host_url` to google().

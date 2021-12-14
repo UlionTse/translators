@@ -315,7 +315,7 @@ class GoogleV2(Tse):
         self.host_url = None
         self.cn_host_url = 'https://translate.google.cn'
         self.en_host_url = 'https://translate.google.com'
-        self.api_url = 'https://translate.google.cn/_/TranslateWebserverUi/data/batchexecute'
+        self.api_url = None
         self.request_server_region_info = REQUEST_SERVER_REGION_INFO
         self.host_headers = None
         self.api_headers = None
@@ -339,6 +339,15 @@ class GoogleV2(Tse):
         data = execjs.get().eval(data_str)
         return {'bl': data['cfb2h'], 'f.sid': data['FdrFJe']}
 
+    def get_consent_cookie(self, consent_html): # by mercuree. merged but not verify.
+        et = lxml.etree.HTML(consent_html)
+        input_element = et.xpath('.//input[@type="hidden"][@name="v"]')
+        if input_element:
+            cookie_value = input_element[0].attrib.get('value')
+        else:
+            cookie_value = 'cb'  # cookie CONSENT=YES+cb works for now
+        return f'CONSENT=YES+{cookie_value}'
+
     # @Tse.time_stat
     def google_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, list]:
         """
@@ -347,7 +356,8 @@ class GoogleV2(Tse):
         :param from_language: str, default 'auto'.
         :param to_language: str, default 'en'.
         :param **kwargs:
-                :param if_use_cn_host: boolean, default None.
+                :param reset_host_url: str, default None. eg: 'https://translate.google.fr'
+                :param if_use_cn_host: boolean, default None. affected by `reset_host_url`.
                 :param if_ignore_limit_of_length: boolean, default False.
                 :param is_detail_result: boolean, default False.
                 :param timeout: float, default None.
@@ -355,10 +365,16 @@ class GoogleV2(Tse):
                 :param sleep_seconds: float, default `random.random()`.
         :return: str or list
         """
+        reset_host_url = kwargs.get('reset_host_url', None)
+        if reset_host_url:
+            assert reset_host_url[:25] == 'https://translate.google.'
+            self.host_url = reset_host_url
+        else:
+            use_cn_condition = kwargs.get('if_use_cn_host', None) or self.request_server_region_info.get('countryCode')=='CN'
+            self.host_url = self.cn_host_url if use_cn_condition else self.en_host_url
+        self.api_url = f'{self.host_url}/_/TranslateWebserverUi/data/batchexecute'
 
-        use_cn_condition = kwargs.get('if_use_cn_host', None) or self.request_server_region_info.get('countryCode')=='CN'
-        self.host_url = self.cn_host_url if use_cn_condition else self.en_host_url
-        self.host_headers = self.host_headers or self.get_headers(self.cn_host_url, if_api=False)
+        self.host_headers = self.get_headers(self.cn_host_url, if_api=False)
         self.api_headers = self.get_headers(self.cn_host_url, if_api=True, if_referer_for_host=True, if_ajax_for_api=True)
         is_detail_result = kwargs.get('is_detail_result', False)
         timeout = kwargs.get('timeout', None)
@@ -369,13 +385,12 @@ class GoogleV2(Tse):
         delete_temp_language_map_label = 0
 
         with requests.Session() as ss:
-
-            response = ss.get(self.host_url, headers=self.host_headers, proxies=proxies)
-            if 'consent.google.com' == urllib.parse.urlparse(response.url).hostname:
-                self.set_consent_cookie(response.text)
-                host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
+            r = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+            if 'consent.google.com' == urllib.parse.urlparse(r.url).hostname:
+                self.host_headers.update({'cookie': self.get_consent_cookie(r.text)})
+                host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             else:
-                host_html = response.text
+                host_html = r.text
 
             if not self.language_map:
                 self.language_map = self.get_language_map(host_html)
@@ -396,18 +411,6 @@ class GoogleV2(Tse):
         time.sleep(sleep_seconds)
         self.query_count += 1
         return data if is_detail_result else ' '.join([x[0] for x in data[1][0][0][5]])
-
-    def set_consent_cookie(self, html):
-
-        doc = lxml.etree.HTML(html)
-        cookie_value = 'cb'  # cookie CONSENT=YES+cb works for now
-        input_element = doc.xpath('.//input[@type="hidden"][@name="v"]')
-        if input_element:
-            cookie_value = input_element[0].attrib.get('value')
-
-        self.host_headers.update({
-            'cookie': 'CONSENT=YES+' + cookie_value
-        })
 
 
 class Baidu(Tse):
@@ -493,7 +496,7 @@ class Baidu(Tse):
         query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
     
         with requests.Session() as ss:
-            host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
+            host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             sign_html = self.get_sign_html(ss, host_html, timeout, proxies)
 
             self.host_info = self.get_host_info(host_html, sign_html, query_text)
@@ -607,7 +610,7 @@ class Youdao(Tse):
         query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
 
         with requests.Session() as ss:
-            host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
+            host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             if not self.language_map:
                  self.language_map = self.get_language_map(host_html)
             sign_key = self.get_sign_key(ss, host_html, timeout, proxies)

@@ -115,6 +115,7 @@ print(ts.translate_html(html_text, translator=ts.google, to_language='en', n_job
 # others
 print(ts._argos.host_pool)
 print(ts.argos(wyw_text, reset_host_url=None))
+print(ts.google(wyw_text, reset_host_url=None))
       
 # help
 help(ts.google)
