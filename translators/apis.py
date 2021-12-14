@@ -358,7 +358,7 @@ class GoogleV2(Tse):
 
         use_cn_condition = kwargs.get('if_use_cn_host', None) or self.request_server_region_info.get('countryCode')=='CN'
         self.host_url = self.cn_host_url if use_cn_condition else self.en_host_url
-        self.host_headers = self.get_headers(self.cn_host_url, if_api=False)
+        self.host_headers = self.host_headers or self.get_headers(self.cn_host_url, if_api=False)
         self.api_headers = self.get_headers(self.cn_host_url, if_api=True, if_referer_for_host=True, if_ajax_for_api=True)
         is_detail_result = kwargs.get('is_detail_result', False)
         timeout = kwargs.get('timeout', None)
@@ -369,7 +369,14 @@ class GoogleV2(Tse):
         delete_temp_language_map_label = 0
 
         with requests.Session() as ss:
-            host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
+
+            response = ss.get(self.host_url, headers=self.host_headers, proxies=proxies)
+            if 'consent.google.com' == urllib.parse.urlparse(response.url).hostname:
+                self.set_consent_cookie(response.text)
+                host_html = ss.get(self.host_url, headers=self.host_headers, proxies=proxies).text
+            else:
+                host_html = response.text
+
             if not self.language_map:
                 self.language_map = self.get_language_map(host_html)
             if not self.language_map:
@@ -389,6 +396,18 @@ class GoogleV2(Tse):
         time.sleep(sleep_seconds)
         self.query_count += 1
         return data if is_detail_result else ' '.join([x[0] for x in data[1][0][0][5]])
+
+    def set_consent_cookie(self, html):
+
+        doc = lxml.etree.HTML(html)
+        cookie_value = 'cb'  # cookie CONSENT=YES+cb works for now
+        input_element = doc.xpath('.//input[@type="hidden"][@name="v"]')
+        if input_element:
+            cookie_value = input_element[0].attrib.get('value')
+
+        self.host_headers.update({
+            'cookie': 'CONSENT=YES+' + cookie_value
+        })
 
 
 class Baidu(Tse):
