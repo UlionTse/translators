@@ -12,9 +12,7 @@
 
 * * *
 
-**Translators** is a library which aims to bring **free, multiple, enjoyable** translation to individuals and students in Python. It based on the translation interface of Google, Yandex, Microsoft(Bing), Baidu, Alibaba, Tencent, NetEase(Youdao), Sogou, Kingsoft(Iciba), Iflytek, Deepl, Caiyun, Argos, etc.   
-
-The old version is called **translate-api** ![downloads](https://pepy.tech/badge/translate-api), and it is updated synchronously now.
+**Translators** is a library which aims to bring **free, multiple, enjoyable** translation to individuals and students in Python. It based on the translation interface of Google, Yandex, Microsoft(Bing), Baidu, Alibaba, Tencent, NetEase(Youdao), Sogou, Kingsoft(Iciba), Iflytek, Deepl, Caiyun, Argos, etc.
 
 
 - [Installation](#installation)
@@ -149,21 +147,21 @@ help(ts.google)
 
 ### Features
 
-| Translator | Number of Supported Languages | Advantage                                                    |
-| ---------- | ----------------------------- | ------------------------------------------------------------ |
-| Iciba      | 187                           | support the most languages in the world                      |
-| Google     | 108                           | support more languages in the world                          |
-| Yandex     | 99                            | support more languages in the world, support word to emoji   |
-| Bing       | 77                            | support more languages in the world                          |
-| Iflytek    | 70                            | support more languages in the world                          |
-| Sogou      | 61                            | support more languages in the world                          |
-| Baidu      | 28                            | support main languages, support professional field           |
-| Deepl      | 24                            | high quality to translate but response slowly                |
-| Tencent    | 17                            | support main languages                                       |
-| Argos      | 17                            | support main languages , open-source                         |
-| Youdao     | 14                            | support main languages, high quality                         |
-| Alibaba    | 12                            | support main languages, support professional field           |
-| Caiyun     | 6                             | high quality to translate but response slowly, support professional field |
+| Translator                                             | Number of Supported Languages | Advantage                                                    |
+| ------------------------------------------------------ | ----------------------------- | ------------------------------------------------------------ |
+| [Iciba](https://www.iciba.com/fy)                      | 187                           | support the most languages in the world                      |
+| [Google](https://translate.google.com)                 | 108                           | support more languages in the world                          |
+| [Yandex](https://translate.yandex.com)                 | 99                            | support more languages in the world, support word to emoji   |
+| [Bing](https://www.bing.com/Translator)                | 77                            | support more languages in the world                          |
+| [Iflytek](https://saas.xfyun.cn/translate?tabKey=text) | 70                            | support more languages in the world                          |
+| [Sogou](https://fanyi.sogou.com)                       | 61                            | support more languages in the world                          |
+| [Baidu](https://fanyi.baidu.com)                       | 28                            | support main languages, support professional field           |
+| [Deepl](https://www.deepl.com/translator)              | 24                            | high quality to translate but response slowly                |
+| [Tencent](https://fanyi.qq.com)                        | 17                            | support main languages                                       |
+| [Argos](https://translate.argosopentech.com)           | 17                            | support main languages , open-source                         |
+| [Youdao](https://fanyi.youdao.com)                     | 14                            | support main languages, high quality                         |
+| [Alibaba](https://translate.alibaba.com)               | 12                            | support main languages, support professional field           |
+| [Caiyun](https://fanyi.caiyunapp.com)                  | 6                             | high quality to translate but response slowly, support professional field |
 
 
 
