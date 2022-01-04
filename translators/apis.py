@@ -3,7 +3,7 @@
 
 """MIT License
 
-Copyright (c) 2017-2021 UlionTse
+Copyright (c) 2022 UlionTse
 
 Warning: Prohibition of commercial use!
 This module is designed to help students and individuals with translation services.
@@ -99,18 +99,20 @@ class Tse:
 
     @staticmethod
     def check_language(from_language, to_language, language_map, output_zh=None, output_auto='auto'):
-        from_language = output_auto if from_language in ('auto', 'auto-detect') else from_language
-        from_language = output_zh if output_zh and from_language in ('zh','zh-CN','zh-CHS','zh-Hans') else from_language
-        to_language = output_zh if output_zh and to_language in ('zh','zh-CN','zh-CHS','zh-Hans') else to_language
+        auto_pool = ('auto', 'auto-detect')
+        zh_pool = ('zh', 'zh-CN', 'zh-CHS', 'zh-Hans')
+        from_language = output_auto if from_language in auto_pool else from_language
+        from_language = output_zh if output_zh and from_language in zh_pool else from_language
+        to_language = output_zh if output_zh and to_language in zh_pool else to_language
         
         if from_language != output_auto and from_language not in language_map:
-            raise TranslatorError('Unsupported from_language[{}] in {}.'.format(from_language,sorted(language_map.keys())))
+            raise TranslatorError('Unsupported from_language[{}] in {}.'.format(from_language, sorted(language_map.keys())))
         elif to_language not in language_map:
-            raise TranslatorError('Unsupported to_language[{}] in {}.'.format(to_language,sorted(language_map.keys())))
+            raise TranslatorError('Unsupported to_language[{}] in {}.'.format(to_language, sorted(language_map.keys())))
         elif from_language != output_auto and to_language not in language_map[from_language]:
             loguru.logger.exception('language_map:', language_map)
-            raise TranslatorError('Unsupported translation: from [{0}] to [{1}]!'.format(from_language,to_language))
-        return from_language,to_language
+            raise TranslatorError('Unsupported translation: from [{0}] to [{1}]!'.format(from_language, to_language))
+        return from_language, to_language
 
     @staticmethod
     def make_temp_language_map(from_language, to_language):
@@ -142,7 +144,7 @@ class TranslatorSeverRegion:
         try:
             ip_address = requests.get('https://httpbin.org/ip').json()['origin']
             try:
-                data = requests.get(f'http://ip-api.com/json/{ip_address}', timeout=10).json() # http # limit 45/min.
+                data = requests.get(f'http://ip-api.com/json/{ip_address}', timeout=10).json()  # http # limit 45/min.
                 country = data.get("country")
                 assert country
                 sys.stderr.write(f'Using {country} server backend.\n')
@@ -370,7 +372,7 @@ class GoogleV2(Tse):
             assert reset_host_url[:25] == 'https://translate.google.'
             self.host_url = reset_host_url
         else:
-            use_cn_condition = kwargs.get('if_use_cn_host', None) or self.request_server_region_info.get('countryCode')=='CN'
+            use_cn_condition = kwargs.get('if_use_cn_host', None) or self.request_server_region_info.get('countryCode') == 'CN'
             self.host_url = self.cn_host_url if use_cn_condition else self.en_host_url
         self.api_url = f'{self.host_url}/_/TranslateWebserverUi/data/batchexecute'
 
@@ -419,7 +421,8 @@ class Baidu(Tse):
         self.host_url = 'https://fanyi.baidu.com'
         self.api_url = 'https://fanyi.baidu.com/v2transapi'
         self.langdetect_url = 'https://fanyi.baidu.com/langdetect'
-        self.get_sign_url = 'https://fanyi-cdn.cdn.bcebos.com/static/translation/pkg/index_bd36cef.js'
+        self.get_sign_old_url = 'https://fanyi-cdn.cdn.bcebos.com/static/translation/pkg/index_bd36cef.js'
+        self.get_sign_url = None
         self.get_sign_pattern = 'https://fanyi-cdn.cdn.bcebos.com/static/translation/pkg/index_(.*?).js'
         self.host_headers = self.get_headers(self.host_url, if_api=False)
         self.api_headers = self.get_headers(self.host_url, if_api=True)
@@ -442,7 +445,9 @@ class Baidu(Tse):
             r = ss.get(self.get_sign_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             r.raise_for_status()
         except:
-            r = ss.get(self.get_sign_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+            r = ss.get(self.get_sign_old_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+            r.raise_for_status()
+        self.get_sign_url = self.get_sign_old_url
         return r.text
 
     def get_sign(self, sign_html, ts_text, gtk):
@@ -473,7 +478,7 @@ class Baidu(Tse):
     def baidu_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
         """
         https://fanyi.baidu.com
-        :param query_text: str, must.
+        :param query_text: str, must.  # attention emoji
         :param from_language: str, default 'auto'.
         :param to_language: str, default 'en'.
         :param **kwargs:
@@ -560,6 +565,7 @@ class Youdao(Tse):
             r.raise_for_status()
         except:
             r = ss.get(self.get_old_sign_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+            r.raise_for_status()
         sign = re.compile('n.md5\("fanyideskweb"\+e\+i\+"(.*?)"\)').findall(r.text)
         return sign[0] if sign and sign != [''] else "Tbh5E8=q6U3EXe+&L[4c@" #v1.0.31
 
@@ -615,7 +621,7 @@ class Youdao(Tse):
                  self.language_map = self.get_language_map(host_html)
             sign_key = self.get_sign_key(ss, host_html, timeout, proxies)
             from_language, to_language = self.check_language(from_language, to_language, self.language_map,output_zh=self.output_zh)
-            from_language, to_language = ('auto','auto') if from_language=='auto' else (from_language,to_language)
+            from_language, to_language = ('auto', 'auto') if from_language == 'auto' else (from_language, to_language)
 
             form = self.get_form(query_text, from_language, to_language, sign_key)
             r = ss.post(self.api_url, data=form, headers=self.api_headers, timeout=timeout, proxies=proxies)
@@ -647,7 +653,7 @@ class Tencent(Tse):
     def get_language_map(self, ss, language_url, timeout, proxies):
         r = ss.get(language_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
         r.raise_for_status()
-        lang_map_str = re.compile(pattern='C={(.*?)}|languagePair = {(.*?)}', flags=re.S).search(r.text).group(0) #C=
+        lang_map_str = re.compile(pattern='C={(.*?)}|languagePair = {(.*?)}', flags=re.S).search(r.text).group(0)  # C=
         return execjs.get().eval(lang_map_str)
 
     def get_qt(self, ss, timeout, proxies, if_session=False):
@@ -763,7 +769,7 @@ class Alibaba(Tse):
         :return: str or dict
         """
         use_domain = kwargs.get('professional_field', 'message')
-        assert use_domain in ("general","message","offer")
+        assert use_domain in ("general", "message", "offer")
         is_detail_result = kwargs.get('is_detail_result', False)
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
@@ -816,7 +822,7 @@ class Bing(Tse):
         et = lxml.etree.HTML(host_html)
         lang_list = et.xpath('//*[@id="tta_srcsl"]/option/@value') or et.xpath('//*[@id="t_srcAllLang"]/option/@value')
         lang_list = list(set(lang_list))
-        language_map = {}.fromkeys(lang_list,lang_list)
+        language_map = {}.fromkeys(lang_list, lang_list)
         iid = et.xpath('//*[@id="rich_tta"]/@data-iid')[0] + '.' + str(self.query_count + 1)
         ig = re.compile('IG:"(.*?)"').findall(host_html)[0]
         return {'iid': iid, 'ig': ig, 'language_map': language_map}
@@ -843,7 +849,7 @@ class Bing(Tse):
                 :param sleep_seconds: float, default `random.random()`.
         :return: str or list
         """
-        use_cn_condition = kwargs.get('if_use_cn_host', None) or self.request_server_region_info.get('countryCode')=='CN'
+        use_cn_condition = kwargs.get('if_use_cn_host', None) or self.request_server_region_info.get('countryCode') == 'CN'
         self.host_url = self.cn_host_url if use_cn_condition else self.en_host_url
         self.api_url = self.host_url.replace('Translator', 'ttranslatev3')
         self.host_headers = self.get_headers(self.host_url, if_api=False)
@@ -866,7 +872,7 @@ class Bing(Tse):
             # params = {'isVertical': '1', '': '', 'IG': self.host_info['ig'], 'IID': self.host_info['iid']}
             self.api_url = self.api_url + '?isVertical=1&&IG={}&IID={}'.format(self.host_info['ig'],self.host_info['iid'])
 
-            if not self.tk or time.time() - self.first_time > 3500: #3600
+            if not self.tk or time.time() - self.first_time > 3500:  # 3600
                 self.tk = self.get_tk(host_html)
             form_data = {
                 'text': query_text,
@@ -1150,11 +1156,11 @@ class Deepl(Tse):
                         'raw_en_sentence': sentences[i],
                         'raw_en_context_before': [sentences[i-1]] if sentences[i-1] else [],
                         'raw_en_context_after': [sentences[i+1]] if sentences[i+1] else [],
-                        'preferred_num_beams': 1 if len(sentences)>=4 else 4, # 1 if two sentences else 4, len>=2+2
+                        'preferred_num_beams': 1 if len(sentences) >= 4 else 4,  # 1 if two sentences else 4, len>=2+2
                     } for i in range(1,len(sentences)-1)
                 ],
                 'lang': {
-                    'preference':{
+                    'preference': {
                         'weight': {},
                         'default': 'default',
                     },
@@ -1278,7 +1284,7 @@ class Yandex(Tse):
                 self.language_map = self.get_language_map(host_html)
 
             from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
-            from_language = self.detect_language(ss, query_text, self.sid, timeout, proxies) if from_language=='auto' else from_language
+            from_language = self.detect_language(ss, query_text, self.sid, timeout, proxies) if from_language == 'auto' else from_language
             params = {
                 'id': f'{self.sid}-{self.query_count}-0',
                 'lang': f'{from_language}-{to_language}',
@@ -1429,7 +1435,13 @@ class Iciba(Tse):
             self.language_map = None
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return data if is_detail_result else data['content']['out']
+
+        if data.get('isSensitive') == 1:
+            warnings.warn('Iciba warning: Sorry, your translation file contains sensitive words and cannot provide translation.')
+            content_out = data['content']
+        else:
+            content_out = data['content']['out']
+        return data if is_detail_result else content_out
 
 
 class Iflytek(Tse):
@@ -1437,8 +1449,8 @@ class Iflytek(Tse):
         super().__init__()
         self.host_url = 'https://saas.xfyun.cn/translate?tabKey=text'
         self.api_url = 'https://saas.xfyun.cn/ai-application/trans/its'
-        self.old_language_url = 'https://saas.xfyun.cn/_next/static/nm6eUaYRIwR8O8PcfxpxX/pages/translate.js'
-        self.language_url_pattern = 'https://saas.xfyun.cn/_next/static/(.*?)/pages/translate.js'
+        self.old_language_url = 'https://saas.xfyun.cn/_next/static/4bzLSGCWUNl67Xal-AfIl/pages/translate.js'
+        self.language_url_pattern = '/_next/static/(\w+([-?]\w+))/pages/translate.js'  # tired
         self.language_url = None
         self.cookies_url = 'https://sso.xfyun.cn//SSOService/login/getcookies'
         self.info_url = 'https://saas.xfyun.cn/ai-application/user/info'
@@ -1450,12 +1462,17 @@ class Iflytek(Tse):
 
     def get_language_map(self, host_html, ss, headers, timeout, proxies):
         try:
-            r = ss.get(self.old_language_url, headers=headers, timeout=timeout, proxies=proxies)
+            if not self.language_url:
+                url_path = re.compile(self.language_url_pattern).search(host_html).group(0)
+                self.language_url = f'{self.host_url[:21]}{url_path}'
+            r = ss.get(self.language_url, headers=headers, timeout=timeout, proxies=proxies)
             r.raise_for_status()
         except:
-            if not self.language_url:
-                self.language_url = re.compile(self.language_url_pattern).search(host_html).group(0)
-            r = ss.get(self.language_url, headers=headers, timeout=timeout, proxies=proxies)
+            r = ss.get(self.old_language_url, headers=headers, timeout=timeout, proxies=proxies)
+            r.raise_for_status()
+
+        if not self.language_url:
+            self.language_url = self.old_language_url
 
         js_html = r.text
         lang_str = re.compile('languageList:{(.*?)}').search(js_html).group()[13:]

@@ -1,7 +1,7 @@
 # coding=utf-8
 # author=UlionTse
 
-from translators.apis import *
+from .apis import *
 
 
 query_text1 = '季姬寂，集鸡，鸡即棘鸡。棘鸡饥叽，季姬及箕稷济鸡。👍👍👍'
@@ -60,7 +60,7 @@ def test1():
     for query_text in [query_text1, query_text2, query_text3]:
         print('alibaba:\n', alibaba(query_text))
         print('argos:\n', argos(query_text))
-        print('baidu:\n', baidu(query_text))
+        print('baidu:\n', baidu(query_text))  # emoji
         print('bing:\n', bing(query_text))
         print('caiyun:\n', caiyun(query_text))
         print('deepl:\n', deepl(query_text))
@@ -71,7 +71,6 @@ def test1():
         print('tencent:\n', tencent(query_text))
         print('yandex:\n', yandex(query_text))
         print('youdao:\n', youdao(query_text))
-
 
 
 if __name__ == "__main__":
