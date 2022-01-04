@@ -209,3 +209,7 @@ update deepl()
 4.11.3
 stronger google() about `consent.google.com`, merged from mercuree. #57
 add param `reset_host_url` to google().
+
+4.11.4
+stronger iciba() about sensitive word.
+stronger baidu() and iflytek().
