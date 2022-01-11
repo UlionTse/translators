@@ -282,7 +282,7 @@ class GoogleV1(Tse):
 
         use_cn_condition = kwargs.get('if_use_cn_host', None) or self.request_server_region_info.get('countryCode')=='CN'
         self.host_url = self.cn_host_url if use_cn_condition else self.en_host_url
-        self.host_headers = self.get_headers(self.cn_host_url, if_api=False)
+        self.host_headers = self.get_headers(self.host_url, if_api=False)
         is_detail_result = kwargs.get('is_detail_result', False)
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
@@ -376,8 +376,8 @@ class GoogleV2(Tse):
             self.host_url = self.cn_host_url if use_cn_condition else self.en_host_url
         self.api_url = f'{self.host_url}/_/TranslateWebserverUi/data/batchexecute'
 
-        self.host_headers = self.host_headers or self.get_headers(self.cn_host_url, if_api=False)  # reuse cookie header
-        self.api_headers = self.get_headers(self.cn_host_url, if_api=True, if_referer_for_host=True, if_ajax_for_api=True)
+        self.host_headers = self.host_headers or self.get_headers(self.host_url, if_api=False)  # reuse cookie header
+        self.api_headers = self.get_headers(self.host_url, if_api=True, if_referer_for_host=True, if_ajax_for_api=True)
         is_detail_result = kwargs.get('is_detail_result', False)
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
