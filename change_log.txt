@@ -215,7 +215,11 @@ stronger iciba() about sensitive word.
 stronger baidu() and iflytek().
 
 5.0.0
+In order to avoid the troublesome phenomenon that '4.11.4' is less than '4.9.4', the smaller version number will be one in ten.
 fix yandex().
 fix google() about headers.
 fix iflytek() about regex of getting language_map and use warn method but raise error about `from_language=auto`.
-In order to avoid the troublesome phenomenon that '4.11.4' is less than '4.9.4', the smaller version number will be one in ten.
+
+5.0.1
+stronger deepl() about `language_map`.
+update README.md

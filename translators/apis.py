@@ -335,6 +335,8 @@ class GoogleV2(Tse):
     def get_language_map(self, host_html):
         et = lxml.etree.HTML(host_html)
         lang_list = sorted(list(set(et.xpath('//*/@data-language-code'))))
+        if lang_list:
+            lang_list.remove('auto')
         return {}.fromkeys(lang_list, lang_list)
 
     def get_info(self, host_html):
@@ -1103,15 +1105,13 @@ class Deepl(Tse):
         self.host_headers = self.get_headers(self.host_url, if_api=False)
         self.api_headers = self.get_headers(self.host_url, if_api=True, if_ajax_for_api=False, if_json_for_api=True)
         self.api_headers.update({'TE': 'trailers'})
-        self.request_id = random.randrange(100,10000) * 10000 + 5
+        self.request_id = random.randrange(100, 10000) * 10000 + 5
         self.language_map = None
         self.query_count = 0
         self.output_zh = 'zh'
 
     def get_language_map(self, host_html):
-        pattern = '//*[@dl-test="language-selector"]//option[@value]/@value'
-        lang_list = lxml.etree.HTML(host_html).xpath(pattern)
-        lang_list = list(set([x.split('/')[1] for x in lang_list if 'auto' not in x]))
+        lang_list = list(set(re.compile("translateIntoLang\.(\w+)':").findall(host_html)))
         return {}.fromkeys(lang_list, lang_list)
 
     def split_sentences_param(self, query_text, from_language):
@@ -1123,7 +1123,7 @@ class Deepl(Tse):
                 'texts': [query_text],
                 'lang': {
                     'lang_user_selected': from_language,
-                    'preference':{
+                    'preference': {
                         'weight': {},
                         'default': 'default',
                     },
@@ -1290,7 +1290,6 @@ class Yandex(Tse):
         self.host_headers = self.get_headers(self.host_url, if_api=False, if_referer_for_host=True)  # host_html
         self.host_headers.update({'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8'})
         self.api_headers = self.get_headers(self.host_url, if_api=True, if_ajax_for_api=True)
-        self.api_headers.update({'Host': self.api_host})
         is_detail_result = kwargs.get('is_detail_result', False)
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
@@ -1311,7 +1310,6 @@ class Yandex(Tse):
                 self.sid = self.get_sid(host_html)
                 self.key = self.get_key(host_html)
                 self.csrf_token = self.get_csrf_token(host_html)
-                self.api_headers.update({'X-CSRF-Token': self.csrf_token})
                 self.language_map = self.get_language_map(host_html)
 
             from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
@@ -1325,6 +1323,7 @@ class Yandex(Tse):
                 'yu': self.yu,
             }
             form_data = {'text': query_text, 'options': 4}
+            self.api_headers.update({'Host': self.api_host, 'X-CSRF-Token': self.csrf_token})
             r = ss.post(self.api_url, headers=self.api_headers, params=params, data=form_data, timeout=timeout, proxies=proxies)
             r.raise_for_status()
             data = r.json()

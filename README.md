@@ -81,42 +81,44 @@ html_text = '''
 </html>
 '''
 
+## language
 # input languages
 print(ts.google(wyw_text)) # default: from_language='auto', to_language='en'
-
-## output language_map
+# output language_map
 print(ts._google.language_map)
 
-# professional field
+## professional field
 print(ts.alibaba(wyw_text, professional_field='general')) # ("general","message","offer")
 print(ts.baidu(wyw_text, professional_field='common')) # ('common','medicine','electronics','mechanics')
 print(ts.caiyun(wyw_text, from_language='zh', professional_field=None)) # ("medicine","law","machinery")
 
-# property
+## property
 rs = [ts.tencent(x) for x in [wyw_text, chs_text]]
 print(ts._tencent.query_count)
 print(dir(ts._tencent))
 
-# requests
+## requests
 print(ts.youdao(wyw_text, sleep_seconds=5, timeout=None, proxies=None))
 
-# host service
+## host
+# cn
 print(ts.google(wyw_text, if_use_cn_host=True))
 print(ts.bing(wyw_text, if_use_cn_host=False))
-
-# detail result
-print(ts.sogou(wyw_text, is_detail_result=True))
-      
-# translate html
-print(ts.translate_html(html_text, translator=ts.google, to_language='en', n_jobs=-1))
-
-# others
-print(ts._argos.host_pool)
-print(ts.argos(wyw_text, reset_host_url=None))
+# reset host
 print(ts.google(wyw_text, reset_host_url=None))
 print(ts.yandex(wyw_text, reset_host_url=None))
+
+## detail result
+print(ts.sogou(wyw_text, is_detail_result=True))
       
-# help
+## translate html
+print(ts.translate_html(html_text, translator=ts.google, to_language='en', n_jobs=-1))
+
+## others
+print(ts._argos.host_pool)
+print(ts.argos(wyw_text, reset_host_url=None))
+
+## help
 help(ts.google)
 ```
 
@@ -151,16 +153,16 @@ help(ts.google)
 | Translator                                             | Number of Supported Languages | Advantage                                                    |
 | ------------------------------------------------------ | ----------------------------- | ------------------------------------------------------------ |
 | [Iciba](https://www.iciba.com/fy)                      | 187                           | support the most languages in the world                      |
-| [Google](https://translate.google.com)                 | 108                           | support more languages in the world                          |
+| [Google](https://translate.google.com)                 | 109                           | support more languages in the world                          |
+| [Bing](https://www.bing.com/Translator)                | 102                           | support more languages in the world                          |
 | [Yandex](https://translate.yandex.com)                 | 100                           | support more languages in the world, support word to emoji   |
-| [Bing](https://www.bing.com/Translator)                | 77                            | support more languages in the world                          |
 | [Iflytek](https://saas.xfyun.cn/translate?tabKey=text) | 70                            | support more languages in the world                          |
 | [Sogou](https://fanyi.sogou.com)                       | 61                            | support more languages in the world                          |
 | [Baidu](https://fanyi.baidu.com)                       | 28                            | support main languages, support professional field           |
 | [Deepl](https://www.deepl.com/translator)              | 24                            | high quality to translate but response slowly                |
 | [Tencent](https://fanyi.qq.com)                        | 17                            | support main languages                                       |
 | [Argos](https://translate.argosopentech.com)           | 17                            | support main languages , open-source                         |
-| [Youdao](https://fanyi.youdao.com)                     | 14                            | support main languages, high quality                         |
+| [Youdao](https://fanyi.youdao.com)                     | 15                            | support main languages, high quality                         |
 | [Alibaba](https://translate.alibaba.com)               | 12                            | support main languages, support professional field           |
 | [Caiyun](https://fanyi.caiyunapp.com)                  | 6                             | high quality to translate but response slowly, support professional field |
 
