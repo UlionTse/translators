@@ -73,10 +73,10 @@ html_text = '''
 <!DOCTYPE html>
 <html>
 <head>
-	<title>我是标题</title>
+	<title>这是标题</title>
 </head>
 <body>
-<p>我是文章《你的父亲》</p>
+<p>这是文章《你的父亲》</p>
 </body>
 </html>
 '''
@@ -114,6 +114,7 @@ print(ts.translate_html(html_text, translator=ts.google, to_language='en', n_job
 print(ts._argos.host_pool)
 print(ts.argos(wyw_text, reset_host_url=None))
 print(ts.google(wyw_text, reset_host_url=None))
+print(ts.yandex(wyw_text, reset_host_url=None))
       
 # help
 help(ts.google)
@@ -151,7 +152,7 @@ help(ts.google)
 | ------------------------------------------------------ | ----------------------------- | ------------------------------------------------------------ |
 | [Iciba](https://www.iciba.com/fy)                      | 187                           | support the most languages in the world                      |
 | [Google](https://translate.google.com)                 | 108                           | support more languages in the world                          |
-| [Yandex](https://translate.yandex.com)                 | 99                            | support more languages in the world, support word to emoji   |
+| [Yandex](https://translate.yandex.com)                 | 100                           | support more languages in the world, support word to emoji   |
 | [Bing](https://www.bing.com/Translator)                | 77                            | support more languages in the world                          |
 | [Iflytek](https://saas.xfyun.cn/translate?tabKey=text) | 70                            | support more languages in the world                          |
 | [Sogou](https://fanyi.sogou.com)                       | 61                            | support more languages in the world                          |
@@ -246,6 +247,7 @@ help(ts.google)
 More supported language, eg:
 
 ```python
+# request once first, then:
 print(ts._google.language_map)
 ```
 

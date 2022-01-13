@@ -3,7 +3,7 @@
 
 """MIT License
 
-Copyright (c) 2022 UlionTse
+Copyright (c) 2017-2022 UlionTse
 
 Warning: Prohibition of commercial use!
 This module is designed to help students and individuals with translation services.
@@ -124,17 +124,18 @@ class Tse:
     @staticmethod
     def check_query_text(query_text, if_ignore_limit_of_length=False, limit_of_length=5000):
         if not isinstance(query_text, str):
-            raise TranslatorError('query_text is not string.')
+            raise TranslatorError('query_text is not string type.')
         query_text = query_text.strip()
         if not query_text:
             return ''
         length = len(query_text)
-        if length > limit_of_length and not if_ignore_limit_of_length:
+        if length >= limit_of_length and not if_ignore_limit_of_length:
             raise TranslatorError('The length of the text to be translated exceeds the limit.')
         else:
-            if length > limit_of_length:
-                warnings.warn(f'The translation ignored the excess[above 5000]. Length of `query_text` is {length}.')
-                return query_text[:limit_of_length]
+            if length >= limit_of_length:
+                warnings.warn(f'The translation ignored the excess[above {limit_of_length}]. Length of `query_text` is {length}.')
+                warnings.warn('The translation result will be incomplete.')
+                return query_text[:limit_of_length-1]
         return query_text
 
 
@@ -344,11 +345,8 @@ class GoogleV2(Tse):
     def get_consent_cookie(self, consent_html): # by mercuree. merged but not verify.
         et = lxml.etree.HTML(consent_html)
         input_element = et.xpath('.//input[@type="hidden"][@name="v"]')
-        if input_element:
-            cookie_value = input_element[0].attrib.get('value')
-        else:
-            cookie_value = 'cb'  # cookie CONSENT=YES+cb works for now
-        return f'CONSENT=YES+{cookie_value}'
+        cookie_value = input_element[0].attrib.get('value') if input_element else 'cb'
+        return f'CONSENT=YES+{cookie_value}'  # cookie CONSENT=YES+cb works for now
 
     # @Tse.time_stat
     def google_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, list]:
@@ -368,7 +366,7 @@ class GoogleV2(Tse):
         :return: str or list
         """
         reset_host_url = kwargs.get('reset_host_url', None)
-        if reset_host_url:
+        if reset_host_url and reset_host_url != self.host_url:
             assert reset_host_url[:25] == 'https://translate.google.'
             self.host_url = reset_host_url
         else:
@@ -1232,25 +1230,41 @@ class Yandex(Tse):
         super().__init__()
         self.host_url = 'https://translate.yandex.com'
         self.api_url = 'https://translate.yandex.net/api/v1/tr.json/translate'
+        self.api_host = 'https://translate.yandex.net'
         self.detect_language_url = 'https://translate.yandex.net/api/v1/tr.json/detect'
-        self.host_headers = self.get_headers(self.host_url, if_api=False, if_ajax_for_api=False)
-        self.api_headers = self.get_headers(self.host_url, if_api=True, if_ajax_for_api=True)
+        self.host_headers = None
+        self.api_headers = None
         self.language_map = None
         self.sid = None
+        self.key = None
+        self.csrf_token = None
+        self.yu = None
+        self.begin_timestamp = time.time()
         self.query_count = 0
         self.output_zh = 'zh'
 
     def get_language_map(self, host_html):
-        lang_str = re.compile(pattern='TRANSLATOR_LANGS: {(.*?)},', flags=re.S).findall(host_html)
-        if not lang_str:
-            return {}
-        lang_dict = eval('{' + lang_str[0] + '}')
-        return {}.fromkeys(lang_dict.keys(), lang_dict.keys())
+        lang_str = re.compile(pattern='TRANSLATOR_LANGS: {(.*?)},').findall(host_html)[0]
+        lang_dict = eval('{' + lang_str + '}')
+        lang_list = sorted(list(lang_dict.keys()))
+        return {}.fromkeys(lang_list, lang_list)
+
+    def get_csrf_token(self, host_html):
+        return re.compile(pattern="CSRF_TOKEN: '(.*?)',").findall(host_html)[0]
+
+    def get_key(self, host_html):
+        return re.compile(pattern="SPEECHKIT_KEY: '(.*?)',").findall(host_html)[0]
+
+    def get_sid(self, host_html):
+        sid_find = re.compile("SID: '(.*?)',").findall(host_html)[0]
+        return '.'.join([w[::-1] for w in sid_find.split('.')])
 
     def detect_language(self, ss, query_text, sid, timeout, proxies):
-        params = {'sid': sid, 'srv': 'tr-text', 'text': query_text, 'hint': 'zh,en', 'options': 1,}
+        params = {'sid': sid, 'srv': 'tr-text', 'text': query_text, 'hint': 'en,ru', 'options': 1,}
+        self.host_headers.update({'Host': self.api_host})
         r = ss.get(self.detect_language_url, params=params, headers=self.host_headers, timeout=timeout, proxies=proxies)
         r.raise_for_status()
+        self.host_headers.pop('Host')
         return r.json().get('lang')
 
     # @Tse.time_stat
@@ -1261,6 +1275,7 @@ class Yandex(Tse):
         :param from_language: str, default 'auto'.
         :param to_language: str, default 'en'.
         :param **kwargs:
+                :param reset_host_url: str, default None.eg: 'https://translate.yandex.fr'
                 :param if_ignore_limit_of_length: boolean, default False.
                 :param is_detail_result: boolean, default False.
                 :param timeout: float, default None.
@@ -1268,19 +1283,35 @@ class Yandex(Tse):
                 :param sleep_seconds: float, default `random.random()`.
         :return: str or dict
         """
+        reset_host_url = kwargs.get('reset_host_url', None)
+        if reset_host_url and reset_host_url != self.host_url:
+            assert reset_host_url[:25] == 'https://translate.yandex.'
+            self.host_url = reset_host_url
+        self.host_headers = self.get_headers(self.host_url, if_api=False, if_referer_for_host=True)  # host_html
+        self.host_headers.update({'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8'})
+        self.api_headers = self.get_headers(self.host_url, if_api=True, if_ajax_for_api=True)
+        self.api_headers.update({'Host': self.api_host})
         is_detail_result = kwargs.get('is_detail_result', False)
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
-        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=2000)
 
         with requests.Session() as ss:
-            host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
-            if not self.sid:
-                sid_find = re.compile("SID: '(.*?)',").findall(host_html)
-                self.sid = sid_find[0] if sid_find else '3d58bd71.5f49c293.93b157d0.74722d74657874'
-            if not self.language_map:
+            if not (self.language_map and self.sid and self.yu and time.time() - self.begin_timestamp < 1700):  # 1800
+                self.begin_timestamp = time.time()
+                self.query_count = 0
+
+                r = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+                r.raise_for_status()
+                self.yu = r.cookies.get_dict().get('yuidss') or f'{random.randint(int(1e8), int(9e8))}{int(time.time())}'
+
+                host_html = r.text
+                self.sid = self.get_sid(host_html)
+                self.key = self.get_key(host_html)
+                self.csrf_token = self.get_csrf_token(host_html)
+                self.api_headers.update({'X-CSRF-Token': self.csrf_token})
                 self.language_map = self.get_language_map(host_html)
 
             from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
@@ -1289,8 +1320,9 @@ class Yandex(Tse):
                 'id': f'{self.sid}-{self.query_count}-0',
                 'lang': f'{from_language}-{to_language}',
                 'srv': 'tr-text',
-                'reason': 'auto',
-                'format': 'text'
+                'reason': 'paste',  # 'auto'
+                'format': 'text',
+                'yu': self.yu,
             }
             form_data = {'text': query_text, 'options': 4}
             r = ss.post(self.api_url, headers=self.api_headers, params=params, data=form_data, timeout=timeout, proxies=proxies)
@@ -1450,7 +1482,7 @@ class Iflytek(Tse):
         self.host_url = 'https://saas.xfyun.cn/translate?tabKey=text'
         self.api_url = 'https://saas.xfyun.cn/ai-application/trans/its'
         self.old_language_url = 'https://saas.xfyun.cn/_next/static/4bzLSGCWUNl67Xal-AfIl/pages/translate.js'
-        self.language_url_pattern = '/_next/static/(\w+([-?]\w+))/pages/translate.js'  # tired
+        self.language_url_pattern = '/_next/static/(\w+([-]?\w+))/pages/translate.js'
         self.language_url = None
         self.cookies_url = 'https://sso.xfyun.cn//SSOService/login/getcookies'
         self.info_url = 'https://saas.xfyun.cn/ai-application/user/info'
@@ -1479,7 +1511,7 @@ class Iflytek(Tse):
         lang_list = sorted(list(execjs.eval(lang_str).keys()))
         return {}.fromkeys(lang_list, lang_list)
 
-    def iflytek_api(self, query_text:str, from_language:str='zh', to_language:str='en', **kwargs) -> Union[str,dict]:
+    def iflytek_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
         """
         https://saas.xfyun.cn/translate?tabKey=text
         :param query_text: str, must.
@@ -1500,7 +1532,9 @@ class Iflytek(Tse):
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
         query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
         delete_temp_language_map_label = 0
-        assert from_language != 'auto', 'unsupported [from_language=auto] with [iflytek] !'
+        if from_language == 'auto':
+            warnings.warn('Unsupported [from_language=auto] with [iflytek]! Please specify it.')
+            from_language = 'zh'
 
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text

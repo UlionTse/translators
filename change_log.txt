@@ -213,3 +213,9 @@ add param `reset_host_url` to google().
 4.11.4
 stronger iciba() about sensitive word.
 stronger baidu() and iflytek().
+
+5.0.0
+fix yandex().
+fix google() about headers.
+fix iflytek() about regex of getting language_map and use warn method but raise error about `from_language=auto`.
+In order to avoid the troublesome phenomenon that '4.11.4' is less than '4.9.4', the smaller version number will be one in ten.

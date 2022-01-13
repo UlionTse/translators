@@ -1,7 +1,7 @@
 # coding=utf-8
 # author=UlionTse
 
-from .apis import *
+from apis import *
 
 
 query_text1 = '季姬寂，集鸡，鸡即棘鸡。棘鸡饥叽，季姬及箕稷济鸡。👍👍👍'
@@ -51,7 +51,7 @@ import translators as ts
 @Tse.time_stat
 @loguru.logger.catch
 def test0():
-    r = translate_html(html_text, to_language='zh', translator=google)
+    r = translate_html(html_text, to_language='zh', translator=bing)
     print(r)
 
 
