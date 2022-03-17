@@ -100,7 +100,7 @@ class Tse:
     @staticmethod
     def check_language(from_language, to_language, language_map, output_zh=None, output_auto='auto'):
         auto_pool = ('auto', 'auto-detect')
-        zh_pool = ('zh', 'zh-CN', 'zh-CHS', 'zh-Hans')
+        zh_pool = ('zh', 'zh-CN', 'zh-CHS', 'zh-Hans', 'cn', 'chi')
         from_language = output_auto if from_language in auto_pool else from_language
         from_language = output_zh if output_zh and from_language in zh_pool else from_language
         to_language = output_zh if output_zh and to_language in zh_pool else to_language
@@ -117,9 +117,9 @@ class Tse:
     @staticmethod
     def make_temp_language_map(from_language, to_language):
         warnings.warn('Did not get a complete language map. And do not use `from_language="auto"`.')
-        assert from_language != 'auto' and to_language != 'auto' and from_language != to_language
+        assert to_language != 'auto' and from_language != to_language
         lang_list = [from_language, to_language]
-        return {}.fromkeys(lang_list, lang_list)
+        return {}.fromkeys(lang_list, lang_list) if from_language != 'auto' else {from_language: to_language, to_language: to_language}
 
     @staticmethod
     def check_query_text(query_text, if_ignore_limit_of_length=False, limit_of_length=5000):
@@ -470,7 +470,7 @@ class Baidu(Tse):
                     js_txt = js_re_list[0][20:-111]
                     break
 
-        js_data = execjs.get().eval(js_txt)
+        js_data = execjs.get().eval(js_txt.replace("localStorage.getItem('header')", "'1'"))
         js_data.update({'gtk': gtk, 'sign': sign})
         return js_data
 
@@ -1105,13 +1105,13 @@ class Deepl(Tse):
         self.host_headers = self.get_headers(self.host_url, if_api=False)
         self.api_headers = self.get_headers(self.host_url, if_api=True, if_ajax_for_api=False, if_json_for_api=True)
         self.api_headers.update({'TE': 'trailers'})
-        self.request_id = random.randrange(100, 10000) * 10000 + 5
+        self.request_id = random.randrange(100, 10000) * 10000 + 4
         self.language_map = None
         self.query_count = 0
         self.output_zh = 'zh'
 
     def get_language_map(self, host_html):
-        lang_list = list(set(re.compile("translateIntoLang\.(\w+)':").findall(host_html)))
+        lang_list = list(set(re.compile('translateIntoLang\.(\w+)":').findall(host_html)))
         return {}.fromkeys(lang_list, lang_list)
 
     def split_sentences_param(self, query_text, from_language):
@@ -1206,14 +1206,14 @@ class Deepl(Tse):
             to_language = to_language.upper() if to_language != 'auto' else to_language
 
             ss_params, ss_data = self.split_sentences_param(query_text, from_language)
-            _ = ss.options(self.api_url, params=ss_params, headers=self.api_headers, timeout=timeout, proxies=proxies)
+            # _ = ss.options(self.api_url, params=ss_params, headers=self.api_headers, timeout=timeout, proxies=proxies)
             r_ss = ss.post(self.api_url, params=ss_params, json=ss_data, headers=self.api_headers, timeout=timeout, proxies=proxies)
             r_ss.raise_for_status()
             ss_data = r_ss.json()
             ss_sentences = ss_data['result']['splitted_texts'][0]
 
             cs_params, cs_data = self.context_sentences_param(ss_sentences, from_language, to_language)
-            _ = ss.options(self.api_url, params=cs_params, headers=self.api_headers, timeout=timeout, proxies=proxies)
+            # _ = ss.options(self.api_url, params=cs_params, headers=self.api_headers, timeout=timeout, proxies=proxies)
             r_cs = ss.post(self.api_url, params=cs_params, json=cs_data, headers=self.api_headers, timeout=timeout, proxies=proxies)
             r_cs.raise_for_status()
             data = r_cs.json()
@@ -1221,6 +1221,7 @@ class Deepl(Tse):
         if delete_temp_language_map_label != 0:
             self.language_map = None
         time.sleep(sleep_seconds)
+        self.request_id += 3
         self.query_count += 1
         return data if is_detail_result else ' '.join(item['beams'][0]['postprocessed_sentence'] for item in data['result']['translations'])
 
@@ -1506,7 +1507,7 @@ class Iflytek(Tse):
             self.language_url = self.old_language_url
 
         js_html = r.text
-        lang_str = re.compile('languageList:{(.*?)}').search(js_html).group()[13:]
+        lang_str = re.compile('languageList:\(e={(.*?)}').search(js_html).group()[16:]
         lang_list = sorted(list(execjs.eval(lang_str).keys()))
         return {}.fromkeys(lang_list, lang_list)
 
@@ -1533,7 +1534,7 @@ class Iflytek(Tse):
         delete_temp_language_map_label = 0
         if from_language == 'auto':
             warnings.warn('Unsupported [from_language=auto] with [iflytek]! Please specify it.')
-            from_language = 'zh'
+            from_language = self.output_zh
 
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -1549,7 +1550,8 @@ class Iflytek(Tse):
             cookie_dict = ss.cookies.get_dict()
             self.api_headers.update({'Cookie': f'_wafuid={cookie_dict["_wafuid"]}; di_c_mti={cookie_dict["SESSION"]}'})
 
-            cipher_query_text = base64.b64encode(query_text.encode()).decode()
+            # cipher_query_text = base64.b64encode(query_text.encode()).decode()
+            cipher_query_text = query_text
             form_data = {'from': from_language, 'to': to_language, 'text': cipher_query_text}
             r = ss.post(self.api_url, headers=self.api_headers, data=form_data, timeout=timeout, proxies=proxies)
             r.raise_for_status()
@@ -1559,7 +1561,8 @@ class Iflytek(Tse):
             self.language_map = None
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return data if is_detail_result else data['data']['result']['trans_result']['dst']
+        return data if is_detail_result else eval(data['data'])['trans_result']['dst']
+
 
 
 REQUEST_SERVER_REGION_INFO = TranslatorSeverRegion().request_server_region_info
@@ -1593,7 +1596,7 @@ _youdao = Youdao()
 youdao = _youdao.youdao_api
 
 
-@Tse.time_stat
+# @Tse.time_stat
 def translate_html(html_text:str, to_language:str='en', translator:Callable='auto', n_jobs:int=-1, **kwargs) -> str:
     """
     Translate the displayed content of html without changing the html structure.

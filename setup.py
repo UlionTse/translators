@@ -1,7 +1,8 @@
 # coding=utf-8
 # author=UlionTse
 
-from setuptools import setup,find_packages
+import os
+from setuptools import setup, find_packages
 
 
 PACKAGE = "translators"
@@ -11,7 +12,12 @@ DESCRIPTION = "Translators is a library which aims to bring free, multiple, enjo
 AUTHOR = "UlionTse"
 AUTHOR_EMAIL = "shinalone@outlook.com"
 URL = "https://github.com/uliontse/translators"
-VERSION = __import__(PACKAGE).__version__
+
+try:
+    VERSION = __import__(PACKAGE).__version__
+except:
+    os.system('pip install --upgrade -r requirements.txt')
+    VERSION = __import__(PACKAGE).__version__
 
 with open('README.md', 'r', encoding='utf-8') as file:
     long_description = file.read()
@@ -34,19 +40,22 @@ setup(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         # "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
     keywords=['translate', 'translator', 'fanyi', 'translate_html', 'Google', 'Yandex', 'Bing',
               'Baidu', 'Alibaba', 'Tencent', 'Youdao', 'Sogou', 'Iciba', 'Iflytek', 'Deepl', 'Caiyun', 'Argos'],
     install_requires=[
-        'requests>=2.26.0',
+        'requests>=2.27.1',
         'PyExecJS>=1.5.1',
-        'lxml>=4.5.0',
-        'loguru>=0.4.1',
-        'pathos>=0.2.7',
+        'lxml>=4.8.0',
+        'loguru>=0.6.0',
+        'pathos>=0.2.8',
     ],
     zip_safe=False,
 )

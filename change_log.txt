@@ -223,3 +223,7 @@ fix iflytek() about regex of getting language_map and use warn method but raise 
 5.0.1
 stronger deepl() about `language_map`.
 update README.md
+
+5.0.2
+Continuous follow-up fixes based on service changes：baidu(), deepl(), iflytek().
+add more suitable python version.
