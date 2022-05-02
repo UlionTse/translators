@@ -234,3 +234,6 @@ add itranslate().
 add translateCom() but from microsoft, like bing().
 change `assert` to `if not ...: raise ...`.
 ready to fix ifytek() about [geetest].
+
+5.1.1
+update readme.md
