@@ -30,9 +30,7 @@
   - [Help](#Help)
 - [More About Translators](#more-about-translators)
   - [Features](#features)
-  
   - [Support Language](#support-language)
-  
   - [About Chinese Language](#about-Chinese-language)
 - [Issues]()
   - [Linux Runtime Environment](#linux-runtime-environment)
