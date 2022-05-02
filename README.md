@@ -28,15 +28,17 @@
   - [Translate HTML](#translate-html)
   - [Others](#others)
   - [Help](#Help)
+- [More About Translators](#more-about-translators)
+  - [Features](#features)
+  
+  - [Support Language](#support-language)
+  
+  - [About Chinese Language](#about-Chinese-language)
 - [Issues]()
   - [Linux Runtime Environment](#linux-runtime-environment)
   - [Supported Country and Region Service](#supported-country-and-region-service)
   - [HttpError 4xx](#httperror-4xx)
   - [RequestsError or ProxyError](#requests-error-or-proxy-error)
-- [More About Translators](#more-about-translators)
-  - [Features](#features)
-  - [Support Language](#support-language)
-  - [About Chinese Language](#about-Chinese-language)
 - [License](#License)
 
 ## Installation
@@ -119,29 +121,7 @@ print(ts.argos(wyw_text, reset_host_url=None))
 help(ts.google)
 ```
 
-## Issues
 
-### Linux Runtime Environment
-
-1. To support javascript runtime environment, you should [Download | Node.js](https://nodejs.org/en/download/).
-2. PS, `ts.baidu()` does not work on Linux without desktop.
-
-### Supported Country and Region Service
-
-1. If you have requests error, please check whether this service is provided in your country or region.
-2. Check the website about `eg: help(ts.google)`.
-
-### HttpError 4xx
-
-1. Please check whether you made high frequency requests.
-2. Please check whether this service is provided in your country or region.
-3. Detail to solve [HttpError](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) itself.
-4. Please [issue me](https://github.com/UlionTse/translators/issues), thanks.
-
-### RequestsError or ProxyError
-
-1. Check whether the advanced version of `requests` you have installed can access the site properly. If not, try lowering the version or otherwise.
-2. Check that agents are enabled on your computer. If it is enabled, try turning it off or otherwise.
 
 ## More About Translators
 
@@ -263,6 +243,34 @@ print(ts._google.language_map)
 | Chinese(白苗文)  | mww                    |                                        |                                        | Y                                       |                                  |                                          |                                 |                                    | Y                                | Y                                 |                                                        |                                       |                                           |                                              |                                             |                                                     |                                                               |
 | Chinese(彝语)   | ii                     |                                        |                                        |                                         |                                  |                                          |                                 |                                    |                                  |                                   | Y                                                      |                                       |                                           |                                              |                                             |                                                     |                                                               |
 | Chinese(苗语)   | hmn                    |                                        |                                        |                                         |                                  |                                          |                                 |                                    |                                  |                                   |                                                        |                                       |                                           |                                              | Y                                           |                                                     |                                                               |
+
+
+
+## Issues
+
+### Linux Runtime Environment
+
+1. To support javascript runtime environment, you should [Download | Node.js](https://nodejs.org/en/download/).
+2. PS, `ts.baidu()` does not work on Linux without desktop.
+
+### Supported Country and Region Service
+
+1. If you have requests error, please check whether this service is provided in your country or region.
+2. Check the website about `eg: help(ts.google)`.
+
+### HttpError 4xx
+
+1. Please check whether you made high frequency requests.
+2. Please check whether this service is provided in your country or region.
+3. Detail to solve [HttpError](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) itself.
+4. Please [issue me](https://github.com/UlionTse/translators/issues), thanks.
+
+### RequestsError or ProxyError
+
+1. Check whether the advanced version of `requests` you have installed can access the site properly. If not, try lowering the version or otherwise.
+2. Check that agents are enabled on your computer. If it is enabled, try turning it off or otherwise. 
+
+
 
 ## License
 
