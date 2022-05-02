@@ -129,7 +129,7 @@ help(ts.google)
 | [Google](https://translate.google.com)                        | 109                           | support more languages in the world                                                                     |
 | [Bing](https://www.bing.com/Translator)                       | 102                           | support more languages in the world                                                                     |
 | [Yandex](https://translate.yandex.com)                        | 100                           | support more languages in the world, support word to emoji                                              |
-| [Itranslate](https://itranslate.com/webapp)                   | 100                           | support translation of different regions but the same language differences, such as en_US, en-UK, en-AU |
+| [Itranslate](https://itranslate.com/webapp)                   | 100                           | support translation of different regions but the same language differences, such as en-US, en-UK, en-AU |
 | [Iflytek](https://saas.xfyun.cn/translate?tabKey=text)        | 70                            | support more languages in the world                                                                     |
 | [Sogou](https://fanyi.sogou.com)                              | 61                            | support more languages in the world                                                                     |
 | [Reverso](https://www.reverso.net/text-translation)           | 42                            | popular on Mac and Iphone                                                                               |
