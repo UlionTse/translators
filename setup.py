@@ -49,7 +49,8 @@ setup(
         "Programming Language :: Python :: 3.11",
     ],
     keywords=['translate', 'translator', 'fanyi', 'translate_html', 'Google', 'Yandex', 'Bing',
-              'Baidu', 'Alibaba', 'Tencent', 'Youdao', 'Sogou', 'Iciba', 'Iflytek', 'Deepl', 'Caiyun', 'Argos'],
+              'Baidu', 'Alibaba', 'Tencent', 'Youdao', 'Sogou', 'Iciba', 'Iflytek', 'Deepl',
+              'Caiyun', 'Argos', 'Reverso', 'Itranslate', 'TranslateCom'],
     install_requires=[
         'requests>=2.27.1',
         'PyExecJS>=1.5.1',

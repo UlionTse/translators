@@ -117,7 +117,8 @@ class Tse:
     @staticmethod
     def make_temp_language_map(from_language, to_language):
         warnings.warn('Did not get a complete language map. And do not use `from_language="auto"`.')
-        assert to_language != 'auto' and from_language != to_language
+        if not (to_language != 'auto' and from_language != to_language):
+            raise TranslatorError("to_language != 'auto' and from_language != to_language")
         lang_list = [from_language, to_language]
         return {}.fromkeys(lang_list, lang_list) if from_language != 'auto' else {from_language: to_language, to_language: to_language}
 
@@ -142,12 +143,14 @@ class Tse:
 class TranslatorSeverRegion:
     @property
     def request_server_region_info(self):
+        # https://geolocation.onetrust.com/cookieconsentpub/v1/geo/location
         try:
             ip_address = requests.get('https://httpbin.org/ip').json()['origin']
             try:
                 data = requests.get(f'http://ip-api.com/json/{ip_address}', timeout=10).json()  # http # limit 45/min.
                 country = data.get("country")
-                assert country
+                if not country:
+                    raise TranslatorError('Unknown country or region.')
                 sys.stderr.write(f'Using {country} server backend.\n')
                 return data
             except requests.exceptions.Timeout:
@@ -369,7 +372,8 @@ class GoogleV2(Tse):
         """
         reset_host_url = kwargs.get('reset_host_url', None)
         if reset_host_url and reset_host_url != self.host_url:
-            assert reset_host_url[:25] == 'https://translate.google.'
+            if not reset_host_url[:25] == 'https://translate.google.':
+                raise TranslatorError('Your [reset_host_url] is wrong.')
             self.host_url = reset_host_url
         else:
             use_cn_condition = kwargs.get('if_use_cn_host', None) or self.request_server_region_info.get('countryCode') == 'CN'
@@ -492,7 +496,8 @@ class Baidu(Tse):
         """
 
         use_domain = kwargs.get('professional_field', 'common')
-        assert use_domain in ('common', 'medicine', 'electronics', 'mechanics')
+        if use_domain not in ('common', 'medicine', 'electronics', 'mechanics'):
+            raise TranslatorError('Your [professional_field] is wrong.')
         is_detail_result = kwargs.get('is_detail_result', False)
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
@@ -769,7 +774,8 @@ class Alibaba(Tse):
         :return: str or dict
         """
         use_domain = kwargs.get('professional_field', 'message')
-        assert use_domain in ("general", "message", "offer")
+        if use_domain not in ("general", "message", "offer"):
+            raise TranslatorError('Your [professional_field] is wrong.')
         is_detail_result = kwargs.get('is_detail_result', False)
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
@@ -1044,7 +1050,8 @@ class Caiyun(Tse):
         """
         use_domain = kwargs.get('professional_field', None)
         if use_domain:
-            assert use_domain in ("medicine", "law", "machinery")
+            if use_domain not in ("medicine", "law", "machinery"):
+                raise TranslatorError('Your [professional_field] is wrong.')
         is_detail_result = kwargs.get('is_detail_result', False)
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
@@ -1286,7 +1293,8 @@ class Yandex(Tse):
         """
         reset_host_url = kwargs.get('reset_host_url', None)
         if reset_host_url and reset_host_url != self.host_url:
-            assert reset_host_url[:25] == 'https://translate.yandex.'
+            if reset_host_url[:25] != 'https://translate.yandex.':
+                raise TranslatorError('Your [reset_host_url] is wrong.')
             self.host_url = reset_host_url
         self.host_headers = self.get_headers(self.host_url, if_api=False, if_referer_for_host=True)  # host_html
         self.host_headers.update({'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8'})
@@ -1373,7 +1381,8 @@ class Argos(Tse):
         """
         reset_host_url = kwargs.get('reset_host_url', None)
         if reset_host_url and reset_host_url != self.host_url:
-            assert reset_host_url in self.host_pool, f'`reset_host_url` not in `host_pool`: {self.host_pool}'
+            if reset_host_url not in self.host_pool:
+                raise TranslatorError('Your [reset_host_url] is wrong.')
             self.host_url = reset_host_url
             self.api_url = f'{self.host_url}/translate'
             self.language_url = f'{self.host_url}/languages'
@@ -1564,6 +1573,250 @@ class Iflytek(Tse):
         return data if is_detail_result else eval(data['data'])['trans_result']['dst']
 
 
+class Reverso(Tse):
+    def __init__(self):
+        super().__init__()
+        self.host_url = 'https://www.reverso.net/text-translation'
+        self.api_url = 'https://api.reverso.net/translate/v1/translation'
+        self.language_url = 'https://cdn.reverso.net/trans/v2.3.6/main.js'
+        self.host_headers = self.get_headers(self.host_url, if_api=False)
+        self.api_headers = self.get_headers(self.host_url, if_api=True, if_json_for_api=True)
+        self.language_map = None
+        self.language_tran = None
+        self.query_count = 0
+        self.output_zh = 'zh' #'chi', because there are self.language_tran
+
+    def get_language_map(self, lang_url, ss, headers, timeout, proxies):
+        lang_html = ss.get(lang_url, headers=headers, timeout=timeout, proxies=proxies).text
+        lang_str = re.compile('const e={(.*?)}').search(lang_html).group()[8:]
+        lang_dict = execjs.eval(lang_str)
+        lang_dict['ptb'] = 'pt'
+        lang_dict = {k:v for v,k in lang_dict.items()}
+        lang_list = list(lang_dict.keys())
+        return {'lang_map': {}.fromkeys(lang_list, lang_list), 'lang_tran': lang_dict}
+
+    def reverso_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
+        """
+        https://www.reverso.net/text-translation
+        :param query_text: str, must.
+        :param from_language: str, default 'zh', unsupported 'auto'.
+        :param to_language: str, default 'en'.
+        :param **kwargs:
+                :param if_ignore_limit_of_length: boolean, default False.
+                :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
+                :param proxies: dict, default None.
+                :param sleep_seconds: float, default `random.random()`.
+        :return: str or dict
+        """
+        is_detail_result = kwargs.get('is_detail_result', False)
+        timeout = kwargs.get('timeout', None)
+        proxies = kwargs.get('proxies', None)
+        sleep_seconds = kwargs.get('sleep_seconds', random.random())
+        if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        delete_temp_language_map_label = 0
+        if from_language == 'auto':
+            warnings.warn('Unsupported [from_language=auto] with [reverso]! Please specify it.')
+            from_language = self.output_zh
+
+        with requests.Session() as ss:
+            _ = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
+
+            if not self.language_map:
+                lang_box = self.get_language_map(self.language_url, ss, self.host_headers, timeout, proxies)
+                self.language_map, self.language_tran = lang_box['lang_map'], lang_box['lang_tran']
+            if not self.language_map:
+                delete_temp_language_map_label += 1
+                self.language_map = self.make_temp_language_map(from_language, to_language)
+            from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
+            if self.language_tran:
+                from_language, to_language = self.language_tran[from_language], self.language_tran[to_language]
+
+            form_data = {
+                'format': 'text',
+                'from': from_language,
+                'to': to_language,
+                'input': query_text,
+                'options': {
+                    'contextResults': 'true',
+                    'languageDetection': 'true',
+                    'sentenceSplitter': 'true',
+                    'origin': 'translation.web',
+                }
+            }
+            r = ss.post(self.api_url, headers=self.api_headers, json=form_data, timeout=timeout, proxies=proxies)
+            r.raise_for_status()
+            data = r.json()
+
+        if delete_temp_language_map_label != 0:
+            self.language_map = None
+        time.sleep(sleep_seconds)
+        self.query_count += 1
+        return data if is_detail_result else ' '.join(data['translation'])
+
+
+class Itranslate(Tse):
+    def __init__(self):
+        super().__init__()
+        self.host_url = 'https://itranslate.com/webapp'
+        self.api_url = 'https://web-api.itranslateapp.com/v3/texts/translate'
+        self.language_url = 'https://itranslate-webapp-production.web.app/main.js'
+        self.host_headers = self.get_headers(self.host_url, if_api=False)
+        self.api_headers = self.get_headers(self.host_url, if_api=True, if_json_for_api=True)
+        self.language_map = None
+        self.language_description = None
+        self.api_key = None
+        self.query_count = 0
+        self.output_zh = 'zh-CN'
+
+    def get_language_map(self, lang_url, ss, headers, timeout, proxies):
+        lang_html = ss.get(lang_url, headers=headers, timeout=timeout, proxies=proxies).text
+        api_key = re.compile('"API-KEY":"(.*?)"').findall(lang_html)[0]
+
+        lang_str = re.compile('d=\[{(.*?)}\]').search(lang_html).group()[2:]
+        lang_origin_list = execjs.eval(lang_str)
+        lang_list = [dd['dialect'] for dd in lang_origin_list]
+        return {'lang_map': {}.fromkeys(lang_list, lang_list), 'lang_desc': lang_origin_list, 'api_key': api_key}
+
+    def en_tran(self, from_lang, to_lang):
+        if from_lang == 'en':
+            return 'en-US', to_lang
+        elif to_lang == 'en':
+            return from_lang, 'en-US'
+        else:
+            return from_lang, to_lang
+
+    def itranslate_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
+        """
+        https://itranslate.com/webapp
+        :param query_text: str, must.
+        :param from_language: str, default 'auto'.
+        :param to_language: str, default 'en-US'.
+        :param **kwargs:
+                :param if_ignore_limit_of_length: boolean, default False.
+                :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
+                :param proxies: dict, default None.
+                :param sleep_seconds: float, default `random.random()`.
+        :return: str or dict
+        """
+        is_detail_result = kwargs.get('is_detail_result', False)
+        timeout = kwargs.get('timeout', None)
+        proxies = kwargs.get('proxies', None)
+        sleep_seconds = kwargs.get('sleep_seconds', random.random())
+        if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        delete_temp_language_map_label = 0
+
+        with requests.Session() as ss:
+            _ = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
+
+            if not self.language_map:
+                lang_box = self.get_language_map(self.language_url, ss, self.host_headers, timeout, proxies)
+                self.api_key = lang_box['api_key']
+                self.api_headers.update({'API-KEY': self.api_key})
+                self.language_map, self.language_description = lang_box['lang_map'], lang_box['lang_desc']
+            if not self.language_map:
+                delete_temp_language_map_label += 1
+                self.language_map = self.make_temp_language_map(from_language, to_language)
+
+            from_language, to_language = self.en_tran(from_language, to_language)
+            from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
+
+            form_data = {
+                'source': {'dialect': from_language, 'text': query_text, 'with': ['synonyms']},
+                'target': {'dialect': to_language},
+            }
+            r = ss.post(self.api_url, headers=self.api_headers, json=form_data, timeout=timeout, proxies=proxies)
+            r.raise_for_status()
+            data = r.json()
+
+        if delete_temp_language_map_label != 0:
+            self.language_map = None
+        time.sleep(sleep_seconds)
+        self.query_count += 1
+        return data if is_detail_result else data['target']['text']
+
+
+class TranslateCom(Tse):
+    def __init__(self):
+        super().__init__()
+        self.host_url = 'https://www.translate.com/machine-translation'
+        self.api_url = 'https://www.translate.com/translator/translate_mt'
+        self.lang_detect_url = 'https://www.translate.com/translator/ajax_lang_auto_detect'
+        self.language_url = 'https://www.translate.com/ajax/language/ht/all'
+        self.host_headers = self.get_headers(self.host_url, if_api=False)
+        self.api_headers = self.get_headers(self.host_url, if_api=True, if_json_for_api=False)
+        self.language_map = None
+        self.language_description = None
+        self.tk = None
+        self.query_count = 0
+        self.output_zh = 'zh'
+
+    def get_language_map(self, lang_url, ss, headers, timeout, proxies):
+        lang_origin_list = ss.get(lang_url, headers=headers, timeout=timeout, proxies=proxies).json()
+        lang_map = {item['code']: [it['code'] for it in item['availableTranslationLanguages']] for item in lang_origin_list}
+        return {'lang_map': lang_map, 'lang_desc': lang_origin_list}
+
+    def translateCom_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
+        """
+        https://www.translate.com/machine-translation
+        :param query_text: str, must.
+        :param from_language: str, default 'auto'.
+        :param to_language: str, default 'en'.
+        :param **kwargs:
+                :param if_ignore_limit_of_length: boolean, default False.
+                :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
+                :param proxies: dict, default None.
+                :param sleep_seconds: float, default `random.random()`.
+        :return: str or dict
+        """
+        is_detail_result = kwargs.get('is_detail_result', False)
+        timeout = kwargs.get('timeout', None)
+        proxies = kwargs.get('proxies', None)
+        sleep_seconds = kwargs.get('sleep_seconds', random.random())
+        if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        delete_temp_language_map_label = 0
+
+        with requests.Session() as ss:
+            r = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+            if not self.tk:
+                self.tk = r.cookies.get_dict()
+                self.api_headers.update({'Cookie': f'XSRF-TOKEN={self.tk["XSRF-TOKEN"]}; ci_session={self.tk["ci_session"]}'})
+
+            if not self.language_map:
+                lang_box = self.get_language_map(self.language_url, ss, self.host_headers, timeout, proxies)
+                self.language_map, self.language_description = lang_box['lang_map'], lang_box['lang_desc']
+            if not self.language_map:
+                delete_temp_language_map_label += 1
+                self.language_map = self.make_temp_language_map(from_language, to_language)
+            from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
+
+            if from_language == 'auto':
+                detect_form = {'text_to_translate': query_text}
+                r_detect = ss.post(self.lang_detect_url, headers=self.api_headers, data=detect_form, timeout=timeout, proxies=proxies)
+                from_language = r_detect.json()['language']
+
+            form_data = {
+                'text_to_translate': query_text,
+                'source_lang': from_language,
+                'translated_lang': to_language,
+                'use_cache_only': 'false',
+            }
+            r = ss.post(self.api_url, headers=self.api_headers, data=form_data, timeout=timeout, proxies=proxies)
+            r.raise_for_status()
+            data = r.json()
+
+        if delete_temp_language_map_label != 0:
+            self.language_map = None
+        time.sleep(sleep_seconds)
+        self.query_count += 1
+        return data if is_detail_result else data['translated_text'] # translation_source is microsoft, wtf!
+
+
 
 REQUEST_SERVER_REGION_INFO = TranslatorSeverRegion().request_server_region_info
 
@@ -1586,10 +1839,16 @@ _iciba = Iciba()
 iciba = _iciba.iciba_api
 _iflytek = Iflytek()
 iflytek = _iflytek.iflytek_api
+_itranslate = Itranslate()
+itranslate = _itranslate.itranslate_api
+_reverso = Reverso()
+reverso = _reverso.reverso_api
 _sogou = Sogou()
 sogou = _sogou.sogou_api
 _tencent = Tencent()
 tencent = _tencent.tencent_api
+_translateCom = TranslateCom()
+translateCom = _translateCom.translateCom_api
 _yandex = Yandex()
 yandex = _yandex.yandex_api
 _youdao = Youdao()
@@ -1612,7 +1871,8 @@ def translate_html(html_text:str, to_language:str='en', translator:Callable='aut
     """
     if kwargs:
         for param in ('query_text', 'to_language', 'is_detail_result'):
-            assert param not in kwargs, f'{param} should not be in `**kwargs`.'
+            if param in kwargs:
+                raise TranslatorError(f'{param} should not be in `**kwargs`.')
     kwargs.update({'sleep_seconds': 0})
 
     n_jobs = os.cpu_count() if n_jobs <= 0 else n_jobs

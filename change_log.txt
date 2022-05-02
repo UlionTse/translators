@@ -227,3 +227,10 @@ update README.md
 5.0.2
 Continuous follow-up fixes based on service changes：baidu(), deepl(), iflytek().
 add more suitable python version.
+
+5.1.0
+add reverso().
+add itranslate().
+add translateCom() but from microsoft, like bing().
+change `assert` to `if not ...: raise ...`.
+ready to fix ifytek() about [geetest].
