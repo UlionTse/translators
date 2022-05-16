@@ -237,3 +237,8 @@ ready to fix ifytek() about [geetest].
 
 5.1.1
 update readme.md
+
+5.2.0
+add papago().
+add utibet().
+pause iflytek() and wait for the fix.

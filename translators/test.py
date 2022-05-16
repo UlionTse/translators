@@ -66,12 +66,14 @@ def test1():
         print('deepl:\n', deepl(query_text))
         print('google:\n', google(query_text))
         print('icaba:\n', iciba(query_text))
-        print('iflytek:\n', iflytek(query_text)) # geetest
+        # print('iflytek:\n', iflytek(query_text)) # geetest
         print('itranslate:\n', itranslate(query_text))
+        print('papago:\n', papago(query_text))
         print('reverso:\n', reverso(query_text))
         print('sogou:\n', sogou(query_text))
         print('tencent:\n', tencent(query_text))
         print('translateCom:\n', translateCom(query_text))
+        print('utibet:\n', utibet(query_text))
         print('yandex:\n', yandex(query_text))
         print('youdao:\n', youdao(query_text))
 

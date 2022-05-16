@@ -39,6 +39,8 @@ import re
 import sys
 import time
 import json
+import uuid
+import hmac
 import base64
 import random
 import urllib.parse
@@ -921,9 +923,9 @@ class Sogou(Tse):
         uuid = ''
         for i in range(8):
             uuid += hex(int(65536 * (1 + random.random())))[2:][1:]
-            if i in range(1,5):
+            if i in range(1, 5):
                 uuid += '-'
-        sign_text = "" + from_language + to_language + query_text + '109984457' # window.__INITIAL_STATE__.common.CONFIG.secretCode
+        sign_text = "" + from_language + to_language + query_text + '109984457'  # window.__INITIAL_STATE__.common.CONFIG.secretCode
         sign = hashlib.md5(sign_text.encode()).hexdigest()
         form = {
             "from": from_language,
@@ -931,8 +933,8 @@ class Sogou(Tse):
             "text": query_text,
             "uuid": uuid,
             "s": sign,
-            "client": "pc", #wap
-            "fr": "browser_pc", #browser_wap
+            "client": "pc",  # wap
+            "fr": "browser_pc",  # browser_wap
             "needQc": "1",
         }
         return form
@@ -1562,6 +1564,12 @@ class Iflytek(Tse):
             # cipher_query_text = base64.b64encode(query_text.encode()).decode()
             cipher_query_text = query_text
             form_data = {'from': from_language, 'to': to_language, 'text': cipher_query_text}
+
+            # TODO: sdf
+            print(cookie_dict)
+            print(self.language_map)
+            print(form_data)
+
             r = ss.post(self.api_url, headers=self.api_headers, data=form_data, timeout=timeout, proxies=proxies)
             r.raise_for_status()
             data = r.json()
@@ -1817,6 +1825,180 @@ class TranslateCom(Tse):
         return data if is_detail_result else data['translated_text'] # translation_source is microsoft, wtf!
 
 
+class Utibet(Tse):
+    def __init__(self):
+        super().__init__()
+        self.host_url = 'http://mt.utibet.edu.cn/mt'  # must http
+        self.api_url = self.host_url
+        self.host_headers = self.get_headers(self.host_url, if_api=False)
+        self.api_headers = self.get_headers(self.host_url, if_api=True, if_json_for_api=False)
+        self.language_map = {'ti': ['zh'], 'zh': ['ti']}
+        self.query_count = 0
+        self.output_zh = 'zh'
+
+    def parse_result(self, host_html):
+        et = lxml.etree.HTML(host_html)
+        return et.xpath('//*[@name="tgt"]/text()')[0]
+
+    def utibet_api(self, query_text:str, from_language:str='auto', to_language:str='zh', **kwargs) -> Union[str]:
+        """
+        http://mt.utibet.edu.cn/mt
+        :param query_text: str, must.
+        :param from_language: str, default 'auto', equals to 'tibet'.
+        :param to_language: str, default 'zh'.
+        :param **kwargs:
+                :param if_ignore_limit_of_length: boolean, default False.
+                :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
+                :param proxies: dict, default None.
+                :param sleep_seconds: float, default `random.random()`.
+        :return: str or dict
+        """
+        is_detail_result = kwargs.get('is_detail_result', False)
+        timeout = kwargs.get('timeout', None)
+        proxies = kwargs.get('proxies', None)
+        sleep_seconds = kwargs.get('sleep_seconds', random.random())
+        if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        if from_language == 'auto':
+            warnings.warn('Unsupported [from_language=auto] with [utibet]! Please specify it.')
+            from_language = 'ti'
+
+        with requests.Session() as ss:
+            _ = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+            from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
+            form_data = {
+                'src': query_text,
+                'tgt': query_text if from_language == 'ti' else '',
+                'lang': 'tc' if from_language == 'ti' else 'ct',
+            }
+            form_data = urllib.parse.urlencode(form_data)
+            r = ss.post(self.api_url, headers=self.api_headers, data=form_data, timeout=timeout, proxies=proxies)
+            r.raise_for_status()
+            data_html = r.text
+
+        time.sleep(sleep_seconds)
+        self.query_count += 1
+        return data_html if is_detail_result else self.parse_result(data_html)
+
+
+class Papago(Tse):
+    def __init__(self):
+        super().__init__()
+        self.host_url = 'https://papago.naver.com'
+        self.api_url = 'https://papago.naver.com/apis/n2mt/translate'  # nsmt
+        self.web_api_url = 'https://papago.naver.net/website'
+        self.lang_detect_url = 'https://papago.naver.com/apis/langs/dect'
+        self.language_url = None
+        self.language_url_pattern = '/home.(.*?).chunk.js'
+        self.old_language_url = 'https://papago.naver.com/home.abcde5dfcc3f3d4bcd43.chunk.js'
+        self.host_headers = self.get_headers(self.host_url, if_api=False)
+        self.api_headers = self.get_headers(self.host_url, if_api=True, if_json_for_api=False)
+        self.language_map = None
+        self.device_id = uuid.uuid4().__str__()
+        self.auth_key = 'v1.6.7_cc60b67557'
+        self.query_count = 0
+        self.output_zh = 'zh-CN'
+
+    def get_language_map(self, host_html, ss, headers, timeout, proxies):
+        try:
+            if not self.language_url:
+                url_path = re.compile(self.language_url_pattern).search(host_html).group(0)
+                self.language_url = ''.join([self.host_url, url_path])
+            r = ss.get(self.language_url, headers=headers, timeout=timeout, proxies=proxies)
+            r.raise_for_status()
+        except:
+            r = ss.get(self.old_language_url, headers=headers, timeout=timeout, proxies=proxies)
+            r.raise_for_status()
+
+        if not self.language_url:
+            self.language_url = self.old_language_url
+
+        js_html = r.text
+        lang_str = re.compile('be={(.*?)}').search(js_html).group()[3:]
+        lang_str = re.compile('oe.a.(\w)+').sub('"desc"', lang_str).lower()
+        lang_str = lang_str.replace('zh-cn', 'zh-CN').replace('zh-tw', 'zh-TW')
+        lang_list = list(execjs.eval(lang_str).keys())
+        lang_list = sorted(list(filter(lambda x: x not in ('all', 'auto'), lang_list)))
+        return {}.fromkeys(lang_list, lang_list)
+
+    def get_auth(self, url, auth_key, device_id, time_stamp):
+        '''Authorization: "PPG " + t + ":" + p.a.HmacMD5(t + "\n" + e.split("?")[0] + "\n" + n, "v1.6.7_cc60b67557").toString(p.a.enc.Base64)'''
+        auth = hmac.new(key=auth_key.encode(), msg=f'{device_id}\n{url}\n{time_stamp}'.encode(), digestmod='md5').digest()
+        return f'PPG {device_id}:{base64.b64encode(auth).decode()}'
+
+    def trans_web(self, from_language, to_language, web_link, ss, headers, proxies, timeout):
+        params = {'url': web_link, 'target': to_language, 'source': from_language, 'locale': 'en'}
+        return ss.get(self.web_api_url, params=params, headers=headers, proxies=proxies, timeout=timeout).text
+
+    def papago_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
+        """
+        https://papago.naver.com
+        :param query_text: str, must.
+        :param from_language: str, default 'auto'.
+        :param to_language: str, default 'en'.
+        :param **kwargs:
+                :param if_translate_web_link: boolean, default False. eg, meanwhile query_text='https://www.naver.com'.
+                :param if_ignore_limit_of_length: boolean, default False.
+                :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
+                :param proxies: dict, default None.
+                :param sleep_seconds: float, default `random.random()`.
+        :return: str or dict
+        """
+        if_translate_web_link = kwargs.get('if_translate_web_link', False)
+        is_detail_result = kwargs.get('is_detail_result', False)
+        timeout = kwargs.get('timeout', None)
+        proxies = kwargs.get('proxies', None)
+        sleep_seconds = kwargs.get('sleep_seconds', random.random())
+        if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        delete_temp_language_map_label = 0
+
+        with requests.Session() as ss:
+            host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
+            if not self.language_map:
+                self.language_map = self.get_language_map(host_html, ss, self.host_headers, timeout, proxies)
+            if not self.language_map:
+                delete_temp_language_map_label += 1
+                self.language_map = self.make_temp_language_map(from_language, to_language)
+            from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
+
+            if if_translate_web_link:
+                return self.trans_web(from_language, to_language, query_text, ss, self.host_headers, proxies, timeout)
+
+            detect_time = str(int(time.time() * 1000))
+            detect_auth = self.get_auth(self.lang_detect_url, self.auth_key, self.device_id, detect_time)
+            detect_add_headers = {'device-type': 'pc', 'timestamp': detect_time, 'authorization': detect_auth}
+            detect_headers = {**self.api_headers, **detect_add_headers}
+
+            if from_language == 'auto':
+                detect_form = urllib.parse.urlencode({'query': query_text})
+                r_detect = ss.post(self.lang_detect_url, headers=detect_headers, data=detect_form, timeout=timeout, proxies=proxies)
+                from_language = r_detect.json()['langCode']
+
+            trans_time = str(int(time.time() * 1000))
+            trans_auth = self.get_auth(self.api_url, self.auth_key, self.device_id, trans_time)
+            trans_update_headers = {'x-apigw-partnerid': 'papago', 'timestamp': trans_time, 'authorization': trans_auth}
+            detect_headers.update(trans_update_headers)
+            trans_headers = detect_headers
+
+            form_data = {
+                'deviceId': self.device_id,
+                'text': query_text, 'source': from_language, 'target': to_language, 'locale': 'en',
+                'dict': 'true', 'dictDisplay': 30, 'honorific': 'false', 'instant': 'false', 'paging': 'false',
+            }
+            form_data = urllib.parse.urlencode(form_data)
+            r = ss.post(self.api_url, headers=trans_headers, data=form_data, timeout=timeout, proxies=proxies)
+            r.raise_for_status()
+            data = r.json()
+
+        if delete_temp_language_map_label != 0:
+            self.language_map = None
+        time.sleep(sleep_seconds)
+        self.query_count += 1
+        return data if is_detail_result else data['translatedText']
+
 
 REQUEST_SERVER_REGION_INFO = TranslatorSeverRegion().request_server_region_info
 
@@ -1841,6 +2023,8 @@ _iflytek = Iflytek()
 iflytek = _iflytek.iflytek_api
 _itranslate = Itranslate()
 itranslate = _itranslate.itranslate_api
+_papago = Papago()
+papago = _papago.papago_api
 _reverso = Reverso()
 reverso = _reverso.reverso_api
 _sogou = Sogou()
@@ -1849,6 +2033,8 @@ _tencent = Tencent()
 tencent = _tencent.tencent_api
 _translateCom = TranslateCom()
 translateCom = _translateCom.translateCom_api
+_utibet = Utibet()
+utibet = _utibet.utibet_api
 _yandex = Yandex()
 yandex = _yandex.yandex_api
 _youdao = Youdao()
