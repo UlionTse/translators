@@ -1891,7 +1891,6 @@ class Papago(Tse):
         self.lang_detect_url = 'https://papago.naver.com/apis/langs/dect'
         self.language_url = None
         self.language_url_pattern = '/home.(.*?).chunk.js'
-        self.old_language_url = 'https://papago.naver.com/home.abcde5dfcc3f3d4bcd43.chunk.js'
         self.host_headers = self.get_headers(self.host_url, if_api=False)
         self.api_headers = self.get_headers(self.host_url, if_api=True, if_json_for_api=False)
         self.language_map = None
@@ -1908,14 +1907,11 @@ class Papago(Tse):
             r = ss.get(self.language_url, headers=headers, timeout=timeout, proxies=proxies)
             r.raise_for_status()
         except:
-            r = ss.get(self.old_language_url, headers=headers, timeout=timeout, proxies=proxies)
-            r.raise_for_status()
-
-        if not self.language_url:
-            self.language_url = self.old_language_url
+            lang_list = ['de', 'en', 'es', 'fr', 'hi', 'id', 'it', 'ja', 'ko', 'pt', 'ru', 'th', 'vi', 'zh-CN', 'zh-TW']
+            return {}.fromkeys(lang_list, lang_list)
 
         js_html = r.text
-        lang_str = re.compile('be={(.*?)}').search(js_html).group()[3:]
+        lang_str = re.compile('={ALL:(.*?)}').search(js_html).group()[1:]
         lang_str = re.compile('oe.a.(\w)+').sub('"desc"', lang_str).lower()
         lang_str = lang_str.replace('zh-cn', 'zh-CN').replace('zh-tw', 'zh-TW')
         lang_list = list(execjs.eval(lang_str).keys())
