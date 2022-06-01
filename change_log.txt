@@ -242,3 +242,8 @@ update readme.md
 add papago().
 add utibet().
 pause iflytek() and wait for the fix.
+
+5.2.2
+fix multiprocessing.pool.close() of translate_html(). #67
+recover `query_text`='', return ''.
+add and fix input_limit.

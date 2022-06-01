@@ -129,8 +129,6 @@ class Tse:
         if not isinstance(query_text, str):
             raise TranslatorError('query_text is not string type.')
         query_text = query_text.strip()
-        if not query_text:
-            return ''
         length = len(query_text)
         if length >= limit_of_length and not if_ignore_limit_of_length:
             raise TranslatorError('The length of the text to be translated exceeds the limit.')
@@ -295,6 +293,8 @@ class GoogleV1(Tse):
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
         query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        if not query_text:
+            return ''
 
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -331,6 +331,7 @@ class GoogleV2(Tse):
         self.rpcid = 'MkEWBc'
         self.query_count = 0
         self.output_zh = 'zh-CN'
+        self.input_limit = 5000
 
     def get_rpc(self, query_text, from_language, to_language):
         param = json.dumps([[query_text, from_language, to_language, True], [1]])
@@ -389,8 +390,10 @@ class GoogleV2(Tse):
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
-        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
         delete_temp_language_map_label = 0
+        if not query_text:
+            return ''
 
         with requests.Session() as ss:
             r = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
@@ -443,6 +446,7 @@ class Baidu(Tse):
         self.language_map = None
         self.query_count = 0
         self.output_zh = 'zh'
+        self.input_limit = 5000
 
     def get_sign_html(self, ss, host_html, timeout, proxies):
         try:
@@ -505,7 +509,9 @@ class Baidu(Tse):
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
-        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
+        if not query_text:
+            return ''
     
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -554,6 +560,7 @@ class Youdao(Tse):
         self.language_map = None
         self.query_count = 0
         self.output_zh = 'zh-CHS'
+        self.input_limit = 5000
     
     def get_language_map(self, host_html):
         et = lxml.etree.HTML(host_html)
@@ -620,7 +627,9 @@ class Youdao(Tse):
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
-        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
+        if not query_text:
+            return ''
 
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -656,6 +665,7 @@ class Tencent(Tse):
         self.qtv_qtk = None
         self.query_count = 0
         self.output_zh = 'zh'
+        self.input_limit = 2000
  
     def get_language_map(self, ss, language_url, timeout, proxies):
         r = ss.get(language_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
@@ -688,7 +698,9 @@ class Tencent(Tse):
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
-        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
+        if not query_text:
+            return ''
 
         with requests.Session() as ss:
             _ = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -726,6 +738,7 @@ class Alibaba(Tse):
         self.language_map = None
         self.query_count = 0
         self.output_zh = 'zh'
+        self.input_limit = 5000
     
     def get_dmtrack_pageid(self, host_response):
         try:
@@ -783,7 +796,9 @@ class Alibaba(Tse):
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
-        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
+        if not query_text:
+            return ''
         
         with requests.Session() as ss:
             host_response = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
@@ -825,6 +840,7 @@ class Bing(Tse):
         self.query_count = 0
         self.output_auto = 'auto-detect'
         self.output_zh = 'zh-Hans'
+        self.input_limit = 1000
     
     def get_host_info(self, host_html):
         et = lxml.etree.HTML(host_html)
@@ -867,7 +883,9 @@ class Bing(Tse):
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
-        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
+        if not query_text:
+            return ''
     
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -911,6 +929,7 @@ class Sogou(Tse):
         self.form_data = None
         self.query_count = 0
         self.output_zh = 'zh-CHS'
+        self.input_limit = 5000
     
     def get_language_map(self, ss, get_language_url, timeout, proxies):
         lang_html = ss.get(get_language_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -959,7 +978,9 @@ class Sogou(Tse):
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
-        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
+        if not query_text:
+            return ''
         
         with requests.Session() as ss:
             _ = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -1001,6 +1022,7 @@ class Caiyun(Tse):
         self.decrypt_dictionary = self.crypt(if_de=True)
         self.query_count = 0
         self.output_zh = 'zh'
+        self.input_limit = 5000
 
     def get_language_map(self, ss, timeout, proxies):
         js_html = ss.get(self.get_tk_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -1059,7 +1081,9 @@ class Caiyun(Tse):
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
-        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
+        if not query_text:
+            return ''
 
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -1118,6 +1142,7 @@ class Deepl(Tse):
         self.language_map = None
         self.query_count = 0
         self.output_zh = 'zh'
+        self.input_limit = 5000
 
     def get_language_map(self, host_html):
         lang_list = list(set(re.compile('translateIntoLang\.(\w+)":').findall(host_html)))
@@ -1199,8 +1224,10 @@ class Deepl(Tse):
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
-        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
         delete_temp_language_map_label = 0
+        if not query_text:
+            return ''
 
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -1252,6 +1279,7 @@ class Yandex(Tse):
         self.begin_timestamp = time.time()
         self.query_count = 0
         self.output_zh = 'zh'
+        self.input_limit = 10000  # ten thousand.
 
     def get_language_map(self, host_html):
         lang_str = re.compile(pattern='TRANSLATOR_LANGS: {(.*?)},').findall(host_html)[0]
@@ -1270,7 +1298,7 @@ class Yandex(Tse):
         return '.'.join([w[::-1] for w in sid_find.split('.')])
 
     def detect_language(self, ss, query_text, sid, timeout, proxies):
-        params = {'sid': sid, 'srv': 'tr-text', 'text': query_text, 'hint': 'en,ru', 'options': 1,}
+        params = {'sid': sid, 'srv': 'tr-text', 'text': query_text, 'hint': 'en,ru', 'options': 1}
         self.host_headers.update({'Host': self.api_host})
         r = ss.get(self.detect_language_url, params=params, headers=self.host_headers, timeout=timeout, proxies=proxies)
         r.raise_for_status()
@@ -1306,7 +1334,9 @@ class Yandex(Tse):
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
-        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=2000)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
+        if not query_text:
+            return ''
 
         with requests.Session() as ss:
             if not (self.language_map and self.sid and self.yu and time.time() - self.begin_timestamp < 1700):  # 1800
@@ -1358,6 +1388,8 @@ class Argos(Tse):
         self.language_map = None
         self.query_count = 0
         self.output_zh = 'zh'
+        self.input_limit = 5000  # unknown
+
 
     def get_language_map(self, lang_url, ss, headers, timeout, proxies):
         # et = lxml.etree.HTML(host_html)
@@ -1394,8 +1426,10 @@ class Argos(Tse):
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
-        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
         delete_temp_language_map_label = 0
+        if not query_text:
+            return ''
 
         with requests.Session() as ss:
             _ = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -1429,6 +1463,7 @@ class Iciba(Tse):
         self.language_map = None
         self.query_count = 0
         self.output_zh = 'zh'
+        self.input_limit = 3000
 
     def get_language_map(self, api_url, ss, headers, timeout, proxies):
         params = {'c': 'trans', 'm': 'getLanguage', 'q': 0, 'type': 'en', 'str': ''}
@@ -1455,8 +1490,10 @@ class Iciba(Tse):
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
-        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
         delete_temp_language_map_label = 0
+        if not query_text:
+            return ''
 
         with requests.Session() as ss:
             _ = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
@@ -1502,6 +1539,7 @@ class Iflytek(Tse):
         self.language_map = None
         self.query_count = 0
         self.output_zh = 'cn'
+        self.input_limit = 2000
 
     def get_language_map(self, host_html, ss, headers, timeout, proxies):
         try:
@@ -1541,8 +1579,11 @@ class Iflytek(Tse):
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
-        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
         delete_temp_language_map_label = 0
+        if not query_text:
+            return ''
+
         if from_language == 'auto':
             warnings.warn('Unsupported [from_language=auto] with [iflytek]! Please specify it.')
             from_language = self.output_zh
@@ -1564,11 +1605,6 @@ class Iflytek(Tse):
             # cipher_query_text = base64.b64encode(query_text.encode()).decode()
             cipher_query_text = query_text
             form_data = {'from': from_language, 'to': to_language, 'text': cipher_query_text}
-
-            # TODO: sdf
-            print(cookie_dict)
-            print(self.language_map)
-            print(form_data)
 
             r = ss.post(self.api_url, headers=self.api_headers, data=form_data, timeout=timeout, proxies=proxies)
             r.raise_for_status()
@@ -1593,6 +1629,7 @@ class Reverso(Tse):
         self.language_tran = None
         self.query_count = 0
         self.output_zh = 'zh' #'chi', because there are self.language_tran
+        self.input_limit = 2000
 
     def get_language_map(self, lang_url, ss, headers, timeout, proxies):
         lang_html = ss.get(lang_url, headers=headers, timeout=timeout, proxies=proxies).text
@@ -1622,8 +1659,11 @@ class Reverso(Tse):
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
-        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
         delete_temp_language_map_label = 0
+        if not query_text:
+            return ''
+
         if from_language == 'auto':
             warnings.warn('Unsupported [from_language=auto] with [reverso]! Please specify it.')
             from_language = self.output_zh
@@ -1677,6 +1717,7 @@ class Itranslate(Tse):
         self.api_key = None
         self.query_count = 0
         self.output_zh = 'zh-CN'
+        self.input_limit = 1000
 
     def get_language_map(self, lang_url, ss, headers, timeout, proxies):
         lang_html = ss.get(lang_url, headers=headers, timeout=timeout, proxies=proxies).text
@@ -1714,8 +1755,10 @@ class Itranslate(Tse):
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
-        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
         delete_temp_language_map_label = 0
+        if not query_text:
+            return ''
 
         with requests.Session() as ss:
             _ = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -1761,6 +1804,7 @@ class TranslateCom(Tse):
         self.tk = None
         self.query_count = 0
         self.output_zh = 'zh'
+        self.input_limit = 15000  # fifteen thousand letters left today.
 
     def get_language_map(self, lang_url, ss, headers, timeout, proxies):
         lang_origin_list = ss.get(lang_url, headers=headers, timeout=timeout, proxies=proxies).json()
@@ -1786,8 +1830,10 @@ class TranslateCom(Tse):
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
-        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
         delete_temp_language_map_label = 0
+        if not query_text:
+            return ''
 
         with requests.Session() as ss:
             r = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
@@ -1822,7 +1868,7 @@ class TranslateCom(Tse):
             self.language_map = None
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return data if is_detail_result else data['translated_text'] # translation_source is microsoft, wtf!
+        return data if is_detail_result else data['translated_text']  # translation_source is microsoft, wtf!
 
 
 class Utibet(Tse):
@@ -1835,6 +1881,7 @@ class Utibet(Tse):
         self.language_map = {'ti': ['zh'], 'zh': ['ti']}
         self.query_count = 0
         self.output_zh = 'zh'
+        self.input_limit = 5000  # unknown
 
     def parse_result(self, host_html):
         et = lxml.etree.HTML(host_html)
@@ -1859,7 +1906,10 @@ class Utibet(Tse):
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
-        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
+        if not query_text:
+            return ''
+
         if from_language == 'auto':
             warnings.warn('Unsupported [from_language=auto] with [utibet]! Please specify it.')
             from_language = 'ti'
@@ -1898,6 +1948,7 @@ class Papago(Tse):
         self.auth_key = 'v1.6.7_cc60b67557'
         self.query_count = 0
         self.output_zh = 'zh-CN'
+        self.input_limit = 5000
 
     def get_language_map(self, host_html, ss, headers, timeout, proxies):
         try:
@@ -1948,8 +1999,10 @@ class Papago(Tse):
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
-        query_text = self.check_query_text(query_text, if_ignore_limit_of_length)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
         delete_temp_language_map_label = 0
+        if not query_text:
+            return ''
 
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -2061,9 +2114,13 @@ def translate_html(html_text:str, to_language:str='en', translator:Callable='aut
     translator = bing if translator == 'auto' else translator
 
     pattern = re.compile(r"(?:^|(?<=>))([\s\S]*?)(?:(?=<)|$)") #TODO: <code></code> <div class="codetext notranslate">
-    sentence_list = set(pattern.findall(html_text))
-    _map_translate_func = lambda sentence: (sentence,translator(query_text=sentence, to_language=to_language, **kwargs))
-    result_list = pathos.multiprocessing.ProcessPool(n_jobs).map(_map_translate_func, sentence_list)
-    result_dict = {text: ts_text for text,ts_text in result_list}
+    sentence_list = list(set(pattern.findall(html_text)))
+    _map_translate_func = lambda sentence: (sentence, translator(query_text=sentence, to_language=to_language, **kwargs))
+
+    pool = pathos.multiprocessing.ProcessPool(n_jobs)
+    result_list = pool.map(_map_translate_func, sentence_list)
+    pool.close()
+
+    result_dict = {text: ts_text for text, ts_text in result_list}
     _get_result_func = lambda k: result_dict.get(k.group(1), '')
     return pattern.sub(repl=_get_result_func, string=html_text)
