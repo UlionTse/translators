@@ -2117,9 +2117,8 @@ def translate_html(html_text:str, to_language:str='en', translator:Callable='aut
     sentence_list = list(set(pattern.findall(html_text)))
     _map_translate_func = lambda sentence: (sentence, translator(query_text=sentence, to_language=to_language, **kwargs))
 
-    pool = pathos.multiprocessing.ProcessPool(n_jobs)
-    result_list = pool.map(_map_translate_func, sentence_list)
-    pool.close()
+    with pathos.multiprocessing.ProcessPool(n_jobs) as pool:
+        result_list = pool.map(_map_translate_func, sentence_list)
 
     result_dict = {text: ts_text for text, ts_text in result_list}
     _get_result_func = lambda k: result_dict.get(k.group(1), '')
