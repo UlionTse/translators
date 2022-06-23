@@ -55,7 +55,6 @@ import execjs
 import requests
 import loguru
 
-
 loguru.logger.remove()
 loguru.logger.add(sys.stdout, format='[{time:HH:mm:ss}] <lvl>{message}</lvl>', level='INFO')
 loguru.logger.opt(colors=True)
@@ -64,7 +63,7 @@ loguru.logger.opt(colors=True)
 class Tse:
     def __init__(self):
         self.author = 'Ulion.Tse'
-    
+
     @staticmethod
     def time_stat(func):
         @functools.wraps(func)
@@ -74,6 +73,7 @@ class Tse:
             t2 = time.time()
             loguru.logger.success('CostTime(fn: {}): {}s'.format(func.__name__, round((t2 - t1), 1)), style='braces')
             return r
+
         return _wrapper
 
     @staticmethod
@@ -106,7 +106,7 @@ class Tse:
         from_language = output_auto if from_language in auto_pool else from_language
         from_language = output_zh if output_zh and from_language in zh_pool else from_language
         to_language = output_zh if output_zh and to_language in zh_pool else to_language
-        
+
         if from_language != output_auto and from_language not in language_map:
             raise TranslatorError('Unsupported from_language[{}] in {}.'.format(from_language, sorted(language_map.keys())))
         elif to_language not in language_map:
@@ -134,9 +134,10 @@ class Tse:
             raise TranslatorError('The length of the text to be translated exceeds the limit.')
         else:
             if length >= limit_of_length:
-                warnings.warn(f'The translation ignored the excess[above {limit_of_length}]. Length of `query_text` is {length}.')
+                warnings.warn(
+                    f'The translation ignored the excess[above {limit_of_length}]. Length of `query_text` is {length}.')
                 warnings.warn('The translation result will be incomplete.')
-                return query_text[:limit_of_length-1]
+                return query_text[:limit_of_length - 1]
         return query_text
 
 
@@ -194,8 +195,8 @@ class GoogleV1(Tse):
         while c < size_b - 2:
             d = b[c + 2]
             d = ord(d[0]) - 87 if 'a' <= d else int(d)
-            d = (a % 2**32) >> d if '+' == b[c + 1] else a << d
-            a = a + d & (2**32-1) if '+' == b[c] else a ^ d
+            d = (a % 2 ** 32) >> d if '+' == b[c + 1] else a << d
+            a = a + d & (2 ** 32 - 1) if '+' == b[c] else a ^ d
             c += 3
         return a
 
@@ -203,12 +204,12 @@ class GoogleV1(Tse):
         ints = []
         for v in text:
             int_v = ord(v)
-            if int_v < 2**16:
+            if int_v < 2 ** 16:
                 ints.append(int_v)
             else:
                 # unicode, emoji
-                ints.append(int((int_v - 2**16) / 2**10 + 55296))
-                ints.append(int((int_v - 2**16) % 2**10 + 56320))
+                ints.append(int((int_v - 2 ** 16) / 2 ** 10 + 55296))
+                ints.append(int((int_v - 2 ** 16) % 2 ** 10 + 56320))
         return ints
 
     def acquire(self, text, tkk):
@@ -219,10 +220,10 @@ class GoogleV1(Tse):
 
         while g < size:
             l = ints[g]
-            if l < 2**7: # 128(ascii)
+            if l < 2 ** 7:  # 128(ascii)
                 e.append(l)
             else:
-                if l < 2**11: # 2048
+                if l < 2 ** 11:  # 2048
                     e.append(l >> 6 | 192)
                 else:
                     if (l & 64512) == 55296 and g + 1 < size and ints[g + 1] & 64512 == 56320:
@@ -232,7 +233,7 @@ class GoogleV1(Tse):
                         e.append(l >> 12 & 63 | 128)
                     else:
                         e.append(l >> 12 | 224)
-                    e.append(l >> 6 & 63 | 128) ##
+                    e.append(l >> 6 & 63 | 128)  ##
                 e.append(l & 63 | 128)
             g += 1
 
@@ -247,7 +248,7 @@ class GoogleV1(Tse):
         a = self._xr(a, '+-3^+b+-f')
         a ^= int(d[1]) if len(d) > 1 else 0
         if a < 0:
-            a = (a & (2**31-1)) + 2**31
+            a = (a & (2 ** 31 - 1)) + 2 ** 31
         a %= int(1E6)
         return '{}.{}'.format(a, a ^ b)
 
@@ -257,9 +258,9 @@ class GoogleV1(Tse):
             time.sleep(0.01)
 
         lang_list_str = re.compile("source_code_name:\[(.*?)\],").findall(host_html)[0]
-        lang_list_str = ('['+ lang_list_str + ']').replace('code','"code"').replace('name','"name"')
+        lang_list_str = ('[' + lang_list_str + ']').replace('code', '"code"').replace('name', '"name"')
         lang_list = [x['code'] for x in eval(lang_list_str) if x['code'] != 'auto']
-        return {}.fromkeys(lang_list,lang_list)
+        return {}.fromkeys(lang_list, lang_list)
 
     def get_tkk(self, host_html, ss, timeout, proxies):
         while 'tkk:' not in host_html:
@@ -268,7 +269,7 @@ class GoogleV1(Tse):
         return re.compile("tkk:'(.*?)'").findall(host_html)[0]
 
     # @Tse.time_stat
-    def google_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,list]:
+    def google_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, list]:
         """
         https://translate.google.com, https://translate.google.cn.
         :param query_text: str, must.
@@ -284,7 +285,7 @@ class GoogleV1(Tse):
         :return: str or list
         """
 
-        use_cn_condition = kwargs.get('if_use_cn_host', None) or self.request_server_region_info.get('countryCode')=='CN'
+        use_cn_condition = kwargs.get('if_use_cn_host', None) or self.request_server_region_info.get('countryCode') == 'CN'
         self.host_url = self.cn_host_url if use_cn_condition else self.en_host_url
         self.host_headers = self.get_headers(self.host_url, if_api=False)
         is_detail_result = kwargs.get('is_detail_result', False)
@@ -299,22 +300,23 @@ class GoogleV1(Tse):
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             if not self.language_map:
-                 self.language_map = self.get_language_map(host_html, ss, timeout, proxies)
-            from_language,to_language = self.check_language(from_language,to_language,self.language_map,output_zh=self.output_zh)
+                self.language_map = self.get_language_map(host_html, ss, timeout, proxies)
+            from_language, to_language = self.check_language(from_language, to_language, self.language_map,
+                                                             output_zh=self.output_zh)
 
             if not self.tkk:
                 self.tkk = self.get_tkk(host_html, ss, timeout, proxies)
 
             tk = self.acquire(query_text, self.tkk)
             self.api_url = (self.host_url + '/translate_a/single?client={0}&sl={1}&tl={2}&hl=zh-CN&dt=at&dt=bd&dt=ex'
-                + '&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&source=bh&ssel=0&tsel=0&kc=1&tk='
-                + str(tk) + '&q=' + urllib.parse.quote(query_text)).format('webapp', from_language,to_language)  # [t,webapp]
+                            + '&dt=ld&dt=md&dt=qca&dt=rw&dt=rm&dt=ss&dt=t&ie=UTF-8&oe=UTF-8&source=bh&ssel=0&tsel=0&kc=1&tk='
+                            + str(tk) + '&q=' + urllib.parse.quote(query_text)).format('webapp', from_language, to_language)  # [t,webapp]
             r = ss.get(self.api_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             r.raise_for_status()
             data = r.json()
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return data if is_detail_result else ''.join([item[0] for item in data[0] if isinstance(item[0],str)])
+        return data if is_detail_result else ''.join([item[0] for item in data[0] if isinstance(item[0], str)])
 
 
 class GoogleV2(Tse):
@@ -350,7 +352,7 @@ class GoogleV2(Tse):
         data = execjs.get().eval(data_str)
         return {'bl': data['cfb2h'], 'f.sid': data['FdrFJe']}
 
-    def get_consent_cookie(self, consent_html): # by mercuree. merged but not verify.
+    def get_consent_cookie(self, consent_html):  # by mercuree. merged but not verify.
         et = lxml.etree.HTML(consent_html)
         input_element = et.xpath('.//input[@type="hidden"][@name="v"]')
         cookie_value = input_element[0].attrib.get('value') if input_element else 'cb'
@@ -408,7 +410,8 @@ class GoogleV2(Tse):
             if not self.language_map:
                 delete_temp_language_map_label += 1
                 self.language_map = self.make_temp_language_map(from_language, to_language)
-            from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
+            from_language, to_language = self.check_language(from_language, to_language, self.language_map,
+                                                             output_zh=self.output_zh)
 
             rpc_data = self.get_rpc(query_text, from_language, to_language)
             rpc_data = urllib.parse.urlencode(rpc_data)
@@ -421,34 +424,34 @@ class GoogleV2(Tse):
             self.language_map = None
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return data if is_detail_result else ' '.join([x[0] for x in data[1][0][0][5]])
+        return data if is_detail_result else ' '.join([x[0] for x in (data[1][0][0][5] or data[1][0])])
 
 
 class Baidu(Tse):
     def __init__(self):
         super().__init__()
         self.host_url = 'https://fanyi.baidu.com'
-        self.api_url = 'https://fanyi.baidu.com/v2transapi'
+        self.api1_url = 'https://fanyi.baidu.com/transapi'
+        self.api2_url = 'https://fanyi.baidu.com/v2transapi'
         self.langdetect_url = 'https://fanyi.baidu.com/langdetect'
         self.get_sign_old_url = 'https://fanyi-cdn.cdn.bcebos.com/static/translation/pkg/index_bd36cef.js'
         self.get_sign_url = None
         self.get_sign_pattern = 'https://fanyi-cdn.cdn.bcebos.com/static/translation/pkg/index_(.*?).js'
         self.host_headers = self.get_headers(self.host_url, if_api=False)
         self.api_headers = self.get_headers(self.host_url, if_api=True)
-        self.bdtk_pool = [
-            {"baidu_id": "F215FBBB82CAF048A24B86785E193475:FG=1", "token": "4e6d918b00ada40933d3e63fd2f2c009"},
-            {"baidu_id": "97AD065BAC1491494A8D48510DABE382:FG=1", "token": "9d893922f8ea987de2f2adc81a81fbe7"},
-            {"baidu_id": "A6D0C58DDED7B75B744EDE8A26054BF3:FG=1", "token": "4a1edb47b0528aad49d622db98c7c750"},
-        ]
-        self.bdtk = random.choice(self.bdtk_pool)
-        self.new_bdtk = None
-        self.host_info = None
         self.language_map = None
+        self.token = None
+        self.sign = None
         self.query_count = 0
         self.output_zh = 'zh'
         self.input_limit = 5000
 
-    def get_sign_html(self, ss, host_html, timeout, proxies):
+    def get_language_map(self, host_html):
+        lang_str = re.compile('langMap: {(.*?)}').search(host_html.replace('\n', '').replace('  ', '')).group()[8:]
+        return execjs.eval(lang_str)
+
+    def get_sign(self, query_text, host_html, ss, timeout, proxies):
+        gtk = re.compile("window.gtk = '(.*?)';").findall(host_html)[0]
         try:
             if not self.get_sign_url:
                 self.get_sign_url = re.compile(self.get_sign_pattern).search(host_html).group(0)
@@ -457,35 +460,63 @@ class Baidu(Tse):
         except:
             r = ss.get(self.get_sign_old_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             r.raise_for_status()
-        self.get_sign_url = self.get_sign_old_url
-        return r.text
+        sign_html = r.text
 
-    def get_sign(self, sign_html, ts_text, gtk):
         begin_label = 'define("translation:widget/translate/input/pGrab",function(r,o,t){'
         end_label = 'var i=null;t.exports=e});'
+
         sign_js = sign_html[sign_html.find(begin_label) + len(begin_label):sign_html.find(end_label)]
         sign_js = sign_js.replace('function e(r)', 'function e(r,i)')
-        return execjs.compile(sign_js).call('e', ts_text, gtk)
+        return execjs.compile(sign_js).call('e', query_text, gtk)
 
-    def get_host_info(self, host_html, sign_html, ts_text):
-        gtk = re.compile("window.gtk = '(.*?)';").findall(host_html)[0]
-        sign = self.get_sign(sign_html, ts_text, gtk)
-    
-        et = lxml.etree.HTML(host_html)
-        js_txt = ''
-        for i in range(6):
-            js_re_list = et.xpath(f"/html/body/script[{i}]/text()")
-            if js_re_list:
-                if 'langMap' in js_re_list[0]:
-                    js_txt = js_re_list[0][20:-111]
-                    break
+    def get_tk(self, host_html):
+        return re.compile("token: '(.*?)',").findall(host_html)[0]
 
-        js_data = execjs.get().eval(js_txt.replace("localStorage.getItem('header')", "'1'"))
-        js_data.update({'gtk': gtk, 'sign': sign})
-        return js_data
+    def baidu_api_v1(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
+        """
+        https://fanyi.baidu.com
+        :param query_text: str, must.  # attention emoji
+        :param from_language: str, default 'auto'.
+        :param to_language: str, default 'en'.
+        :param **kwargs:
+                :param if_ignore_limit_of_length: boolean, default False.
+                :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
+                :param proxies: dict, default None.
+                :param sleep_seconds: float, default `random.random()`.
+        :return: str or dict
+        """
+        is_detail_result = kwargs.get('is_detail_result', False)
+        timeout = kwargs.get('timeout', None)
+        proxies = kwargs.get('proxies', None)
+        sleep_seconds = kwargs.get('sleep_seconds', random.random())
+        if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
+        if not query_text:
+            return ''
+
+        with requests.Session() as ss:
+            _ = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)  # must twice, send cookies.
+            host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
+            if not self.language_map:
+                self.language_map = self.get_language_map(host_html)
+            from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
+
+            form_data = {
+                'from': from_language,
+                'to': to_language,
+                'query': query_text,
+                'source': 'txt',
+            }
+            r = ss.post(self.api1_url, data=form_data, headers=self.api_headers, timeout=timeout, proxies=proxies)
+            r.raise_for_status()
+            data = r.json()
+        time.sleep(sleep_seconds)
+        self.query_count += 1
+        return data if is_detail_result else data['data'][0]['dst']
 
     # @Tse.time_stat
-    def baidu_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
+    def baidu_api_v2(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
         https://fanyi.baidu.com
         :param query_text: str, must.  # attention emoji
@@ -512,39 +543,66 @@ class Baidu(Tse):
         query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
         if not query_text:
             return ''
-    
+
         with requests.Session() as ss:
+            _ = ss.get(self.host_url, headers=self.host_headers, timeout=timeout,
+                       proxies=proxies)  # must twice, send cookies.
             host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
-            sign_html = self.get_sign_html(ss, host_html, timeout, proxies)
+            if not self.language_map:
+                self.language_map = self.get_language_map(host_html)
+            if not self.token:
+                self.token = self.get_tk(host_html)
+            self.sign = self.get_sign(query_text, host_html, ss, timeout, proxies)
 
-            self.host_info = self.get_host_info(host_html, sign_html, query_text)
-            self.new_bdtk = {"baidu_id": ss.cookies.get("BAIDUID"), "token": self.host_info.get("token")}
-            self.language_map = self.host_info['langMap']
-            from_language,to_language = self.check_language(from_language,to_language,self.language_map,output_zh=self.output_zh)
-            self.api_headers.update({"cookie": "BAIDUID={};".format(self.bdtk['baidu_id'])})
-
+            from_language, to_language = self.check_language(from_language, to_language, self.language_map,
+                                                             output_zh=self.output_zh)
             if from_language == 'auto':
-                res = ss.post(self.langdetect_url, headers=self.api_headers, data={"query": query_text}, timeout=timeout, proxies=proxies)
+                res = ss.post(self.langdetect_url, headers=self.api_headers, data={"query": query_text},
+                              timeout=timeout, proxies=proxies)
                 from_language = res.json()['lan']
-            
-            # param_data = {"from": from_language, "to": to_language}
+
+            params = {"from": from_language, "to": to_language}
             form_data = {
                 "from": from_language,
                 "to": to_language,
                 "query": query_text,  # from urllib.parse import quote_plus
                 "transtype": "translang",  # ["translang","realtime"]
                 "simple_means_flag": "3",
-                "sign": self.host_info.get('sign'),
-                "token": self.bdtk['token'],  # self.host_info.get('token'),
+                "sign": self.sign,
+                "token": self.token,
                 "domain": use_domain,
             }
             form_data = urllib.parse.urlencode(form_data).encode('utf-8')
-            r = ss.post(self.api_url, headers=self.api_headers, data=form_data, timeout=timeout, proxies=proxies)
+            r = ss.post(self.api2_url, params=params, data=form_data, headers=self.api_headers, timeout=timeout, proxies=proxies)
             r.raise_for_status()
             data = r.json()
         time.sleep(sleep_seconds)
         self.query_count += 1
         return data if is_detail_result else '\n'.join([x['dst'] for x in data['trans_result']['data']])
+
+    # @Tse.time_stat
+    def baidu_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
+        """
+        https://fanyi.baidu.com
+        :param query_text: str, must.  # attention emoji
+        :param from_language: str, default 'auto'.
+        :param to_language: str, default 'en'.
+        :param **kwargs:
+                :param version: str, default 'v2'. Choose from ('v1', 'v2').
+                :param professional_field: str, default 'common'. Choose from ('common', 'medicine', 'electronics', 'mechanics')
+                :param if_ignore_limit_of_length: boolean, default False.
+                :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
+                :param proxies: dict, default None.
+                :param sleep_seconds: float, default `random.random()`.
+        :return: str or dict
+        """
+        use_version = kwargs.get('version', 'v2')
+        if use_version not in ('v1', 'v2'):
+            raise TranslatorError('Your parameter [version] is wrong.')
+        if use_version == 'v1':
+            return self.baidu_api_v1(query_text, from_language, to_language, **kwargs)
+        return self.baidu_api_v2(query_text, from_language, to_language, **kwargs)
 
 
 class Youdao(Tse):
@@ -561,7 +619,7 @@ class Youdao(Tse):
         self.query_count = 0
         self.output_zh = 'zh-CHS'
         self.input_limit = 5000
-    
+
     def get_language_map(self, host_html):
         et = lxml.etree.HTML(host_html)
         lang_list = et.xpath('//*[@id="languageSelect"]/li/@data-value')
@@ -580,11 +638,11 @@ class Youdao(Tse):
         except:
             r = ss.get(self.get_old_sign_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             r.raise_for_status()
-        sign = re.compile('n.md5\("fanyideskweb"\+e\+i\+"(.*?)"\)').findall(r.text)
-        return sign[0] if sign and sign != [''] else "Tbh5E8=q6U3EXe+&L[4c@" #v1.0.31
+        sign = re.compile('md5\("fanyideskweb" \+ e \+ i \+ "(.*?)"\)').findall(r.text)
+        return sign[0] if sign and sign != [''] else "Ygy_4c=r#e#4EX^NUGUc5"  # v1.1.10
 
     def get_form(self, query_text, from_language, to_language, sign_key):
-        ts = str(int(time.time()*1000))
+        ts = str(int(time.time() * 1000))
         salt = str(ts) + str(random.randrange(0, 10))
         sign_text = ''.join(['fanyideskweb', query_text, salt, sign_key])
         sign = hashlib.md5(sign_text.encode()).hexdigest()
@@ -593,22 +651,23 @@ class Youdao(Tse):
             'i': query_text,
             'from': from_language,
             'to': to_language,
-            'lts': ts,                  # r = "" + (new Date).getTime()
-            'salt': salt,               # i = r + parseInt(10 * Math.random(), 10)
-            'sign': sign,               # n.md5("fanyideskweb" + e + i + "n%A-rKaT5fb[Gy?;N5@Tj"),e=text
-            'bv': bv,                   # n.md5(navigator.appVersion)
+            'lts': ts,  # r = "" + (new Date).getTime()
+            'salt': salt,  # i = r + parseInt(10 * Math.random(), 10)
+            'sign': sign,  # n.md5("fanyideskweb" + e + i + "n%A-rKaT5fb[Gy?;N5@Tj"),e=text
+            'bv': bv,  # n.md5(navigator.appVersion)
             'smartresult': 'dict',
             'client': 'fanyideskweb',
             'doctype': 'json',
             'version': '2.1',
             'keyfrom': 'fanyi.web',
-            'action': 'FY_BY_DEFAULT',  # not time.["FY_BY_REALTlME","FY_BY_DEFAULT"]
+            'action': 'FY_BY_REALTlME',
+            # not time.["FY_BY_REALTlME", "FY_BY_DEFAULT", "FY_BY_CLICKBUTTION", "lan-select"]
             # 'typoResult': 'false'
         }
         return form
 
     # @Tse.time_stat
-    def youdao_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
+    def youdao_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
         https://fanyi.youdao.com
         :param query_text: str, must.
@@ -634,10 +693,9 @@ class Youdao(Tse):
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             if not self.language_map:
-                 self.language_map = self.get_language_map(host_html)
+                self.language_map = self.get_language_map(host_html)
             sign_key = self.get_sign_key(ss, host_html, timeout, proxies)
-            from_language, to_language = self.check_language(from_language, to_language, self.language_map,output_zh=self.output_zh)
-            from_language, to_language = ('auto', 'auto') if from_language == 'auto' else (from_language, to_language)
+            from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
 
             form = self.get_form(query_text, from_language, to_language, sign_key)
             r = ss.post(self.api_url, data=form, headers=self.api_headers, timeout=timeout, proxies=proxies)
@@ -645,7 +703,7 @@ class Youdao(Tse):
             data = r.json()
             if data['errorCode'] == 40:
                 raise TranslatorError('Invalid translation of `from_language[auto]`, '
-                                'please specify parameters of `from_language` or `to_language`.')
+                                      'please specify parameters of `from_language` or `to_language`.')
         time.sleep(sleep_seconds)
         self.query_count += 1
         return data if is_detail_result else ' '.join(item['tgt'] if item['tgt'] else '\n' for result in data['translateResult'] for item in result)
@@ -666,7 +724,7 @@ class Tencent(Tse):
         self.query_count = 0
         self.output_zh = 'zh'
         self.input_limit = 2000
- 
+
     def get_language_map(self, ss, language_url, timeout, proxies):
         r = ss.get(language_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
         r.raise_for_status()
@@ -679,7 +737,7 @@ class Tencent(Tse):
         return requests.post(self.get_qt_url, headers=self.qt_headers, json=self.qtv_qtk, timeout=timeout, proxies=proxies).json()
 
     # @Tse.time_stat
-    def tencent_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
+    def tencent_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
         https://fanyi.qq.com
         :param query_text: str, must.
@@ -716,14 +774,14 @@ class Tencent(Tse):
                 'qtk': self.qtv_qtk.get('qtk', ''),
                 'ticket': '',
                 'randstr': '',
-                'sessionUuid': 'translate_uuid' + str(int(time.time()*1000)),
+                'sessionUuid': 'translate_uuid' + str(int(time.time() * 1000)),
             }
             r = ss.post(self.api_url, headers=self.api_headers, data=form_data, timeout=timeout, proxies=proxies)
             r.raise_for_status()
             data = r.json()
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return data if is_detail_result else ''.join(item['targetText'] for item in data['translate']['records']) # auto whitespace
+        return data if is_detail_result else ''.join(item['targetText'] for item in data['translate']['records'])  # auto whitespace
 
 
 class Alibaba(Tse):
@@ -739,7 +797,7 @@ class Alibaba(Tse):
         self.query_count = 0
         self.output_zh = 'zh'
         self.input_limit = 5000
-    
+
     def get_dmtrack_pageid(self, host_response):
         try:
             e = re.compile("dmtrack_pageid='(\w+)';").findall(host_response.text)[0]
@@ -752,7 +810,7 @@ class Alibaba(Tse):
             n, r = e[0:16], e[16:26]
             i = hex(int(r, 10))[2:] if re.compile('^[\-+]?[0-9]+$').match(r) else r
             e = n + i
-    
+
         s = int(time.time() * 1000)
         o = ''.join([e, hex(s)[2:]])
         for _ in range(1, 10):
@@ -773,7 +831,7 @@ class Alibaba(Tse):
             return _get_lang(self.get_language_old_url, params=params)
 
     # @Tse.time_stat
-    def alibaba_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
+    def alibaba_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
         https://translate.alibaba.com
         :param query_text: str, must.
@@ -799,12 +857,12 @@ class Alibaba(Tse):
         query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
         if not query_text:
             return ''
-        
+
         with requests.Session() as ss:
             host_response = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             dmtrack_pageid = self.get_dmtrack_pageid(host_response)
             if not self.language_map:
-                 self.language_map = self.get_language_map(ss, use_domain, dmtrack_pageid, timeout, proxies)
+                self.language_map = self.get_language_map(ss, use_domain, dmtrack_pageid, timeout, proxies)
             from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
             form_data = {
                 "srcLanguage": from_language,
@@ -814,7 +872,7 @@ class Alibaba(Tse):
                 "source": "",
                 "bizType": use_domain,
             }
-            params = {"dmtrack_pageid":dmtrack_pageid}
+            params = {"dmtrack_pageid": dmtrack_pageid}
             r = ss.post(self.api_url, headers=self.api_headers, params=params, data=form_data, timeout=timeout, proxies=proxies)
             r.raise_for_status()
             data = r.json()
@@ -841,7 +899,7 @@ class Bing(Tse):
         self.output_auto = 'auto-detect'
         self.output_zh = 'zh-Hans'
         self.input_limit = 1000
-    
+
     def get_host_info(self, host_html):
         et = lxml.etree.HTML(host_html)
         lang_list = et.xpath('//*[@id="tta_srcsl"]/option/@value') or et.xpath('//*[@id="t_srcAllLang"]/option/@value')
@@ -856,9 +914,8 @@ class Bing(Tse):
         result = execjs.get().eval(result_str)
         return {'key': result[0], 'token': result[1]}
 
-
     # @Tse.time_stat
-    def bing_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,list]:
+    def bing_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, list]:
         """
         https://bing.com/Translator, https://cn.bing.com/Translator.
         :param query_text: str, must.
@@ -886,7 +943,7 @@ class Bing(Tse):
         query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
         if not query_text:
             return ''
-    
+
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             self.host_info = self.get_host_info(host_html)
@@ -894,9 +951,9 @@ class Bing(Tse):
             if not self.language_map:
                 self.language_map = self.host_info.get('language_map')
             from_language, to_language = self.check_language(from_language, to_language, self.language_map,
-                                                             output_zh=self.output_zh,output_auto=self.output_auto)
+                                                             output_zh=self.output_zh, output_auto=self.output_auto)
             # params = {'isVertical': '1', '': '', 'IG': self.host_info['ig'], 'IID': self.host_info['iid']}
-            self.api_url = self.api_url + '?isVertical=1&&IG={}&IID={}'.format(self.host_info['ig'],self.host_info['iid'])
+            self.api_url = self.api_url + '?isVertical=1&&IG={}&IID={}'.format(self.host_info['ig'], self.host_info['iid'])
 
             if not self.tk or time.time() - self.first_time > 3500:  # 3600
                 self.tk = self.get_tk(host_html)
@@ -930,14 +987,14 @@ class Sogou(Tse):
         self.query_count = 0
         self.output_zh = 'zh-CHS'
         self.input_limit = 5000
-    
+
     def get_language_map(self, ss, get_language_url, timeout, proxies):
         lang_html = ss.get(get_language_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
         lang_list_str = re.compile('"ALL":\[(.*?)\]').findall(lang_html)[0]
         lang_list = execjs.get().eval('[' + lang_list_str + ']')
         lang_list = [x['lang'] for x in lang_list]
-        return {}.fromkeys(lang_list,lang_list)
-    
+        return {}.fromkeys(lang_list, lang_list)
+
     def get_form(self, query_text, from_language, to_language):
         uuid = ''
         for i in range(8):
@@ -957,9 +1014,9 @@ class Sogou(Tse):
             "needQc": "1",
         }
         return form
-    
+
     # @Tse.time_stat
-    def sogou_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
+    def sogou_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
         https://fanyi.sogou.com
         :param query_text: str, must.
@@ -981,7 +1038,7 @@ class Sogou(Tse):
         query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
         if not query_text:
             return ''
-        
+
         with requests.Session() as ss:
             _ = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             # if not self.get_language_url:
@@ -1057,7 +1114,7 @@ class Caiyun(Tse):
         return base64.b64decode(_ciphertext).decode()
 
     # @Tse.time_stat
-    def caiyun_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str, dict]:
+    def caiyun_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
         https://fanyi.caiyunapp.com
         :param query_text: str, must.
@@ -1172,24 +1229,24 @@ class Deepl(Tse):
         params = {'method': 'LMT_handle_jobs'}
         data = {
             'id': self.request_id + 1,
-            'jsonrpc':' 2.0',
+            'jsonrpc': ' 2.0',
             'params': {
-                'priority': 1, #-1 if 'quality': 'fast'
+                'priority': 1,  # -1 if 'quality': 'fast'
                 'commonJobParams': {
                     # 'regionalVariant': 'en-US',
                     'browserType': 1,
                     'formality': None,
                 },
-                'timestamp': int(time.time()*1000),
+                'timestamp': int(time.time() * 1000),
                 'jobs': [
                     {
                         'kind': 'default',
                         # 'quality': 'fast', # -1
                         'raw_en_sentence': sentences[i],
-                        'raw_en_context_before': [sentences[i-1]] if sentences[i-1] else [],
-                        'raw_en_context_after': [sentences[i+1]] if sentences[i+1] else [],
+                        'raw_en_context_before': [sentences[i - 1]] if sentences[i - 1] else [],
+                        'raw_en_context_after': [sentences[i + 1]] if sentences[i + 1] else [],
                         'preferred_num_beams': 1 if len(sentences) >= 4 else 4,  # 1 if two sentences else 4, len>=2+2
-                    } for i in range(1,len(sentences)-1)
+                    } for i in range(1, len(sentences) - 1)
                 ],
                 'lang': {
                     'preference': {
@@ -1205,7 +1262,7 @@ class Deepl(Tse):
         return params, data
 
     # @Tse.time_stat
-    def deepl_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
+    def deepl_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
         https://www.deepl.com
         :param query_text: str, must.
@@ -1236,8 +1293,7 @@ class Deepl(Tse):
             if not self.language_map:
                 delete_temp_language_map_label += 1
                 self.language_map = self.make_temp_language_map(from_language, to_language)
-            from_language, to_language = self.check_language(from_language, to_language, language_map=self.language_map,
-                                                             output_zh=self.output_zh, output_auto='auto')
+            from_language, to_language = self.check_language(from_language, to_language, language_map=self.language_map, output_zh=self.output_zh, output_auto='auto')
             from_language = from_language.upper() if from_language != 'auto' else from_language
             to_language = to_language.upper() if to_language != 'auto' else to_language
 
@@ -1306,7 +1362,7 @@ class Yandex(Tse):
         return r.json().get('lang')
 
     # @Tse.time_stat
-    def yandex_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
+    def yandex_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
         https://translate.yandex.com
         :param query_text: str, must.
@@ -1390,7 +1446,6 @@ class Argos(Tse):
         self.output_zh = 'zh'
         self.input_limit = 5000  # unknown
 
-
     def get_language_map(self, lang_url, ss, headers, timeout, proxies):
         # et = lxml.etree.HTML(host_html)
         # lang_list = sorted(list(set(et.xpath('//*/select/option/@value'))))
@@ -1398,7 +1453,7 @@ class Argos(Tse):
         lang_list = sorted([lang['code'] for lang in lang_list])
         return {}.fromkeys(lang_list, lang_list)
 
-    def argos_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
+    def argos_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
         https://translate.argosopentech.com
         :param query_text: str, must.
@@ -1471,7 +1526,7 @@ class Iciba(Tse):
         lang_list = sorted(list(set([lang for d in dd for lang in dd[d]])))
         return {}.fromkeys(lang_list, lang_list)
 
-    def iciba_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
+    def iciba_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
         https://www.iciba.com/fy
         :param query_text: str, must.
@@ -1524,7 +1579,7 @@ class Iciba(Tse):
         return data if is_detail_result else content_out
 
 
-class Iflytek(Tse):
+class IflytekV1(Tse):
     def __init__(self):
         super().__init__()
         self.host_url = 'https://saas.xfyun.cn/translate?tabKey=text'
@@ -1560,7 +1615,7 @@ class Iflytek(Tse):
         lang_list = sorted(list(execjs.eval(lang_str).keys()))
         return {}.fromkeys(lang_list, lang_list)
 
-    def iflytek_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
+    def iflytek_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
         https://saas.xfyun.cn/translate?tabKey=text
         :param query_text: str, must.
@@ -1617,6 +1672,76 @@ class Iflytek(Tse):
         return data if is_detail_result else eval(data['data'])['trans_result']['dst']
 
 
+class IflytekV2(Tse):
+    def __init__(self):
+        super().__init__()
+        self.host_url = 'https://fanyi.xfyun.cn/console/trans/text'  # https://www.iflyrec.com/html/translate.html
+        self.api_url = 'https://fanyi.xfyun.cn/api-tran/trans/its'
+        self.detect_language_url = 'https://fanyi.xfyun.cn/api-tran/trans/detection'
+        self.get_language_url = 'https://fanyi.xfyun.cn/js/trans-text/index.7da7fa2e.js'
+        self.host_headers = self.get_headers(self.host_url, if_api=False)
+        self.api_headers = self.get_headers(self.host_url, if_api=True)
+        self.language_map = None
+        self.query_count = 0
+        self.output_zh = 'cn'
+        self.input_limit = 2000
+
+    def get_language_map(self, lang_url, ss, headers, timeout, proxies):
+        js_html = ss.get(lang_url, headers=headers, timeout=timeout, proxies=proxies).text
+        lang_list = re.compile('languageCode:"(.*?)",').findall(js_html)
+        lang_list = sorted(list(set(lang_list)))
+        return {}.fromkeys(lang_list, lang_list)
+
+    def iflytek_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
+        """
+        https://fanyi.xfyun.cn/console/trans/text
+        :param query_text: str, must.
+        :param from_language: str, default 'zh', unsupported 'auto'.
+        :param to_language: str, default 'en'.
+        :param **kwargs:
+                :param if_ignore_limit_of_length: boolean, default False.
+                :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
+                :param proxies: dict, default None.
+                :param sleep_seconds: float, default `random.random()`.
+        :return: str or dict
+        """
+        is_detail_result = kwargs.get('is_detail_result', False)
+        timeout = kwargs.get('timeout', None)
+        proxies = kwargs.get('proxies', None)
+        sleep_seconds = kwargs.get('sleep_seconds', random.random())
+        if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
+        delete_temp_language_map_label = 0
+        if not query_text:
+            return ''
+
+        with requests.Session() as ss:
+            _ = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
+
+            if not self.language_map:
+                self.language_map = self.get_language_map(self.get_language_url, ss, self.host_headers, timeout, proxies)
+            if not self.language_map:
+                delete_temp_language_map_label += 1
+                self.language_map = self.make_temp_language_map(from_language, to_language)
+
+            if from_language == 'auto':
+                detect_r = ss.get(self.detect_language_url, params={'text': query_text}, headers=self.host_headers, timeout=timeout, proxies=proxies)
+                from_language = detect_r.json()['data'] if detect_r.status_code == 200 and detect_r.text.strip() != '' else self.output_zh
+            from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
+
+            form_data = {'from': from_language, 'to': to_language, 'text': query_text}
+            r = ss.post(self.api_url, headers=self.api_headers, data=form_data, timeout=timeout, proxies=proxies)
+            r.raise_for_status()
+            data = r.json()
+
+        if delete_temp_language_map_label != 0:
+            self.language_map = None
+        time.sleep(sleep_seconds)
+        self.query_count += 1
+        return data if is_detail_result else eval(data['data'])['trans_result']['dst']
+
+
 class Reverso(Tse):
     def __init__(self):
         super().__init__()
@@ -1628,7 +1753,7 @@ class Reverso(Tse):
         self.language_map = None
         self.language_tran = None
         self.query_count = 0
-        self.output_zh = 'zh' #'chi', because there are self.language_tran
+        self.output_zh = 'zh'  # 'chi', because there are self.language_tran
         self.input_limit = 2000
 
     def get_language_map(self, lang_url, ss, headers, timeout, proxies):
@@ -1636,11 +1761,11 @@ class Reverso(Tse):
         lang_str = re.compile('const e={(.*?)}').search(lang_html).group()[8:]
         lang_dict = execjs.eval(lang_str)
         lang_dict['ptb'] = 'pt'
-        lang_dict = {k:v for v,k in lang_dict.items()}
+        lang_dict = {k: v for v, k in lang_dict.items()}
         lang_list = list(lang_dict.keys())
         return {'lang_map': {}.fromkeys(lang_list, lang_list), 'lang_tran': lang_dict}
 
-    def reverso_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
+    def reverso_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
         https://www.reverso.net/text-translation
         :param query_text: str, must.
@@ -1736,7 +1861,7 @@ class Itranslate(Tse):
         else:
             return from_lang, to_lang
 
-    def itranslate_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
+    def itranslate_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
         https://itranslate.com/webapp
         :param query_text: str, must.
@@ -1811,7 +1936,7 @@ class TranslateCom(Tse):
         lang_map = {item['code']: [it['code'] for it in item['availableTranslationLanguages']] for item in lang_origin_list}
         return {'lang_map': lang_map, 'lang_desc': lang_origin_list}
 
-    def translateCom_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
+    def translateCom_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
         https://www.translate.com/machine-translation
         :param query_text: str, must.
@@ -1887,7 +2012,7 @@ class Utibet(Tse):
         et = lxml.etree.HTML(host_html)
         return et.xpath('//*[@name="tgt"]/text()')[0]
 
-    def utibet_api(self, query_text:str, from_language:str='auto', to_language:str='zh', **kwargs) -> Union[str]:
+    def utibet_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'zh', **kwargs) -> Union[str]:
         """
         http://mt.utibet.edu.cn/mt
         :param query_text: str, must.
@@ -1978,7 +2103,7 @@ class Papago(Tse):
         params = {'url': web_link, 'target': to_language, 'source': from_language, 'locale': 'en'}
         return ss.get(self.web_api_url, params=params, headers=headers, proxies=proxies, timeout=timeout).text
 
-    def papago_api(self, query_text:str, from_language:str='auto', to_language:str='en', **kwargs) -> Union[str,dict]:
+    def papago_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
         https://papago.naver.com
         :param query_text: str, must.
@@ -2055,6 +2180,7 @@ _alibaba = Alibaba()
 alibaba = _alibaba.alibaba_api
 _argos = Argos()
 argos = _argos.argos_api
+# _baidu = Baidu()
 _baidu = Baidu()
 baidu = _baidu.baidu_api
 _bing = Bing()
@@ -2068,7 +2194,8 @@ _google = GoogleV2()
 google = _google.google_api
 _iciba = Iciba()
 iciba = _iciba.iciba_api
-_iflytek = Iflytek()
+# _iflytek = IflytekV1()
+_iflytek = IflytekV2()
 iflytek = _iflytek.iflytek_api
 _itranslate = Itranslate()
 itranslate = _itranslate.itranslate_api
@@ -2091,7 +2218,7 @@ youdao = _youdao.youdao_api
 
 
 # @Tse.time_stat
-def translate_html(html_text:str, to_language:str='en', translator:Callable='auto', n_jobs:int=-1, **kwargs) -> str:
+def translate_html(html_text: str, to_language: str = 'en', translator: Callable = 'auto', n_jobs: int = -1, **kwargs) -> str:
     """
     Translate the displayed content of html without changing the html structure.
     :param html_text: str, html format.
@@ -2113,9 +2240,10 @@ def translate_html(html_text:str, to_language:str='en', translator:Callable='aut
     n_jobs = os.cpu_count() if n_jobs <= 0 else n_jobs
     translator = bing if translator == 'auto' else translator
 
-    pattern = re.compile(r"(?:^|(?<=>))([\s\S]*?)(?:(?=<)|$)") #TODO: <code></code> <div class="codetext notranslate">
+    pattern = re.compile(r"(?:^|(?<=>))([\s\S]*?)(?:(?=<)|$)")  # TODO: <code></code> <div class="codetext notranslate">
     sentence_list = list(set(pattern.findall(html_text)))
-    _map_translate_func = lambda sentence: (sentence, translator(query_text=sentence, to_language=to_language, **kwargs))
+    _map_translate_func = lambda sentence: (
+    sentence, translator(query_text=sentence, to_language=to_language, **kwargs))
 
     with pathos.multiprocessing.ProcessPool(n_jobs) as pool:
         result_list = pool.map(_map_translate_func, sentence_list)

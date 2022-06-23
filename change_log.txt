@@ -180,7 +180,7 @@ delete temp_language_map
 fix `request_server_region_info`，can `input`.
 
 4.8.1
-fix `request_server_region_info`, https -> http, merge user `dadas190`.
+fix `request_server_region_info`, https -> http, merge user `@dadas190`.
 
 4.9.1
 add caiyun().
@@ -190,7 +190,7 @@ fix `app.().js` changed.
 allow setting timeout. #47
 
 4.9.5
-fix deepl(). The job of fixing `get_language_map()` is user `BingLingGroup`'s merged.
+fix deepl(). The job of fixing `get_language_map()` is user `@BingLingGroup`'s merged.
 
 4.10.0
 add argos().
@@ -207,7 +207,7 @@ update README.md
 update deepl()
 
 4.11.3
-stronger google() about `consent.google.com`, merged from mercuree. #57
+stronger google() about `consent.google.com`, merged from @mercuree. #57
 add param `reset_host_url` to google().
 
 4.11.4
@@ -247,3 +247,10 @@ pause iflytek() and wait for the fix.
 fix multiprocessing.pool.close() of translate_html(). #67
 recover `query_text`='', return ''.
 add and fix input_limit.
+
+5.3.0
+rebuild baidu() and add 2 versions.
+rebuild iflytek() v2.
+fix youdao() about get_sign().  #74
+stronger google() about parsing data, especially one word own two result.  #69
+stronger multiprocessing, merged from @llabbasmkhll.  #71, #72
