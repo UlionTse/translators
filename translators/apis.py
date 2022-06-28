@@ -2251,9 +2251,3 @@ def translate_html(html_text: str, to_language: str = 'en', translator: Callable
     result_dict = {text: ts_text for text, ts_text in result_list}
     _get_result_func = lambda k: result_dict.get(k.group(1), '')
     return pattern.sub(repl=_get_result_func, string=html_text)
-
-
-if __name__ == '__main__':
-    query_text = '你是谁？你在哪儿？'
-    print(papago(query_text))
-
