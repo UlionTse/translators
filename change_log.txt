@@ -254,3 +254,8 @@ rebuild iflytek() v2.
 fix youdao() about get_sign().  #74
 stronger google() about parsing data, especially one word own two result.  #69
 stronger multiprocessing, merged from @llabbasmkhll.  #71, #72
+
+5.3.1
+follow to change and recover iciba().
+stronger papago().
+

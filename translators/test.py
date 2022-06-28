@@ -60,13 +60,13 @@ def test1():
     for query_text in [query_text1, query_text2, query_text3]:
         print('alibaba:\n', alibaba(query_text))
         print('argos:\n', argos(query_text))
-        print('baidu:\n', baidu(query_text))  # emoji
+        print('baidu:\n', baidu(query_text))
         print('bing:\n', bing(query_text))
         print('caiyun:\n', caiyun(query_text))
         print('deepl:\n', deepl(query_text))
         print('google:\n', google(query_text))
         print('icaba:\n', iciba(query_text))
-        # print('iflytek:\n', iflytek(query_text)) # geetest
+        print('iflytek:\n', iflytek(query_text))
         print('itranslate:\n', itranslate(query_text))
         print('papago:\n', papago(query_text))
         print('reverso:\n', reverso(query_text))

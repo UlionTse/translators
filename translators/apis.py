@@ -1516,6 +1516,7 @@ class Iciba(Tse):
         self.api_headers = self.get_headers(self.host_url, if_api=True, if_ajax_for_api=True, if_json_for_api=False)
         self.language_headers = self.get_headers(self.host_url, if_api=False, if_json_for_api=True)
         self.language_map = None
+        self.s_y2 = 'ifanyiweb8hc9s98e'
         self.query_count = 0
         self.output_zh = 'zh'
         self.input_limit = 3000
@@ -1559,8 +1560,8 @@ class Iciba(Tse):
                 self.language_map = self.make_temp_language_map(from_language, to_language)
             from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
 
-            sign = hashlib.md5(f"6key_cibaifanyicjbysdlove1{query_text}".encode()).hexdigest()[:16]
-            params = {'c': 'trans', 'm': 'fy', 'client': 6, 'auth_user': 'key_ciba', 'sign': sign}
+            sign = hashlib.md5(f"6key_web_fanyi{self.s_y2}{query_text}".encode()).hexdigest()[:16]  # strip()
+            params = {'c': 'trans', 'm': 'fy', 'client': 6, 'auth_user': 'key_web_fanyi', 'sign': sign}
             form_data = {'from': from_language, 'to': to_language, 'q': query_text}
             r = ss.post(self.api_url, headers=self.api_headers, params=params, data=form_data, timeout=timeout, proxies=proxies)
             r.raise_for_status()
@@ -2082,17 +2083,17 @@ class Papago(Tse):
                 self.language_url = ''.join([self.host_url, url_path])
             r = ss.get(self.language_url, headers=headers, timeout=timeout, proxies=proxies)
             r.raise_for_status()
+
+            js_html = r.text
+            lang_str = re.compile('={ALL:(.*?)}').search(js_html).group()[1:]
+            lang_str = lang_str.lower().replace('zh-cn', 'zh-CN').replace('zh-tw', 'zh-TW')
+            lang_list = re.compile(',"(.*?)":|,(.*?):').findall(lang_str)
+            lang_list = [j if j else k for j, k in lang_list]
+            lang_list = sorted(list(filter(lambda x: x not in ('all', 'auto'), lang_list)))
+            return {}.fromkeys(lang_list, lang_list)
         except:
             lang_list = ['de', 'en', 'es', 'fr', 'hi', 'id', 'it', 'ja', 'ko', 'pt', 'ru', 'th', 'vi', 'zh-CN', 'zh-TW']
             return {}.fromkeys(lang_list, lang_list)
-
-        js_html = r.text
-        lang_str = re.compile('={ALL:(.*?)}').search(js_html).group()[1:]
-        lang_str = re.compile('oe.a.(\w)+').sub('"desc"', lang_str).lower()
-        lang_str = lang_str.replace('zh-cn', 'zh-CN').replace('zh-tw', 'zh-TW')
-        lang_list = list(execjs.eval(lang_str).keys())
-        lang_list = sorted(list(filter(lambda x: x not in ('all', 'auto'), lang_list)))
-        return {}.fromkeys(lang_list, lang_list)
 
     def get_auth(self, url, auth_key, device_id, time_stamp):
         '''Authorization: "PPG " + t + ":" + p.a.HmacMD5(t + "\n" + e.split("?")[0] + "\n" + n, "v1.6.7_cc60b67557").toString(p.a.enc.Base64)'''
@@ -2242,8 +2243,7 @@ def translate_html(html_text: str, to_language: str = 'en', translator: Callable
 
     pattern = re.compile(r"(?:^|(?<=>))([\s\S]*?)(?:(?=<)|$)")  # TODO: <code></code> <div class="codetext notranslate">
     sentence_list = list(set(pattern.findall(html_text)))
-    _map_translate_func = lambda sentence: (
-    sentence, translator(query_text=sentence, to_language=to_language, **kwargs))
+    _map_translate_func = lambda sentence: (sentence, translator(query_text=sentence, to_language=to_language, **kwargs))
 
     with pathos.multiprocessing.ProcessPool(n_jobs) as pool:
         result_list = pool.map(_map_translate_func, sentence_list)
@@ -2251,3 +2251,9 @@ def translate_html(html_text: str, to_language: str = 'en', translator: Callable
     result_dict = {text: ts_text for text, ts_text in result_list}
     _get_result_func = lambda k: result_dict.get(k.group(1), '')
     return pattern.sub(repl=_get_result_func, string=html_text)
+
+
+if __name__ == '__main__':
+    query_text = '你是谁？你在哪儿？'
+    print(papago(query_text))
+
