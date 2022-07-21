@@ -259,3 +259,15 @@ stronger multiprocessing, merged from @llabbasmkhll.  #71, #72
 follow to change and recover iciba().
 stronger papago().
 
+5.4.0
+add lingvanex().
+add mglip().
+add niutrans().
+change baidu()'s default `version` to `v1`, and fix regexp bug.  #78
+
+# todo:
+add niutrans() but need to debug it.
+change baidu()'s default `version` to `v1`, need to debug `v2`.
+
+5.4.1
+upgrade readme.md

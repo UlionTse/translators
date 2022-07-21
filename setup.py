@@ -7,8 +7,7 @@ from setuptools import setup, find_packages
 
 PACKAGE = "translators"
 NAME = "translators"
-DESCRIPTION = "Translators is a library which aims to bring free, multiple, enjoyable translation to individuals " \
-              "and students in Python."
+DESCRIPTION = "Translators is a library which aims to bring free, multiple, enjoyable translation to individuals and students in Python."
 AUTHOR = "UlionTse"
 AUTHOR_EMAIL = "shinalone@outlook.com"
 URL = "https://github.com/uliontse/translators"
@@ -48,15 +47,18 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
     ],
-    keywords=['translate', 'translator', 'fanyi', 'translate_html', 'Google', 'Yandex', 'Bing',
-              'Baidu', 'Alibaba', 'Tencent', 'Youdao', 'Sogou', 'Iciba', 'Iflytek', 'Deepl',
-              'Caiyun', 'Argos', 'Reverso', 'Itranslate', 'TranslateCom', 'Papago', 'Utibet'],
+    keywords=[
+        'translate', 'translator', 'fanyi', 'translate_html',
+        'Google', 'Yandex', 'Bing', 'Baidu', 'Alibaba', 'Tencent', 'Youdao', 'Sogou',
+        'Iciba', 'Iflytek', 'Deepl', 'Niutrans', 'Lingvanex', 'Reverso', 'Itranslate',
+        'Papago', 'Caiyun', 'Mglip', 'Utibet', 'Argos', 'TranslateCom',
+    ],
     install_requires=[
-        'requests>=2.27.1',
+        'requests>=2.28.1',
         'PyExecJS>=1.5.1',
-        'lxml>=4.8.0',
+        'lxml>=4.9.1',
         'loguru>=0.6.0',
-        'pathos>=0.2.8',
+        'pathos>=0.2.9',
     ],
     zip_safe=False,
 )

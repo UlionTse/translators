@@ -73,7 +73,6 @@ class Tse:
             t2 = time.time()
             loguru.logger.success('CostTime(fn: {}): {}s'.format(func.__name__, round((t2 - t1), 1)), style='braces')
             return r
-
         return _wrapper
 
     @staticmethod
@@ -102,7 +101,7 @@ class Tse:
     @staticmethod
     def check_language(from_language, to_language, language_map, output_zh=None, output_auto='auto'):
         auto_pool = ('auto', 'auto-detect')
-        zh_pool = ('zh', 'zh-CN', 'zh-CHS', 'zh-Hans', 'cn', 'chi')
+        zh_pool = ('zh', 'zh-CN', 'zh-CHS', 'zh-Hans', 'zh-Hans_CN', 'cn', 'chi')
         from_language = output_auto if from_language in auto_pool else from_language
         from_language = output_zh if output_zh and from_language in zh_pool else from_language
         to_language = output_zh if output_zh and to_language in zh_pool else to_language
@@ -114,7 +113,21 @@ class Tse:
         elif from_language != output_auto and to_language not in language_map[from_language]:
             loguru.logger.exception('language_map:', language_map)
             raise TranslatorError('Unsupported translation: from [{0}] to [{1}]!'.format(from_language, to_language))
+        elif from_language == to_language:
+            raise TranslatorError(f'from_language[{from_language}] and to_language[{to_language}] should not be same.')
         return from_language, to_language
+
+    @staticmethod
+    def en_tran(from_lang, to_lang, default_lang='en-US', default_translator='Itranslate'):
+        if default_translator not in ('Itranslate', 'Lingvanex'):
+            return from_lang, to_lang
+        from_lang = default_lang if from_lang == 'en' else from_lang
+        to_lang = default_lang if to_lang == 'en' else to_lang
+        from_lang = default_lang.replace('-', '_') if default_translator == 'Lingvanex' and '-' in from_lang else from_lang
+        to_lang = default_lang.replace('-', '_') if default_translator == 'Lingvanex' and '-' in to_lang else to_lang
+        warnings.warn(f'Unsupported [language=en] with [{default_translator}]! Please specify it.')
+        warnings.warn(f'default languages: [{from_lang}, {to_lang}]')
+        return from_lang, to_lang
 
     @staticmethod
     def make_temp_language_map(from_language, to_language):
@@ -142,23 +155,26 @@ class Tse:
 
 
 class TranslatorSeverRegion:
+    def __init__(self):
+        self.get_addr_url = 'https://geolocation.onetrust.com/cookieconsentpub/v1/geo/location'
+        self.get_ip_url = 'https://httpbin.org/ip'
+        self.ip_api_addr_url = 'http://ip-api.com/json'  # must http.
+        self.ip_tb_add_url = 'https://ip.taobao.com/outGetIpInfo'
+
     @property
     def request_server_region_info(self):
-        # https://geolocation.onetrust.com/cookieconsentpub/v1/geo/location
         try:
-            ip_address = requests.get('https://httpbin.org/ip').json()['origin']
+            ip_address = requests.get(self.get_ip_url).json()['origin']
             try:
-                data = requests.get(f'http://ip-api.com/json/{ip_address}', timeout=10).json()  # http # limit 45/min.
+                data = requests.get(f'{self.ip_api_addr_url}/{ip_address}', timeout=10).json()  # http # limit 45/min.
                 country = data.get("country")
                 if not country:
                     raise TranslatorError('Unknown country or region.')
                 sys.stderr.write(f'Using {country} server backend.\n')
                 return data
             except requests.exceptions.Timeout:
-                data = requests.post(
-                    url='https://ip.taobao.com/outGetIpInfo',
-                    data={'ip': ip_address, 'accessKey': 'alibaba-inc'}
-                ).json().get('data')
+                form_data = {'ip': ip_address, 'accessKey': 'alibaba-inc'}
+                data = requests.post(url=self.ip_tb_add_url, data=form_data).json().get('data')
                 data.update({'countryCode': data.get('country_id')})
                 return data
 
@@ -301,8 +317,7 @@ class GoogleV1(Tse):
             host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             if not self.language_map:
                 self.language_map = self.get_language_map(host_html, ss, timeout, proxies)
-            from_language, to_language = self.check_language(from_language, to_language, self.language_map,
-                                                             output_zh=self.output_zh)
+            from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
 
             if not self.tkk:
                 self.tkk = self.get_tkk(host_html, ss, timeout, proxies)
@@ -410,8 +425,7 @@ class GoogleV2(Tse):
             if not self.language_map:
                 delete_temp_language_map_label += 1
                 self.language_map = self.make_temp_language_map(from_language, to_language)
-            from_language, to_language = self.check_language(from_language, to_language, self.language_map,
-                                                             output_zh=self.output_zh)
+            from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
 
             rpc_data = self.get_rpc(query_text, from_language, to_language)
             rpc_data = urllib.parse.urlencode(rpc_data)
@@ -442,6 +456,7 @@ class Baidu(Tse):
         self.language_map = None
         self.token = None
         self.sign = None
+        self.acs_token = None
         self.query_count = 0
         self.output_zh = 'zh'
         self.input_limit = 5000
@@ -451,7 +466,9 @@ class Baidu(Tse):
         return execjs.eval(lang_str)
 
     def get_sign(self, query_text, host_html, ss, timeout, proxies):
-        gtk = re.compile("window.gtk = '(.*?)';").findall(host_html)[0]
+        gtk_list = re.compile("""window.gtk = '(.*?)';|window.gtk = "(.*?)";""").findall(host_html)[0]
+        gtk = gtk_list[0] or gtk_list[1]
+
         try:
             if not self.get_sign_url:
                 self.get_sign_url = re.compile(self.get_sign_pattern).search(host_html).group(0)
@@ -470,7 +487,11 @@ class Baidu(Tse):
         return execjs.compile(sign_js).call('e', query_text, gtk)
 
     def get_tk(self, host_html):
-        return re.compile("token: '(.*?)',").findall(host_html)[0]
+        tk_list = re.compile("""token: '(.*?)',|token: "(.*?)",""").findall(host_html)[0]
+        return tk_list[0] or tk_list[1]
+
+    def get_acs_token(self):
+        pass  # todo
 
     def baidu_api_v1(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
@@ -523,7 +544,7 @@ class Baidu(Tse):
         :param from_language: str, default 'auto'.
         :param to_language: str, default 'en'.
         :param **kwargs:
-                :param professional_field: str, default 'common'. Choose from ('common', 'medicine', 'electronics', 'mechanics')
+                :param professional_field: str, default 'common'. Choose from ('common', 'medicine', 'electronics', 'mechanics', 'novel')
                 :param if_ignore_limit_of_length: boolean, default False.
                 :param is_detail_result: boolean, default False.
                 :param timeout: float, default None.
@@ -533,7 +554,7 @@ class Baidu(Tse):
         """
 
         use_domain = kwargs.get('professional_field', 'common')
-        if use_domain not in ('common', 'medicine', 'electronics', 'mechanics'):
+        if use_domain not in ('common', 'medicine', 'electronics', 'mechanics', 'novel'):  # only support zh-en, en-zh.
             raise TranslatorError('Your [professional_field] is wrong.')
         is_detail_result = kwargs.get('is_detail_result', False)
         timeout = kwargs.get('timeout', None)
@@ -545,20 +566,19 @@ class Baidu(Tse):
             return ''
 
         with requests.Session() as ss:
-            _ = ss.get(self.host_url, headers=self.host_headers, timeout=timeout,
-                       proxies=proxies)  # must twice, send cookies.
+            _ = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)  # must twice, send cookies.
             host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
+
             if not self.language_map:
                 self.language_map = self.get_language_map(host_html)
             if not self.token:
                 self.token = self.get_tk(host_html)
-            self.sign = self.get_sign(query_text, host_html, ss, timeout, proxies)
 
-            from_language, to_language = self.check_language(from_language, to_language, self.language_map,
-                                                             output_zh=self.output_zh)
+            self.sign = self.get_sign(query_text, host_html, ss, timeout, proxies)
+            from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
+
             if from_language == 'auto':
-                res = ss.post(self.langdetect_url, headers=self.api_headers, data={"query": query_text},
-                              timeout=timeout, proxies=proxies)
+                res = ss.post(self.langdetect_url, headers=self.api_headers, data={"query": query_text}, timeout=timeout, proxies=proxies)
                 from_language = res.json()['lan']
 
             params = {"from": from_language, "to": to_language}
@@ -573,6 +593,7 @@ class Baidu(Tse):
                 "domain": use_domain,
             }
             form_data = urllib.parse.urlencode(form_data).encode('utf-8')
+            # self.api_headers.update({'Acs-Token': self.acs_token})  # todo
             r = ss.post(self.api2_url, params=params, data=form_data, headers=self.api_headers, timeout=timeout, proxies=proxies)
             r.raise_for_status()
             data = r.json()
@@ -588,7 +609,7 @@ class Baidu(Tse):
         :param from_language: str, default 'auto'.
         :param to_language: str, default 'en'.
         :param **kwargs:
-                :param version: str, default 'v2'. Choose from ('v1', 'v2').
+                :param version: str, default 'v1'. Choose from ('v1', 'v2').
                 :param professional_field: str, default 'common'. Choose from ('common', 'medicine', 'electronics', 'mechanics')
                 :param if_ignore_limit_of_length: boolean, default False.
                 :param is_detail_result: boolean, default False.
@@ -597,7 +618,7 @@ class Baidu(Tse):
                 :param sleep_seconds: float, default `random.random()`.
         :return: str or dict
         """
-        use_version = kwargs.get('version', 'v2')
+        use_version = kwargs.get('version', 'v1')
         if use_version not in ('v1', 'v2'):
             raise TranslatorError('Your parameter [version] is wrong.')
         if use_version == 'v1':
@@ -1453,6 +1474,7 @@ class Argos(Tse):
         lang_list = sorted([lang['code'] for lang in lang_list])
         return {}.fromkeys(lang_list, lang_list)
 
+    # @Tse.time_stat
     def argos_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
         https://translate.argosopentech.com
@@ -1527,6 +1549,7 @@ class Iciba(Tse):
         lang_list = sorted(list(set([lang for d in dd for lang in dd[d]])))
         return {}.fromkeys(lang_list, lang_list)
 
+    # @Tse.time_stat
     def iciba_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
         https://www.iciba.com/fy
@@ -1571,13 +1594,7 @@ class Iciba(Tse):
             self.language_map = None
         time.sleep(sleep_seconds)
         self.query_count += 1
-
-        if data.get('isSensitive') == 1:
-            warnings.warn('Iciba warning: Sorry, your translation file contains sensitive words and cannot provide translation.')
-            content_out = data['content']
-        else:
-            content_out = data['content']['out']
-        return data if is_detail_result else content_out
+        return data if is_detail_result else data['content'] if data.get('isSensitive') == 1 else data['content']['out']
 
 
 class IflytekV1(Tse):
@@ -1616,6 +1633,7 @@ class IflytekV1(Tse):
         lang_list = sorted(list(execjs.eval(lang_str).keys()))
         return {}.fromkeys(lang_list, lang_list)
 
+    # @Tse.time_stat
     def iflytek_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
         https://saas.xfyun.cn/translate?tabKey=text
@@ -1693,6 +1711,7 @@ class IflytekV2(Tse):
         lang_list = sorted(list(set(lang_list)))
         return {}.fromkeys(lang_list, lang_list)
 
+    # @Tse.time_stat
     def iflytek_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
         https://fanyi.xfyun.cn/console/trans/text
@@ -1766,6 +1785,7 @@ class Reverso(Tse):
         lang_list = list(lang_dict.keys())
         return {'lang_map': {}.fromkeys(lang_list, lang_list), 'lang_tran': lang_dict}
 
+    # @Tse.time_stat
     def reverso_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
         https://www.reverso.net/text-translation
@@ -1854,14 +1874,7 @@ class Itranslate(Tse):
         lang_list = [dd['dialect'] for dd in lang_origin_list]
         return {'lang_map': {}.fromkeys(lang_list, lang_list), 'lang_desc': lang_origin_list, 'api_key': api_key}
 
-    def en_tran(self, from_lang, to_lang):
-        if from_lang == 'en':
-            return 'en-US', to_lang
-        elif to_lang == 'en':
-            return from_lang, 'en-US'
-        else:
-            return from_lang, to_lang
-
+    # @Tse.time_stat
     def itranslate_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
         https://itranslate.com/webapp
@@ -1898,7 +1911,7 @@ class Itranslate(Tse):
                 delete_temp_language_map_label += 1
                 self.language_map = self.make_temp_language_map(from_language, to_language)
 
-            from_language, to_language = self.en_tran(from_language, to_language)
+            from_language, to_language = self.en_tran(from_language, to_language, default_translator='Itranslate')
             from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
 
             form_data = {
@@ -1937,6 +1950,7 @@ class TranslateCom(Tse):
         lang_map = {item['code']: [it['code'] for it in item['availableTranslationLanguages']] for item in lang_origin_list}
         return {'lang_map': lang_map, 'lang_desc': lang_origin_list}
 
+    # @Tse.time_stat
     def translateCom_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
         https://www.translate.com/machine-translation
@@ -2013,7 +2027,8 @@ class Utibet(Tse):
         et = lxml.etree.HTML(host_html)
         return et.xpath('//*[@name="tgt"]/text()')[0]
 
-    def utibet_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'zh', **kwargs) -> Union[str]:
+    # @Tse.time_stat
+    def utibet_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'zh', **kwargs) -> Union[str, dict]:
         """
         http://mt.utibet.edu.cn/mt
         :param query_text: str, must.
@@ -2055,7 +2070,7 @@ class Utibet(Tse):
 
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return data_html if is_detail_result else self.parse_result(data_html)
+        return {'data_html': data_html} if is_detail_result else self.parse_result(data_html)
 
 
 class Papago(Tse):
@@ -2104,6 +2119,7 @@ class Papago(Tse):
         params = {'url': web_link, 'target': to_language, 'source': from_language, 'locale': 'en'}
         return ss.get(self.web_api_url, params=params, headers=headers, proxies=proxies, timeout=timeout).text
 
+    # @Tse.time_stat
     def papago_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
         https://papago.naver.com
@@ -2175,13 +2191,268 @@ class Papago(Tse):
         return data if is_detail_result else data['translatedText']
 
 
+class Lingvanex(Tse):
+    def __init__(self):
+        super().__init__()
+        self.host_url = 'https://lingvanex.com/demo/'
+        self.api_url = None
+        self.language_url = None
+        self.auth_url = 'https://lingvanex.com/lingvanex_demo_page/js/api-base.js'
+        self.host_headers = self.get_headers(self.host_url, if_api=False)
+        self.api_headers = self.get_headers(self.host_url, if_api=True, if_json_for_api=False)
+        self.language_map = None
+        self.detail_language_map = None
+        self.auth_info = None
+        self.mode = None
+        self.query_count = 0
+        self.output_zh = 'zh-Hans_CN'
+        self.input_limit = 10000
+
+    def get_auth(self, auth_url, ss, headers, timeout, proxies):
+        js_html = ss.get(auth_url, headers=headers, timeout=timeout, proxies=proxies).text
+        return {k: v for k, v in re.compile(',(.*?)="(.*?)"').findall(js_html)}
+
+    def get_language_map(self, lang_url, ss, headers, timeout, proxies):
+        params = {'all': 'true', 'code': 'en_GB', 'platform': 'dp', '_': int(time.time() * 1000)}
+        detail_lang_map = ss.get(lang_url, params=params, headers=headers, timeout=timeout, proxies=proxies).json()
+        for _ in range(3):
+            _ = ss.get(lang_url, params={'platform': 'dp'}, headers=headers, timeout=timeout, proxies=proxies)
+        lang_list = sorted(set([item['full_code'] for item in detail_lang_map['result']]))
+        return {'d_lang_map': detail_lang_map, 'lang_map': {}.fromkeys(lang_list, lang_list)}
+
+    # @Tse.time_stat
+    def lingvanex_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
+        """
+        https://lingvanex.com/demo/
+        :param query_text: str, must.
+        :param from_language: str, default 'auto'.
+        :param to_language: str, default 'en'.
+        :param **kwargs:
+                :param mode: str, default "B2C", choose from ("B2B", "B2C").
+                :param if_ignore_limit_of_length: boolean, default False.
+                :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
+                :param proxies: dict, default None.
+                :param sleep_seconds: float, default `random.random()`.
+        :return: str or dict
+        """
+        mode = kwargs.get('mode', 'B2C')
+        is_detail_result = kwargs.get('is_detail_result', False)
+        timeout = kwargs.get('timeout', None)
+        proxies = kwargs.get('proxies', None)
+        sleep_seconds = kwargs.get('sleep_seconds', random.random())
+        if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
+        delete_temp_language_map_label = 0
+        if not query_text:
+            return ''
+
+        if from_language == 'auto':
+            warnings.warn('Unsupported [from_language=auto] with [lingvanex]! Please specify it.')
+            from_language = self.output_zh
+
+        with requests.Session() as ss:
+            _ = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+
+            if not self.auth_info:
+                self.auth_info = self.get_auth(self.auth_url, ss, self.host_headers, timeout, proxies)
+
+            if mode != self.mode:
+                self.mode = mode
+                self.api_url = ''.join([self.auth_info[f'{mode}_BASE_URL'], self.auth_info['TRANSLATE_URL']])
+                self.language_url = ''.join([self.auth_info[f'{mode}_BASE_URL'], self.auth_info['GET_LANGUAGES_URL']])
+                self.host_headers.update({'authorization': self.auth_info[f'{mode}_AUTH_TOKEN']})
+                self.api_headers.update({'authorization': self.auth_info[f'{mode}_AUTH_TOKEN']})
+                self.api_headers.update({'referer': urllib.parse.urlparse(self.auth_info[f'{mode}_BASE_URL']).netloc})
+
+            if not self.language_map:
+                lang_data = self.get_language_map(self.language_url, ss, self.host_headers, timeout, proxies)
+                self.detail_language_map, self.language_map = lang_data['d_lang_map'], lang_data['lang_map']
+            if not self.language_map:
+                delete_temp_language_map_label += 1
+                self.language_map = self.make_temp_language_map(from_language, to_language)
+
+            from_language, to_language = self.en_tran(from_language, to_language, default_translator='Lingvanex')
+            from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
+
+            form_data = {
+                'from': from_language,
+                'to': to_language,
+                'text': query_text,
+                'platform': 'dp',
+                'is_return_text_split_ranges': 'true'
+            }
+            form_data = urllib.parse.urlencode(form_data)
+            r = ss.post(self.api_url, headers=self.api_headers, data=form_data, timeout=timeout, proxies=proxies)
+            r.raise_for_status()
+            data = r.json()
+
+        if delete_temp_language_map_label != 0:
+            self.language_map = None
+        time.sleep(sleep_seconds)
+        self.query_count += 1
+        return data if is_detail_result else data['result'] if self.mode == 'B2C' else data['result']['text']
+
+
+class Niutrans(Tse):
+    def __init__(self):
+        super().__init__()
+        self.host_url = 'https://niutrans.com/trans?type=text'
+        self.api_url = 'https://test.niutrans.com/NiuTransServer/testaligntrans'
+        self.detect_language_url = 'https://test.niutrans.com/NiuTransServer/language'
+        self.get_language_url = 'https://niutrans.com/NiuTransFrontPage/language/getAllLanguage'
+        self.validate_url = 'https://niutrans.com/NiuTransFrontPage/validation/translate'
+        self.is_login_console_url = 'https://niutrans.com/NiuTransConsole/user/isLogin'
+        self.is_login_doc_url = 'https://niutrans.com/NiuTransDocumentTrans/document/isLogin'
+        self.console_service_url = 'https://niutrans.com/NiuTransAuthCenter/login?service=https://niutrans.com/NiuTransConsole/sso'
+        self.doc_service_url = 'https://niutrans.com/NiuTransAuthCenter/login?service=https://niutrans.com/NiuTransDocumentTrans/sso'
+        self.json_url = 'https://niutrans.com/NiuTransPagesTrans/resource/json/NiuTrans/NiuTrans.json'
+        self.host_headers = self.get_headers(self.host_url, if_api=False)
+        self.api_headers = self.get_headers(self.host_url, if_api=True, if_json_for_api=True)
+        self.api_headers.pop('X-Requested-With')
+        self.language_map = None
+        self.detail_language_map = None
+        self.query_count = 0
+        self.output_zh = 'zh'
+        self.input_limit = 5000
+
+    def get_language_map(self, lang_url, ss, headers, timeout, proxies):
+        params = {'type': 0, 'time': int(time.time() * 1000)}
+        detail_lang_map = ss.get(lang_url, params=params, headers=headers, timeout=timeout, proxies=proxies).json()
+        lang_list = sorted(set([it['code'] for item in detail_lang_map['languageList'] for it in item['result']]))
+        return {'d_lang_map': detail_lang_map, 'lang_map': {}.fromkeys(lang_list, lang_list)}
+
+    # @Tse.time_stat
+    def niutrans_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
+        """
+        https://niutrans.com/trans/
+        :param query_text: str, must.
+        :param from_language: str, default 'auto'.
+        :param to_language: str, default 'en'.
+        :param **kwargs:
+                :param if_ignore_limit_of_length: boolean, default False.
+                :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
+                :param proxies: dict, default None.
+                :param sleep_seconds: float, default `random.random()`.
+        :return: str or dict
+        """
+        is_detail_result = kwargs.get('is_detail_result', False)
+        timeout = kwargs.get('timeout', None)
+        proxies = kwargs.get('proxies', None)
+        sleep_seconds = kwargs.get('sleep_seconds', random.random())
+        if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
+        delete_temp_language_map_label = 0
+        if not query_text:
+            return ''
+
+        with requests.Session() as ss:
+            _ = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+            params = {'time': int(time.time() * 1000)}
+            _ = ss.get(self.is_login_console_url, params=params, headers=self.host_headers, timeout=timeout, proxies=proxies)
+            _ = ss.get(self.is_login_doc_url, params=params, headers=self.host_headers, timeout=timeout, proxies=proxies)
+
+            if not self.language_map:
+                lang_data = self.get_language_map(self.get_language_url, ss, self.host_headers, timeout, proxies)
+                self.detail_language_map, self.language_map = lang_data['d_lang_map'], lang_data['lang_map']
+            if not self.language_map:
+                delete_temp_language_map_label += 1
+                self.language_map = self.make_temp_language_map(from_language, to_language)
+
+            from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
+            if from_language == 'auto':
+                params = {'src_text': query_text, 'source': 'text', 'time': int(time.time() * 1000)}
+                res = ss.get(self.detect_language_url, headers=self.host_headers, params=params, timeout=timeout, proxies=proxies)
+                from_language = res.json()['language']
+
+            _ = ss.get(self.json_url, params=params, headers=self.host_headers, timeout=timeout, proxies=proxies)
+            data = {'src_text': query_text, 'from': from_language, 'to': to_language, 'dictNo': '', 'memoryNo': ''}
+            val_data = urllib.parse.urlencode({**data, **{'id': int(time.time() * 1000)}})
+            self.api_headers.update({'Host': urllib.parse.urlparse(self.host_url).netloc})
+            _ = ss.post(self.validate_url, data=val_data, headers=self.api_headers, timeout=timeout, proxies=proxies)
+            _ = self.get_language_map(self.get_language_url, ss, self.host_headers, timeout, proxies)
+
+            add_data = {'source': 'text', 'isUseDict': '0', 'isUseMemory': '0', 'time': int(time.time() * 1000)}
+            params = urllib.parse.urlencode({**data, **add_data})
+            self.api_headers.update({'Host': urllib.parse.urlparse(self.api_url).netloc})
+
+            r = ss.get(self.api_url, params=params, headers=self.api_headers, timeout=timeout, proxies=proxies)
+            r.raise_for_status()
+            data = r.json()
+
+        if delete_temp_language_map_label != 0:
+            self.language_map = None
+        time.sleep(sleep_seconds)
+        self.query_count += 1
+        return data if is_detail_result else data['tgt_text']
+
+
+class Mglip(Tse):
+    def __init__(self):
+        super().__init__()
+        self.host_url = 'http://fy.mglip.com/pc'  # must http
+        self.api_url = 'http://fy.mglip.com/t2t'
+        self.host_headers = self.get_headers(self.host_url, if_api=False)
+        self.api_headers = self.get_headers(self.host_url, if_api=True, if_json_for_api=False)
+        self.language_map = {}.fromkeys(['zh', 'mon', 'xle'], ['zh', 'mon', 'xle'])
+        self.query_count = 0
+        self.output_zh = 'zh'
+        self.input_limit = 500
+
+    # @Tse.time_stat
+    def mglip_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'zh', **kwargs) -> Union[str, dict]:
+        """
+        http://fy.mglip.com/pc
+        :param query_text: str, must.
+        :param from_language: str, default 'auto', equals to 'tibet'.
+        :param to_language: str, default 'zh'.
+        :param **kwargs:
+                :param if_ignore_limit_of_length: boolean, default False.
+                :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
+                :param proxies: dict, default None.
+                :param sleep_seconds: float, default `random.random()`.
+        :return: str or dict
+        """
+        is_detail_result = kwargs.get('is_detail_result', False)
+        timeout = kwargs.get('timeout', None)
+        proxies = kwargs.get('proxies', None)
+        sleep_seconds = kwargs.get('sleep_seconds', random.random())
+        if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
+        query_text = self.check_query_text(query_text, if_ignore_limit_of_length, limit_of_length=self.input_limit)
+        if not query_text:
+            return ''
+
+        if from_language == 'auto':
+            warnings.warn('Unsupported [from_language=auto] with [oyun]! Please specify it.')
+            from_language = 'mon'
+
+        with requests.Session() as ss:
+            _ = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+            from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
+            form_data = {
+                'userInput': query_text,
+                'from': from_language,
+                'to': to_language,
+            }
+            form_data = urllib.parse.urlencode(form_data)
+            r = ss.post(self.api_url, headers=self.api_headers, data=form_data, timeout=timeout, proxies=proxies)
+            r.raise_for_status()
+            data = r.json()
+
+        time.sleep(sleep_seconds)
+        self.query_count += 1
+        return data if is_detail_result else data['datas'][0]['paragraph'] if data['datas'][0]['type'] == 'trans' else data['datas'][0]['data']
+
+
+
 REQUEST_SERVER_REGION_INFO = TranslatorSeverRegion().request_server_region_info
 
 _alibaba = Alibaba()
 alibaba = _alibaba.alibaba_api
 _argos = Argos()
 argos = _argos.argos_api
-# _baidu = Baidu()
 _baidu = Baidu()
 baidu = _baidu.baidu_api
 _bing = Bing()
@@ -2200,6 +2471,12 @@ _iflytek = IflytekV2()
 iflytek = _iflytek.iflytek_api
 _itranslate = Itranslate()
 itranslate = _itranslate.itranslate_api
+_lingvanex = Lingvanex()
+lingvanex = _lingvanex.lingvanex_api
+_niutrans = Niutrans()
+niutrans = _niutrans.niutrans_api
+_mglip = Mglip()
+mglip = _mglip.mglip_api
 _papago = Papago()
 papago = _papago.papago_api
 _reverso = Reverso()
