@@ -160,6 +160,7 @@ class TranslatorSeverRegion:
         self.get_ip_url = 'https://httpbin.org/ip'
         self.ip_api_addr_url = 'http://ip-api.com/json'  # must http.
         self.ip_tb_add_url = 'https://ip.taobao.com/outGetIpInfo'
+        self.default_country = os.environ.get('TRANSLATORS_DEFAULT_COUNTRY', None)
 
     @property
     def request_server_region_info(self):
@@ -182,7 +183,10 @@ class TranslatorSeverRegion:
             raise TranslatorError('Unable to connect the Internet.\n')
         except:
             warnings.warn('Unable to find server backend.\n')
-            country = input('Please input your server region need to visit:\neg: [England, China, ...]\n')
+            if self.default_country is None:
+                country = input('Please input your server region need to visit:\neg: [England, China, ...]\n')
+            else:
+                country = self.default_country
             sys.stderr.write(f'Using {country} server backend.\n')
             return {'country': country, 'countryCode': 'CN' if country == 'China' else 'EN'}
 
