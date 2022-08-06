@@ -77,9 +77,8 @@ class Tse:
 
     @staticmethod
     def get_headers(host_url, if_api=False, if_referer_for_host=True, if_ajax_for_api=True, if_json_for_api=False):
+        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36"
         url_path = urllib.parse.urlparse(host_url).path
-        user_agent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) " \
-                     "Chrome/55.0.2883.87 Safari/537.36"
         host_headers = {
             'Referer' if if_referer_for_host else 'Host': host_url,
             "User-Agent": user_agent,
@@ -121,6 +120,7 @@ class Tse:
     def en_tran(from_lang, to_lang, default_lang='en-US', default_translator='Itranslate'):
         if default_translator not in ('Itranslate', 'Lingvanex'):
             return from_lang, to_lang
+
         from_lang = default_lang if from_lang == 'en' else from_lang
         to_lang = default_lang if to_lang == 'en' else to_lang
         from_lang = default_lang.replace('-', '_') if default_translator == 'Lingvanex' and '-' in from_lang else from_lang
@@ -147,15 +147,15 @@ class Tse:
             raise TranslatorError('The length of the text to be translated exceeds the limit.')
         else:
             if length >= limit_of_length:
-                warnings.warn(
-                    f'The translation ignored the excess[above {limit_of_length}]. Length of `query_text` is {length}.')
+                warnings.warn(f'The translation ignored the excess[above {limit_of_length}]. Length of `query_text` is {length}.')
                 warnings.warn('The translation result will be incomplete.')
                 return query_text[:limit_of_length - 1]
         return query_text
 
 
-class TranslatorSeverRegion:
+class TranslatorSeverRegion(Tse):
     def __init__(self):
+        super().__init__()
         self.get_addr_url = 'https://geolocation.onetrust.com/cookieconsentpub/v1/geo/location'
         self.get_ip_url = 'https://httpbin.org/ip'
         self.ip_api_addr_url = 'http://ip-api.com/json'  # must http.
@@ -163,28 +163,25 @@ class TranslatorSeverRegion:
 
     @property
     def request_server_region_info(self):
+        _headers_fn = lambda url: self.get_headers(url, if_api=False, if_referer_for_host=True)
         try:
-            ip_address = requests.get(self.get_ip_url).json()['origin']
             try:
-                data = requests.get(f'{self.ip_api_addr_url}/{ip_address}', timeout=10).json()  # http # limit 45/min.
-                country = data.get("country")
-                if not country:
-                    raise TranslatorError('Unknown country or region.')
-                sys.stderr.write(f'Using {country} server backend.\n')
-                return data
+                data = eval(requests.get(self.get_addr_url, headers=_headers_fn(self.get_addr_url)).text[9:-2])
+                sys.stderr.write(f'Using state {data.get("stateName")} server backend.\n')
+                return {'countryCode': data.get('country')}
             except requests.exceptions.Timeout:
+                ip_address = requests.get(self.get_ip_url, headers=_headers_fn(self.get_ip_url)).json()['origin']
                 form_data = {'ip': ip_address, 'accessKey': 'alibaba-inc'}
-                data = requests.post(url=self.ip_tb_add_url, data=form_data).json().get('data')
-                data.update({'countryCode': data.get('country_id')})
-                return data
+                data = requests.post(url=self.ip_tb_add_url, data=form_data, headers=_headers_fn(self.ip_tb_add_url)).json().get('data')
+                return {'countryCode': data.get('country_id')}
 
         except requests.exceptions.ConnectionError:
             raise TranslatorError('Unable to connect the Internet.\n')
         except:
             warnings.warn('Unable to find server backend.\n')
             country = input('Please input your server region need to visit:\neg: [England, China, ...]\n')
-            sys.stderr.write(f'Using {country} server backend.\n')
-            return {'country': country, 'countryCode': 'CN' if country == 'China' else 'EN'}
+            sys.stderr.write(f'Using country {country} server backend.\n')
+            return {'countryCode': 'CN' if country == 'China' else 'EN'}
 
 
 class TranslatorError(Exception):
@@ -2528,3 +2525,7 @@ def translate_html(html_text: str, to_language: str = 'en', translator: Callable
     result_dict = {text: ts_text for text, ts_text in result_list}
     _get_result_func = lambda k: result_dict.get(k.group(1), '')
     return pattern.sub(repl=_get_result_func, string=html_text)
+
+
+if __name__ == '__main__':
+    print(google('你好'))
