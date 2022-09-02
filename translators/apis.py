@@ -1224,7 +1224,7 @@ class Deepl(Tse):
         return {}.fromkeys(lang_list, lang_list)
 
     def split_sentences_param(self, query_text, from_language):
-        params = {'method': 'LMT_split_into_sentences'}
+        params = {'method': 'LMT_split_text'}
         data = {
             'id': self.request_id + 0,
             'jsonrpc': '2.0',
@@ -1260,7 +1260,7 @@ class Deepl(Tse):
                     {
                         'kind': 'default',
                         # 'quality': 'fast', # -1
-                        'raw_en_sentence': sentences[i],
+                        'sentences': sentences[i],
                         'raw_en_context_before': [sentences[i - 1]] if sentences[i - 1] else [],
                         'raw_en_context_after': [sentences[i + 1]] if sentences[i + 1] else [],
                         'preferred_num_beams': 1 if len(sentences) >= 4 else 4,  # 1 if two sentences else 4, len>=2+2
@@ -1271,7 +1271,7 @@ class Deepl(Tse):
                         'weight': {},
                         'default': 'default',
                     },
-                    'source_lang_computed': from_language,
+                    'source_lang_user_selected': from_language,
                     'target_lang': to_language,
                 },
             },
@@ -1320,7 +1320,13 @@ class Deepl(Tse):
             r_ss = ss.post(self.api_url, params=ss_params, json=ss_data, headers=self.api_headers, timeout=timeout, proxies=proxies)
             r_ss.raise_for_status()
             ss_data = r_ss.json()
-            ss_sentences = ss_data['result']['splitted_texts'][0]
+            ss_sentences = ss_data['result']['texts'][0]['chunks']
+            for sent, index in zip(ss_sentences.copy(), range(len(ss_sentences))):
+                temp_dict = {
+                    "id": index
+                }
+                sent["sentences"][0].update(temp_dict)
+                ss_sentences[index] = sent["sentences"]
 
             cs_params, cs_data = self.context_sentences_param(ss_sentences, from_language, to_language)
             # _ = ss.options(self.api_url, params=cs_params, headers=self.api_headers, timeout=timeout, proxies=proxies)
@@ -1333,7 +1339,7 @@ class Deepl(Tse):
         time.sleep(sleep_seconds)
         self.request_id += 3
         self.query_count += 1
-        return data if is_detail_result else ' '.join(item['beams'][0]['postprocessed_sentence'] for item in data['result']['translations'])
+        return data if is_detail_result else ' '.join(item['beams'][0]['sentences'][0]["text"] for item in data['result']['translations'])
 
 
 class Yandex(Tse):
