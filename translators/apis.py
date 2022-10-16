@@ -123,8 +123,8 @@ class Tse:
 
         from_lang = default_lang if from_lang == 'en' else from_lang
         to_lang = default_lang if to_lang == 'en' else to_lang
-        from_lang = default_lang.replace('-', '_') if default_translator == 'Lingvanex' and '-' in from_lang else from_lang
-        to_lang = default_lang.replace('-', '_') if default_translator == 'Lingvanex' and '-' in to_lang else to_lang
+        from_lang = default_lang.replace('-', '_') if default_translator == 'Lingvanex' and from_lang[:3] == 'en-' else from_lang
+        to_lang = default_lang.replace('-', '_') if default_translator == 'Lingvanex' and from_lang[:3] == 'en-' else to_lang
         warnings.warn(f'Unsupported [language=en] with [{default_translator}]! Please specify it.')
         warnings.warn(f'default languages: [{from_lang}, {to_lang}]')
         return from_lang, to_lang
@@ -180,10 +180,7 @@ class TranslatorSeverRegion(Tse):
             raise TranslatorError('Unable to connect the Internet.\n')
         except:
             warnings.warn('Unable to find server backend.\n')
-            if self.default_country is None:
-                country = input('Please input your server region need to visit:\neg: [England, China, ...]\n')
-            else:
-                country = self.default_country
+            country = self.default_country or input('Please input your server region need to visit:\neg: [England, China, ...]\n')
             sys.stderr.write(f'Using country {country} server backend.\n')
             return {'countryCode': 'CN' if country == 'China' else 'EN'}
 
@@ -1698,7 +1695,8 @@ class IflytekV2(Tse):
         self.host_url = 'https://fanyi.xfyun.cn/console/trans/text'  # https://www.iflyrec.com/html/translate.html
         self.api_url = 'https://fanyi.xfyun.cn/api-tran/trans/its'
         self.detect_language_url = 'https://fanyi.xfyun.cn/api-tran/trans/detection'
-        self.get_language_url = 'https://fanyi.xfyun.cn/js/trans-text/index.7da7fa2e.js'
+        self.language_url_pattern = '/js/trans-text/index.(.*?).js'
+        self.language_url = None
         self.host_headers = self.get_headers(self.host_url, if_api=False)
         self.api_headers = self.get_headers(self.host_url, if_api=True)
         self.language_map = None
@@ -1706,9 +1704,16 @@ class IflytekV2(Tse):
         self.output_zh = 'cn'
         self.input_limit = 2000
 
-    def get_language_map(self, lang_url, ss, headers, timeout, proxies):
-        js_html = ss.get(lang_url, headers=headers, timeout=timeout, proxies=proxies).text
-        lang_list = re.compile('languageCode:"(.*?)",').findall(js_html)
+    def get_language_map(self, host_html, ss, headers, timeout, proxies):
+        host_true_url = f'https://{urllib.parse.urlparse(self.host_url).hostname}'
+
+        et = lxml.etree.HTML(host_html)
+        host_js_url = f"""{host_true_url}{et.xpath('//script[@type="module"]/@src')[0]}"""
+        host_js_html = ss.get(host_js_url, headers=headers, timeout=timeout, proxies=proxies).text
+        self.language_url = f"""{host_true_url}{re.compile(self.language_url_pattern).search(host_js_html).group()}"""
+
+        lang_js_html = ss.get(self.language_url, headers=headers, timeout=timeout, proxies=proxies).text
+        lang_list = re.compile('languageCode:"(.*?)",').findall(lang_js_html)
         lang_list = sorted(list(set(lang_list)))
         return {}.fromkeys(lang_list, lang_list)
 
@@ -1738,17 +1743,17 @@ class IflytekV2(Tse):
             return ''
 
         with requests.Session() as ss:
-            _ = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
-
-            if not self.language_map:
-                self.language_map = self.get_language_map(self.get_language_url, ss, self.host_headers, timeout, proxies)
-            if not self.language_map:
-                delete_temp_language_map_label += 1
-                self.language_map = self.make_temp_language_map(from_language, to_language)
+            host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
 
             if from_language == 'auto':
                 detect_r = ss.get(self.detect_language_url, params={'text': query_text}, headers=self.host_headers, timeout=timeout, proxies=proxies)
                 from_language = detect_r.json()['data'] if detect_r.status_code == 200 and detect_r.text.strip() != '' else self.output_zh
+
+            if not self.language_map:
+                self.language_map = self.get_language_map(host_html, ss, self.host_headers, timeout, proxies)
+            if not self.language_map:
+                delete_temp_language_map_label += 1
+                self.language_map = self.make_temp_language_map(from_language, to_language)
             from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
 
             form_data = {'from': from_language, 'to': to_language, 'text': query_text}
@@ -2087,7 +2092,7 @@ class Papago(Tse):
         self.api_headers = self.get_headers(self.host_url, if_api=True, if_json_for_api=False)
         self.language_map = None
         self.device_id = uuid.uuid4().__str__()
-        self.auth_key = 'v1.6.7_cc60b67557'
+        self.auth_key = None  # 'v1.7.1_12f919c9b5'  #'v1.6.7_cc60b67557'
         self.query_count = 0
         self.output_zh = 'zh-CN'
         self.input_limit = 5000
@@ -2095,13 +2100,13 @@ class Papago(Tse):
     def get_language_map(self, host_html, ss, headers, timeout, proxies):
         try:
             if not self.language_url:
-                url_path = re.compile(self.language_url_pattern).search(host_html).group(0)
+                url_path = re.compile(self.language_url_pattern).search(host_html).group()
                 self.language_url = ''.join([self.host_url, url_path])
-            r = ss.get(self.language_url, headers=headers, timeout=timeout, proxies=proxies)
-            r.raise_for_status()
+            lang_js_html = ss.get(self.language_url, headers=headers, timeout=timeout, proxies=proxies).text
 
-            js_html = r.text
-            lang_str = re.compile('={ALL:(.*?)}').search(js_html).group()[1:]
+            self.auth_key = self.get_auth_key(lang_js_html)
+
+            lang_str = re.compile('={ALL:(.*?)}').search(lang_js_html).group()[1:]
             lang_str = lang_str.lower().replace('zh-cn', 'zh-CN').replace('zh-tw', 'zh-TW')
             lang_list = re.compile(',"(.*?)":|,(.*?):').findall(lang_str)
             lang_list = [j if j else k for j, k in lang_list]
@@ -2111,7 +2116,10 @@ class Papago(Tse):
             lang_list = ['de', 'en', 'es', 'fr', 'hi', 'id', 'it', 'ja', 'ko', 'pt', 'ru', 'th', 'vi', 'zh-CN', 'zh-TW']
             return {}.fromkeys(lang_list, lang_list)
 
-    def get_auth(self, url, auth_key, device_id, time_stamp):
+    def get_auth_key(self, lang_js_html):
+        return re.compile('AUTH_KEY:"(.*?)"').findall(lang_js_html)[0]
+
+    def get_authorization(self, url, auth_key, device_id, time_stamp):
         '''Authorization: "PPG " + t + ":" + p.a.HmacMD5(t + "\n" + e.split("?")[0] + "\n" + n, "v1.6.7_cc60b67557").toString(p.a.enc.Base64)'''
         auth = hmac.new(key=auth_key.encode(), msg=f'{device_id}\n{url}\n{time_stamp}'.encode(), digestmod='md5').digest()
         return f'PPG {device_id}:{base64.b64encode(auth).decode()}'
@@ -2160,7 +2168,7 @@ class Papago(Tse):
                 return self.trans_web(from_language, to_language, query_text, ss, self.host_headers, proxies, timeout)
 
             detect_time = str(int(time.time() * 1000))
-            detect_auth = self.get_auth(self.lang_detect_url, self.auth_key, self.device_id, detect_time)
+            detect_auth = self.get_authorization(self.lang_detect_url, self.auth_key, self.device_id, detect_time)
             detect_add_headers = {'device-type': 'pc', 'timestamp': detect_time, 'authorization': detect_auth}
             detect_headers = {**self.api_headers, **detect_add_headers}
 
@@ -2170,7 +2178,7 @@ class Papago(Tse):
                 from_language = r_detect.json()['langCode']
 
             trans_time = str(int(time.time() * 1000))
-            trans_auth = self.get_auth(self.api_url, self.auth_key, self.device_id, trans_time)
+            trans_auth = self.get_authorization(self.api_url, self.auth_key, self.device_id, trans_time)
             trans_update_headers = {'x-apigw-partnerid': 'papago', 'timestamp': trans_time, 'authorization': trans_auth}
             detect_headers.update(trans_update_headers)
             trans_headers = detect_headers
@@ -2426,7 +2434,7 @@ class Mglip(Tse):
             return ''
 
         if from_language == 'auto':
-            warnings.warn('Unsupported [from_language=auto] with [oyun]! Please specify it.')
+            warnings.warn('Unsupported [from_language=auto] with [mglip]! Please specify it.')
             from_language = 'mon'
 
         with requests.Session() as ss:
@@ -2532,4 +2540,4 @@ def translate_html(html_text: str, to_language: str = 'en', translator: Callable
 
 
 if __name__ == '__main__':
-    print(google('你好'))
+    print(yandex('你好', is_detail_result=True))

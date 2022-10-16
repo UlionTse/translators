@@ -274,3 +274,9 @@ upgrade readme.md
 
 5.4.2
 fix func request_server_region_info().
+
+5.4.3
+fix func en_tran().
+fix iflytek() about getting language_map.
+add self.default_country by os.environ, merged from @kevindragon  #79
+stronger papago().
