@@ -62,6 +62,6 @@ setup(
         'pathos>=0.2.9',
     ],
     python_requires='>=3.6',
-    extras_require={'pypi': ['build>=0.80', 'twine>=4.0.1']},
+    extras_require={'pypi': ['build>=0.8.0', 'twine>=4.0.1']},
     zip_safe=False,
 )
