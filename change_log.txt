@@ -130,7 +130,8 @@ add translate_html().
 
 4.7.5
 upgrade translate_html().
-upgrade baidu() by advice of user `mozbugbox`.
+upgrade baidu() by advice of user @mozbugbox.
+reuse requests session by advice of user @mozbugbox.  #23
 
 4.7.6
 remove parameter `use_cache`, default cache language_map.
