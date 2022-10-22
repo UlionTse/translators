@@ -48,14 +48,14 @@ import translators as ts
 </html>
 """
 
-@Tse.time_stat
-@loguru.logger.catch
+# @Tse.time_stat
+# @loguru.logger.catch
 def test0():
     r = translate_html(html_text, to_language='zh', translator=bing)
     print(r)
 
 
-@loguru.logger.catch
+# @loguru.logger.catch
 def test1():
     for query_text in [query_text1, query_text2, query_text3]:
         print('alibaba:\n', alibaba(query_text))

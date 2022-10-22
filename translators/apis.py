@@ -53,27 +53,27 @@ import pathos.multiprocessing
 import lxml.etree
 import execjs
 import requests
-import loguru
+# import loguru
 
-loguru.logger.remove()
-loguru.logger.add(sys.stdout, format='[{time:HH:mm:ss}] <lvl>{message}</lvl>', level='INFO')
-loguru.logger.opt(colors=True)
+# loguru.logger.remove()
+# loguru.logger.add(sys.stdout, format='[{time:HH:mm:ss}] <lvl>{message}</lvl>', level='INFO')
+# loguru.logger.opt(colors=True)
 
 
 class Tse:
     def __init__(self):
         self.author = 'Ulion.Tse'
 
-    @staticmethod
-    def time_stat(func):
-        @functools.wraps(func)
-        def _wrapper(*args, **kwargs):
-            t1 = time.time()
-            r = func(*args, **kwargs)
-            t2 = time.time()
-            loguru.logger.success('CostTime(fn: {}): {}s'.format(func.__name__, round((t2 - t1), 1)), style='braces')
-            return r
-        return _wrapper
+    # @staticmethod
+    # def time_stat(func):
+    #     @functools.wraps(func)
+    #     def _wrapper(*args, **kwargs):
+    #         t1 = time.time()
+    #         r = func(*args, **kwargs)
+    #         t2 = time.time()
+    #         loguru.logger.success('CostTime(fn: {}): {}s'.format(func.__name__, round((t2 - t1), 1)), style='braces')
+    #         return r
+    #     return _wrapper
 
     @staticmethod
     def get_headers(host_url, if_api=False, if_referer_for_host=True, if_ajax_for_api=True, if_json_for_api=False):
@@ -362,7 +362,7 @@ class GoogleV2(Tse):
 
     def get_info(self, host_html):
         data_str = re.compile(r'window.WIZ_global_data = (.*?);</script>').findall(host_html)[0]
-        data = execjs.get().eval(data_str)
+        data = execjs.eval(data_str)
         return {'bl': data['cfb2h'], 'f.sid': data['FdrFJe']}
 
     def get_consent_cookie(self, consent_html):  # by mercuree. merged but not verify.
@@ -748,7 +748,7 @@ class Tencent(Tse):
         r = ss.get(language_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
         r.raise_for_status()
         lang_map_str = re.compile(pattern='C={(.*?)}|languagePair = {(.*?)}', flags=re.S).search(r.text).group(0)  # C=
-        return execjs.get().eval(lang_map_str)
+        return execjs.eval(lang_map_str)
 
     def get_qt(self, ss, timeout, proxies, if_session=False):
         if if_session:
@@ -930,7 +930,7 @@ class Bing(Tse):
 
     def get_tk(self, host_html):
         result_str = re.compile('var params_RichTranslateHelper = (.*?);').findall(host_html)[0]
-        result = execjs.get().eval(result_str)
+        result = execjs.eval(result_str)
         return {'key': result[0], 'token': result[1]}
 
     # @Tse.time_stat
@@ -1010,7 +1010,7 @@ class Sogou(Tse):
     def get_language_map(self, ss, get_language_url, timeout, proxies):
         lang_html = ss.get(get_language_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
         lang_list_str = re.compile('"ALL":\[(.*?)\]').findall(lang_html)[0]
-        lang_list = execjs.get().eval('[' + lang_list_str + ']')
+        lang_list = execjs.eval('[' + lang_list_str + ']')
         lang_list = [x['lang'] for x in lang_list]
         return {}.fromkeys(lang_list, lang_list)
 
@@ -2537,7 +2537,3 @@ def translate_html(html_text: str, to_language: str = 'en', translator: Callable
     result_dict = {text: ts_text for text, ts_text in result_list}
     _get_result_func = lambda k: result_dict.get(k.group(1), '')
     return pattern.sub(repl=_get_result_func, string=html_text)
-
-
-if __name__ == '__main__':
-    print(yandex('你好', is_detail_result=True))

@@ -280,3 +280,7 @@ fix func en_tran().
 fix iflytek() about getting language_map.
 add self.default_country by os.environ, merged from @kevindragon  #79
 stronger papago().
+
+5.4.6
+upgrade packaging of project.
+upload package to Anaconda.  #90
