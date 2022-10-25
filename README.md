@@ -268,15 +268,15 @@ print(ts._google.language_map)
 
 ### HttpError 4xx
 
-1. Please check whether you made high frequency requests.
-2. Please check whether this service is provided in your country or region.
+1. Check whether you made high frequency requests.
+2. Check whether this service is provided in your country or region.
 3. Detail to solve [HttpError](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) itself.
-4. Please [issue me](https://github.com/UlionTse/translators/issues), thanks.
+4. [Issue me](https://github.com/UlionTse/translators/issues), thanks.
 
 ### RequestsError or ProxyError
 
-1. Check whether the advanced version of `requests` you have installed can access the site properly. If not, try lowering the version or otherwise.
-2. Check that agents are enabled on your computer. If it is enabled, try turning it off or otherwise. 
+1. Check whether the network is connected correctly, Lol.
+2. Check the proxy are enabled on your computer. If it is enabled, try turning it off or otherwise. 
 
 ## License
 
