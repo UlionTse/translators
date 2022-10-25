@@ -3,6 +3,7 @@
 </p>
 <p align="center">
   <a href="https://pypi.org/project/translators"><img alt="PyPI - Version" src="https://img.shields.io/pypi/v/translators.svg"></a>
+  <a href="https://anaconda.org/conda-forge/translators"><img alt="Conda - Version" src="https://img.shields.io/conda/vn/conda-forge/translators.svg"></a>
   <a href="https://pypi.org/project/translators"><img alt="PyPI - License" src="https://img.shields.io/pypi/l/translators.svg"></a>
   <a href="https://pypi.org/project/translators"><img alt="PyPI - Python" src="https://img.shields.io/pypi/pyversions/translators.svg"></a>
   <a href="https://pypi.org/project/translators"><img alt="PyPI - Status" src="https://img.shields.io/pypi/status/translators.svg"></a>
@@ -16,6 +17,7 @@
 
 - [Installation](#installation)
   - [From PyPI](#from-PyPI)
+  - [From Conda](#from-Conda)
   - [From Source](#from-source)
 - [Getting Started](#getting-started)
   - [Import library](#Import-library)
@@ -51,6 +53,12 @@ pip install translators --upgrade
 # https://nodejs.org/en/download/
 ```
 
+### From Conda
+
+```shell
+conda install -c conda-forge translators
+```
+
 ### From Source
 
 ```bash
@@ -65,15 +73,15 @@ python setup.py install
 import translators as ts
 
 wyw_text = '季姬寂，集鸡，鸡即棘鸡。棘鸡饥叽，季姬及箕稷济鸡。'
-chs_text = '季姬感到寂寞，罗集了一些鸡来养，鸡是那种出自荆棘丛中的野鸡。野鸡饿了唧唧叫，季姬就拿竹箕中的谷物喂鸡。'
+chs_text = '季姬感到寂寞，罗集了一些鸡来养，鸡是出自荆棘丛中的野鸡。野鸡饿了唧唧叫，季姬就拿竹箕中的谷物喂鸡。'
 html_text = '''
 <!DOCTYPE html>
 <html>
 <head>
-    <title>这是标题</title>
+    <title>《季姬击鸡记》</title>
 </head>
 <body>
-<p>这是文章《父亲写的散文诗》</p>
+<p>还有另一篇文章《施氏食狮史》。</p>
 </body>
 </html>
 '''
@@ -144,7 +152,7 @@ help(ts.google)
 | [Alibaba](https://translate.alibaba.com)                      | 12                            | support main languages, support professional field                                          | [Alibaba](https://www.alibabagroup.com/en/about/overview), China                                       | stable                               |
 | [Caiyun](https://fanyi.caiyunapp.com)                         | 6                             | high quality to translate but response slowly, support professional field                   | [ColorfulClouds](http://caiyunapp.com/jobs/), China                                                    | stable                               |
 | [Mglip](http://fy.mglip.com/pc)                               | 3                             | good at Mongolia translation                                                                | [Inner Mongolia University](https://www.imu.edu.cn/yw/Home.htm), China                                 | stable                               |
-| [Utibet](http://mt.utibet.edu.cn/mt)                          | 2                             | good at Tibet translation                                                                   | [Tibet University](http://www.utibet.edu.cn/), China                                                   | /                                    |
+| [Utibet](http://mt.utibet.edu.cn/mt)                          | 2                             | good at Tibet translation                                                                   | [Tibet University](http://www.utibet.edu.cn/), China                                                   | stable                               |
 | [TranslateCom](https://www.translate.com/machine-translation) | -                             | ~~from Microsoft~~                                                                          | [TranslateCom](https://www.translate.com/about-us), America                                            | stable                               |
 
 ### Support Language

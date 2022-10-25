@@ -1,6 +1,5 @@
 requests
 PyExecJS
 lxml
-loguru
 pathos
-
+cryptography

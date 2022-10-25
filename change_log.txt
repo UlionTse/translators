@@ -285,3 +285,11 @@ stronger papago().
 5.4.6
 upgrade packaging of project.
 upload package to Anaconda.  #90
+
+
+5.4.8
+stronger baidu().
+stronger caiyun().
+stronger deepl().  #83
+rebuild niutrans().
+stronger parsing data about splitting paragraph.

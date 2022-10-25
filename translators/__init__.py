@@ -1,4 +1,4 @@
-__version__ = "5.4.6"
+__version__ = "5.4.8"
 __author__ = "UlionTse"
 
 from translators.apis import (

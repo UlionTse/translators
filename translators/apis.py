@@ -43,17 +43,22 @@ import uuid
 import hmac
 import base64
 import random
-import urllib.parse
 import hashlib
-import functools
+# import functools
 import warnings
+import urllib.parse
 from typing import Union, Callable
 
-import pathos.multiprocessing
-import lxml.etree
+# import loguru
 import execjs
 import requests
-# import loguru
+import lxml.etree
+import pathos.multiprocessing
+# import cryptography.hazmat.primitives.asymmetric.rsa as cry_rsa
+import cryptography.hazmat.primitives.hashes as cry_hashes
+import cryptography.hazmat.primitives.asymmetric.padding as cry_padding
+import cryptography.hazmat.primitives.serialization as cry_serialization
+
 
 # loguru.logger.remove()
 # loguru.logger.add(sys.stdout, format='[{time:HH:mm:ss}] <lvl>{message}</lvl>', level='INFO')
@@ -110,7 +115,6 @@ class Tse:
         elif to_language not in language_map:
             raise TranslatorError('Unsupported to_language[{}] in {}.'.format(to_language, sorted(language_map.keys())))
         elif from_language != output_auto and to_language not in language_map[from_language]:
-            loguru.logger.exception('language_map:', language_map)
             raise TranslatorError('Unsupported translation: from [{0}] to [{1}]!'.format(from_language, to_language))
         elif from_language == to_language:
             raise TranslatorError(f'from_language[{from_language}] and to_language[{to_language}] should not be same.')
@@ -118,15 +122,13 @@ class Tse:
 
     @staticmethod
     def en_tran(from_lang, to_lang, default_lang='en-US', default_translator='Itranslate'):
-        if default_translator not in ('Itranslate', 'Lingvanex'):
-            return from_lang, to_lang
-
-        from_lang = default_lang if from_lang == 'en' else from_lang
-        to_lang = default_lang if to_lang == 'en' else to_lang
-        from_lang = default_lang.replace('-', '_') if default_translator == 'Lingvanex' and from_lang[:3] == 'en-' else from_lang
-        to_lang = default_lang.replace('-', '_') if default_translator == 'Lingvanex' and from_lang[:3] == 'en-' else to_lang
-        warnings.warn(f'Unsupported [language=en] with [{default_translator}]! Please specify it.')
-        warnings.warn(f'default languages: [{from_lang}, {to_lang}]')
+        if default_translator in ('Itranslate', 'Lingvanex'):
+            from_lang = default_lang if from_lang == 'en' else from_lang
+            to_lang = default_lang if to_lang == 'en' else to_lang
+            from_lang = default_lang.replace('-', '_') if default_translator == 'Lingvanex' and from_lang[:3] == 'en-' else from_lang
+            to_lang = default_lang.replace('-', '_') if default_translator == 'Lingvanex' and to_lang[:3] == 'en-' else to_lang
+            # warnings.warn(f'Unsupported [language=en] with [{default_translator}]! Please specify it.')
+            # warnings.warn(f'default languages: [{from_lang}, {to_lang}]')
         return from_lang, to_lang
 
     @staticmethod
@@ -454,7 +456,7 @@ class Baidu(Tse):
         self.language_map = None
         self.token = None
         self.sign = None
-        self.acs_token = None
+        # self.acs_token = None
         self.query_count = 0
         self.output_zh = 'zh'
         self.input_limit = 5000
@@ -488,8 +490,8 @@ class Baidu(Tse):
         tk_list = re.compile("""token: '(.*?)',|token: "(.*?)",""").findall(host_html)[0]
         return tk_list[0] or tk_list[1]
 
-    def get_acs_token(self):
-        pass  # todo
+    # def get_acs_token(self):
+    #     pass
 
     def baidu_api_v1(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
@@ -532,7 +534,7 @@ class Baidu(Tse):
             data = r.json()
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return data if is_detail_result else data['data'][0]['dst']
+        return data if is_detail_result else '\n'.join([item['dst'] for item in data['data']])
 
     # @Tse.time_stat
     def baidu_api_v2(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
@@ -569,9 +571,8 @@ class Baidu(Tse):
 
             if not self.language_map:
                 self.language_map = self.get_language_map(host_html)
-            if not self.token:
-                self.token = self.get_tk(host_html)
 
+            self.token = self.get_tk(host_html)
             self.sign = self.get_sign(query_text, host_html, ss, timeout, proxies)
             from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
 
@@ -584,14 +585,14 @@ class Baidu(Tse):
                 "from": from_language,
                 "to": to_language,
                 "query": query_text,  # from urllib.parse import quote_plus
-                "transtype": "translang",  # ["translang","realtime"]
+                "transtype": "realtime",  # ["translang","realtime"]
                 "simple_means_flag": "3",
                 "sign": self.sign,
                 "token": self.token,
                 "domain": use_domain,
             }
             form_data = urllib.parse.urlencode(form_data).encode('utf-8')
-            # self.api_headers.update({'Acs-Token': self.acs_token})  # todo
+            # self.api_headers.update({'Acs-Token': self.acs_token})
             r = ss.post(self.api2_url, params=params, data=form_data, headers=self.api_headers, timeout=timeout, proxies=proxies)
             r.raise_for_status()
             data = r.json()
@@ -720,12 +721,10 @@ class Youdao(Tse):
             r = ss.post(self.api_url, data=form, headers=self.api_headers, timeout=timeout, proxies=proxies)
             r.raise_for_status()
             data = r.json()
-            if data['errorCode'] == 40:
-                raise TranslatorError('Invalid translation of `from_language[auto]`, '
-                                      'please specify parameters of `from_language` or `to_language`.')
+
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return data if is_detail_result else ' '.join(item['tgt'] if item['tgt'] else '\n' for result in data['translateResult'] for item in result)
+        return data if is_detail_result else '\n'.join([' '.join([it['tgt'] for it in item]) for item in data['translateResult']])
 
 
 class Tencent(Tse):
@@ -1010,7 +1009,7 @@ class Sogou(Tse):
     def get_language_map(self, ss, get_language_url, timeout, proxies):
         lang_html = ss.get(get_language_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
         lang_list_str = re.compile('"ALL":\[(.*?)\]').findall(lang_html)[0]
-        lang_list = execjs.eval('[' + lang_list_str + ']')
+        lang_list = execjs.eval(''.join(['[', lang_list_str, ']']))
         lang_list = [x['lang'] for x in lang_list]
         return {}.fromkeys(lang_list, lang_list)
 
@@ -1081,7 +1080,7 @@ class Caiyun(Tse):
         self.host_url = 'https://fanyi.caiyunapp.com'
         self.api_url = 'https://api.interpreter.caiyunai.com/v1/translator'
         # self.old_get_tk_url = 'https://fanyi.caiyunapp.com/static/js/app.1312348c1a3d00422dd1.js'
-        self.get_tk_pattern = '/static/js/app.(.*?).js'
+        self.get_tk_pattern = '/assets/index.(.*?).js'
         self.get_tk_url = None
         self.get_jwt_url = 'https://api.interpreter.caiyunai.com/v1/user/jwt/generate'
         self.host_headers = self.get_headers(self.host_url, if_api=False, if_referer_for_host=True)
@@ -1109,12 +1108,12 @@ class Caiyun(Tse):
 
     def get_tk(self, ss, timeout, proxies):
         js_html = ss.get(self.get_tk_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
-        return re.compile('t.headers\["X-Authorization"\]="(.*?)",').findall(js_html)[0]
+        return re.compile('headers\["X-Authorization"\]="(.*?)",').findall(js_html)[0]
 
     def get_jwt(self, browser_id, api_headers, ss, timeout, proxies):
         data = {"browser_id": browser_id}
-        _ = ss.options(self.get_jwt_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
-        return ss.post(self.get_jwt_url, headers=api_headers, json=data, timeout=timeout, proxies=proxies).json()['jwt']
+        # _ = ss.options(self.get_jwt_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+        return ss.post(self.get_jwt_url, json=data, headers=api_headers, timeout=timeout, proxies=proxies).json()['jwt']
 
     def crypt(self, if_de=True):
         normal_key = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz' + '0123456789' + '=.+-_/'
@@ -1140,7 +1139,7 @@ class Caiyun(Tse):
         :param from_language: str, default 'auto'.
         :param to_language: str, default 'en'.
         :param **kwargs:
-                :param professional_field: str, default None, choose from ("medicine","law","machinery")
+                :param professional_field: str, default None, choose from (None, "medicine","law","machinery")
                 :param if_ignore_limit_of_length: boolean, default False.
                 :param is_detail_result: boolean, default False.
                 :param timeout: float, default None.
@@ -1149,9 +1148,8 @@ class Caiyun(Tse):
         :return: str or dict
         """
         use_domain = kwargs.get('professional_field', None)
-        if use_domain:
-            if use_domain not in ("medicine", "law", "machinery"):
-                raise TranslatorError('Your [professional_field] is wrong.')
+        if use_domain not in (None, "medicine", "law", "machinery"):
+            raise TranslatorError('Your [professional_field] is wrong.')
         is_detail_result = kwargs.get('is_detail_result', False)
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
@@ -1163,13 +1161,16 @@ class Caiyun(Tse):
 
         with requests.Session() as ss:
             host_html = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
-            if not self.get_tk_url:
-                self.get_tk_url = self.host_url + re.compile(self.get_tk_pattern).search(host_html).group()
+            if not self.tk:
+                tk_path = re.compile(self.get_tk_pattern).search(host_html).group()
+                self.get_tk_url = ''.join([self.host_url, tk_path])
+                self.tk = self.get_tk(ss, timeout, proxies)
+
             if not self.language_map:
                 self.language_map = self.get_language_map(ss, timeout, proxies)
 
             from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
-            self.tk = self.get_tk(ss, timeout, proxies)
+
             self.api_headers.update({
                 "app-name": "xy",
                 "device-id": "",
@@ -1188,7 +1189,7 @@ class Caiyun(Tse):
                 "os_type": "web",
                 "replaced": "true",
                 "request_id": "web_fanyi",
-                "source": query_text,
+                "source": query_text.split('\n'),
                 "trans_type": f"{from_language}2{to_language}",
             }
             if from_language == 'auto':
@@ -1202,8 +1203,7 @@ class Caiyun(Tse):
         time.sleep(sleep_seconds)
         self.query_count += 1
         self.api_headers.pop('T-Authorization')
-        data['target'] = self.decrypt(data['target'])
-        return data if is_detail_result else data['target']
+        return data if is_detail_result else '\n'.join([self.decrypt(item) for item in data['target']])
 
 
 class Deepl(Tse):
@@ -1213,7 +1213,7 @@ class Deepl(Tse):
         self.api_url = 'https://www2.deepl.com/jsonrpc'
         self.host_headers = self.get_headers(self.host_url, if_api=False)
         self.api_headers = self.get_headers(self.host_url, if_api=True, if_ajax_for_api=False, if_json_for_api=True)
-        self.api_headers.update({'TE': 'trailers'})
+        self.params = {'split': {'method': 'LMT_split_text'}, 'handle': {'method': 'LMT_handle_jobs'}}
         self.request_id = random.randrange(100, 10000) * 10000 + 4
         self.language_map = None
         self.query_count = 0
@@ -1225,12 +1225,12 @@ class Deepl(Tse):
         return {}.fromkeys(lang_list, lang_list)
 
     def split_sentences_param(self, query_text, from_language):
-        params = {'method': 'LMT_split_text'}
         data = {
-            'id': self.request_id + 0,
+            'id': self.request_id,
             'jsonrpc': '2.0',
             'params': {
-                'texts': [query_text],
+                'texts': query_text.split('\n'),
+                'commonJobParams': {'mode': 'translate'},
                 'lang': {
                     'lang_user_selected': from_language,
                     'preference': {
@@ -1240,30 +1240,28 @@ class Deepl(Tse):
                 },
             },
         }
-        data.update(params)
-        return params, data
+        return {**self.params['split'], **data}
 
     def context_sentences_param(self, sentences, from_language, to_language):
         sentences = [''] + sentences + ['']
-        params = {'method': 'LMT_handle_jobs'}
         data = {
             'id': self.request_id + 1,
             'jsonrpc': ' 2.0',
             'params': {
                 'priority': 1,  # -1 if 'quality': 'fast'
+                'timestamp': int(time.time() * 1000),
                 'commonJobParams': {
                     # 'regionalVariant': 'en-US',
                     'browserType': 1,
-                    'formality': None,
+                    'mode': 'translate',
                 },
-                'timestamp': int(time.time() * 1000),
                 'jobs': [
                     {
                         'kind': 'default',
                         # 'quality': 'fast', # -1
-                        'sentences': sentences[i],
-                        'raw_en_context_before': [sentences[i - 1]] if sentences[i - 1] else [],
-                        'raw_en_context_after': [sentences[i + 1]] if sentences[i + 1] else [],
+                        'sentences': [{'id': i-1, 'prefix': '', 'text': sentences[i]}],
+                        'raw_en_context_before': sentences[1:i] if sentences[i-1] else [],
+                        'raw_en_context_after': [sentences[i+1]] if sentences[i+1] else [],
                         'preferred_num_beams': 1 if len(sentences) >= 4 else 4,  # 1 if two sentences else 4, len>=2+2
                     } for i in range(1, len(sentences) - 1)
                 ],
@@ -1272,13 +1270,12 @@ class Deepl(Tse):
                         'weight': {},
                         'default': 'default',
                     },
-                    'source_lang_user_selected': from_language,
+                    'source_lang_user_selected': from_language,  # "source_lang_computed"
                     'target_lang': to_language,
                 },
             },
         }
-        data.update(params)
-        return params, data
+        return {**self.params['handle'], **data}
 
     # @Tse.time_stat
     def deepl_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
@@ -1316,22 +1313,15 @@ class Deepl(Tse):
             from_language = from_language.upper() if from_language != 'auto' else from_language
             to_language = to_language.upper() if to_language != 'auto' else to_language
 
-            ss_params, ss_data = self.split_sentences_param(query_text, from_language)
-            # _ = ss.options(self.api_url, params=ss_params, headers=self.api_headers, timeout=timeout, proxies=proxies)
-            r_ss = ss.post(self.api_url, params=ss_params, json=ss_data, headers=self.api_headers, timeout=timeout, proxies=proxies)
-            r_ss.raise_for_status()
-            ss_data = r_ss.json()
-            ss_sentences = ss_data['result']['texts'][0]['chunks']
-            for sent, index in zip(ss_sentences.copy(), range(len(ss_sentences))):
-                temp_dict = {
-                    "id": index
-                }
-                sent["sentences"][0].update(temp_dict)
-                ss_sentences[index] = sent["sentences"]
+            ssp_data = self.split_sentences_param(query_text, from_language)
+            r_s = ss.post(self.api_url, params=self.params['split'], json=ssp_data, headers=self.api_headers, timeout=timeout, proxies=proxies)
+            r_s.raise_for_status()
+            s_data = r_s.json()
 
-            cs_params, cs_data = self.context_sentences_param(ss_sentences, from_language, to_language)
-            # _ = ss.options(self.api_url, params=cs_params, headers=self.api_headers, timeout=timeout, proxies=proxies)
-            r_cs = ss.post(self.api_url, params=cs_params, json=cs_data, headers=self.api_headers, timeout=timeout, proxies=proxies)
+            s_sentences = [it['sentences'][0]['text'] for item in s_data['result']['texts'] for it in item['chunks']]
+            h_data = self.context_sentences_param(s_sentences, from_language, to_language)
+
+            r_cs = ss.post(self.api_url, params=self.params['handle'], json=h_data, headers=self.api_headers, timeout=timeout, proxies=proxies)
             r_cs.raise_for_status()
             data = r_cs.json()
 
@@ -1340,7 +1330,7 @@ class Deepl(Tse):
         time.sleep(sleep_seconds)
         self.request_id += 3
         self.query_count += 1
-        return data if is_detail_result else ' '.join(item['beams'][0]['sentences'][0]["text"] for item in data['result']['translations'])
+        return data if is_detail_result else ' '.join(item['beams'][0]['sentences'][0]["text"] for item in data['result']['translations'])  # not split paragraph
 
 
 class Yandex(Tse):
@@ -1989,9 +1979,9 @@ class TranslateCom(Tse):
 
         with requests.Session() as ss:
             r = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
-            if not self.tk:
-                self.tk = r.cookies.get_dict()
-                self.api_headers.update({'Cookie': f'XSRF-TOKEN={self.tk["XSRF-TOKEN"]}; ci_session={self.tk["ci_session"]}'})
+            # if not self.tk:
+            #     self.tk = r.cookies.get_dict()
+            #     self.api_headers.update({'Cookie': f'XSRF-TOKEN={self.tk["XSRF-TOKEN"]}; ci_session={self.tk["ci_session"]}'})
 
             if not self.language_map:
                 lang_box = self.get_language_map(self.language_url, ss, self.host_headers, timeout, proxies)
@@ -2312,35 +2302,48 @@ class Lingvanex(Tse):
 class Niutrans(Tse):
     def __init__(self):
         super().__init__()
-        self.host_url = 'https://niutrans.com/trans?type=text'
-        self.api_url = 'https://test.niutrans.com/NiuTransServer/testaligntrans'
-        self.detect_language_url = 'https://test.niutrans.com/NiuTransServer/language'
-        self.get_language_url = 'https://niutrans.com/NiuTransFrontPage/language/getAllLanguage'
-        self.validate_url = 'https://niutrans.com/NiuTransFrontPage/validation/translate'
-        self.is_login_console_url = 'https://niutrans.com/NiuTransConsole/user/isLogin'
-        self.is_login_doc_url = 'https://niutrans.com/NiuTransDocumentTrans/document/isLogin'
-        self.console_service_url = 'https://niutrans.com/NiuTransAuthCenter/login?service=https://niutrans.com/NiuTransConsole/sso'
-        self.doc_service_url = 'https://niutrans.com/NiuTransAuthCenter/login?service=https://niutrans.com/NiuTransDocumentTrans/sso'
-        self.json_url = 'https://niutrans.com/NiuTransPagesTrans/resource/json/NiuTrans/NiuTrans.json'
+        self.host_url = 'http://display.niutrans.com'  # must http
+        self.api_url = 'http://display.niutrans.com/niutrans/textTranslation'
+        self.cookie_url = 'http://display.niutrans.com/niutrans/user/getAccountAdmin?locale=zh-CN'
+        self.user_url = 'http://display.niutrans.com/niutrans/user/getGuestUser'
+        self.key_url = 'http://display.niutrans.com/niutrans/user/getOnePublicKey'
+        self.token_url = 'http://display.niutrans.com/niutrans/login'
+        self.info_url = 'http://display.niutrans.com/niutrans/user/getUserInfoByToken'
+        self.get_language_url = 'http://display.niutrans.com/niutrans/translServiceInfo/getAllLanguage'
+        self.detect_language_url = 'http://display.niutrans.com/niutrans/textLanguageDetect'
         self.host_headers = self.get_headers(self.host_url, if_api=False)
-        self.api_headers = self.get_headers(self.host_url, if_api=True, if_json_for_api=True)
-        self.api_headers.pop('X-Requested-With')
+        self.api_headers = None
         self.language_map = None
         self.detail_language_map = None
+        self.account_info = None
         self.query_count = 0
         self.output_zh = 'zh'
         self.input_limit = 5000
 
     def get_language_map(self, lang_url, ss, headers, timeout, proxies):
-        params = {'type': 0, 'time': int(time.time() * 1000)}
-        detail_lang_map = ss.get(lang_url, params=params, headers=headers, timeout=timeout, proxies=proxies).json()
-        lang_list = sorted(set([it['code'] for item in detail_lang_map['languageList'] for it in item['result']]))
+        detail_lang_map = ss.get(lang_url, headers=headers, timeout=timeout, proxies=proxies).json()
+        lang_list = sorted(set([item['languageAbbreviation'] for item in detail_lang_map['data']]))  # 42
         return {'d_lang_map': detail_lang_map, 'lang_map': {}.fromkeys(lang_list, lang_list)}
+
+    def encrypt_rsa(self, message_text, public_key_text):
+        """https://github.com/kjur/jsrsasign/blob/c665ebcebc62cc7e55ffadbf2efec7ef89279b00/sample_node/dataencrypt#L24"""
+        public_key_pem = ''.join(['-----BEGIN PUBLIC KEY-----\n', public_key_text, '\n-----END PUBLIC KEY-----'])
+        public_key_object = cry_serialization.load_pem_public_key(public_key_pem.encode())
+        cipher_text = base64.b64encode(public_key_object.encrypt(
+            plaintext=message_text.encode(),
+            padding=cry_padding.PKCS1v15()
+            # padding=cry_padding.OAEP(
+            #     mgf=cry_padding.MGF1(algorithm=cry_hashes.SHA256()),
+            #     algorithm=cry_hashes.SHA256(),
+            #     label=None
+            # )
+        )).decode()
+        return cipher_text
 
     # @Tse.time_stat
     def niutrans_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
         """
-        https://niutrans.com/trans/
+        http://display.niutrans.com
         :param query_text: str, must.
         :param from_language: str, default 'auto'.
         :param to_language: str, default 'en'.
@@ -2364,12 +2367,29 @@ class Niutrans(Tse):
 
         with requests.Session() as ss:
             _ = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
-            params = {'time': int(time.time() * 1000)}
-            _ = ss.get(self.is_login_console_url, params=params, headers=self.host_headers, timeout=timeout, proxies=proxies)
-            _ = ss.get(self.is_login_doc_url, params=params, headers=self.host_headers, timeout=timeout, proxies=proxies)
+            _ = ss.options(self.cookie_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+
+            if not self.account_info:
+                user_data = ss.get(self.user_url, headers=self.host_headers, timeout=timeout, proxies=proxies).json()
+                key_data = ss.get(self.key_url, headers=self.host_headers, timeout=timeout, proxies=proxies).json()
+                guest_info = {
+                    'username': user_data['data']['username'].strip(),
+                    'password': self.encrypt_rsa(message_text=user_data['data']['password'], public_key_text=key_data['data']),
+                    'publicKey': key_data['data'],
+                    'symbol': '',
+                }
+                r_tk = ss.post(self.token_url, json=guest_info, headers=self.host_headers, timeout=timeout, proxies=proxies)
+                token_data = r_tk.json()
+                self.account_info = {**guest_info, **token_data['data']}
+
+            if not self.api_headers:
+                self.api_headers = {**self.host_headers, **{'Jwt': self.account_info['token']}}
+
+            ss.cookies.update({'Admin-Token': self.account_info['token']})
+            # info_data = ss.get(self.info_url, headers=self.host_headers, timeout=timeout, proxies=proxies).json()
 
             if not self.language_map:
-                lang_data = self.get_language_map(self.get_language_url, ss, self.host_headers, timeout, proxies)
+                lang_data = self.get_language_map(self.get_language_url, ss, self.api_headers, timeout, proxies)
                 self.detail_language_map, self.language_map = lang_data['d_lang_map'], lang_data['lang_map']
             if not self.language_map:
                 delete_temp_language_map_label += 1
@@ -2377,22 +2397,14 @@ class Niutrans(Tse):
 
             from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
             if from_language == 'auto':
-                params = {'src_text': query_text, 'source': 'text', 'time': int(time.time() * 1000)}
-                res = ss.get(self.detect_language_url, headers=self.host_headers, params=params, timeout=timeout, proxies=proxies)
-                from_language = res.json()['language']
+                res = ss.post(self.detect_language_url, json={'src_text': query_text}, headers=self.api_headers, timeout=timeout, proxies=proxies)
+                from_language = res.json()['data']['language']
 
-            _ = ss.get(self.json_url, params=params, headers=self.host_headers, timeout=timeout, proxies=proxies)
-            data = {'src_text': query_text, 'from': from_language, 'to': to_language, 'dictNo': '', 'memoryNo': ''}
-            val_data = urllib.parse.urlencode({**data, **{'id': int(time.time() * 1000)}})
-            self.api_headers.update({'Host': urllib.parse.urlparse(self.host_url).netloc})
-            _ = ss.post(self.validate_url, data=val_data, headers=self.api_headers, timeout=timeout, proxies=proxies)
-            _ = self.get_language_map(self.get_language_url, ss, self.host_headers, timeout, proxies)
-
-            add_data = {'source': 'text', 'isUseDict': '0', 'isUseMemory': '0', 'time': int(time.time() * 1000)}
-            params = urllib.parse.urlencode({**data, **add_data})
-            self.api_headers.update({'Host': urllib.parse.urlparse(self.api_url).netloc})
-
-            r = ss.get(self.api_url, params=params, headers=self.api_headers, timeout=timeout, proxies=proxies)
+            form_data = {
+                'src_text': query_text, 'from': from_language, 'to': to_language,
+                'contrastFlag': 'true', 'termDictionaryLibraryId': '', 'translationMemoryLibraryId': '',
+            }
+            r = ss.post(self.api_url, json=form_data, headers=self.api_headers, timeout=timeout, proxies=proxies)
             r.raise_for_status()
             data = r.json()
 
@@ -2400,7 +2412,7 @@ class Niutrans(Tse):
             self.language_map = None
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return data if is_detail_result else data['tgt_text']
+        return data if is_detail_result else '\n'.join([' '.join([it['data'] for it in item['sentences']]) for item in data['data']])
 
 
 class Mglip(Tse):
@@ -2420,7 +2432,7 @@ class Mglip(Tse):
         """
         http://fy.mglip.com/pc
         :param query_text: str, must.
-        :param from_language: str, default 'auto', equals to 'tibet'.
+        :param from_language: str, default 'auto', equals to 'mon'.
         :param to_language: str, default 'zh'.
         :param **kwargs:
                 :param if_ignore_limit_of_length: boolean, default False.
