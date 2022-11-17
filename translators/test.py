@@ -1,7 +1,7 @@
 # coding=utf-8
 # author=UlionTse
 
-from apis import *
+from servers import *
 
 
 query_text1 = '季姬寂，集鸡，鸡即棘鸡。棘鸡饥叽，季姬及箕稷济鸡。👍👍👍'
@@ -48,7 +48,7 @@ import translators as ts
 # @Tse.time_stat
 # @loguru.logger.catch
 def test0():
-    r = translate_html(html_text, to_language='zh', translator=bing)
+    r = translate_html(html_text, to_language='zh', translator=translators_pool[0], n_jobs=4)
     print(r)
 
 
@@ -68,7 +68,7 @@ def test1():
         print('itranslate:\n', itranslate(query_text))
         print('lingvanex:\n', lingvanex(query_text))
         print('mglip:\n', mglip(query_text, 'zh', 'mon'))
-        print('niutrans:\n', niutrans(query_text))
+        print('niutrans:\n', niutrans(query_text))  # todo
         print('papago:\n', papago(query_text))
         print('reverso:\n', reverso(query_text))
         print('sogou:\n', sogou(query_text))
@@ -80,5 +80,5 @@ def test1():
 
 
 if __name__ == "__main__":
-    # test0()
+    test0()
     test1()

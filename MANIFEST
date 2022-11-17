@@ -5,6 +5,6 @@ requirements.txt
 setup.cfg
 setup.py
 translators/__init__.py
-translators/apis.py
+translators/servers.py
 translators/test.py
 

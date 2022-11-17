@@ -82,7 +82,7 @@ class Tse:
 
     @staticmethod
     def get_headers(host_url, if_api=False, if_referer_for_host=True, if_ajax_for_api=True, if_json_for_api=False):
-        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36"
+        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36"
         url_path = urllib.parse.urlparse(host_url).path
         host_headers = {
             'Referer' if if_referer_for_host else 'Host': host_url,
@@ -142,7 +142,7 @@ class Tse:
     @staticmethod
     def check_query_text(query_text, if_ignore_limit_of_length=False, limit_of_length=5000):
         if not isinstance(query_text, str):
-            raise TranslatorError('query_text is not string type.')
+            raise TranslatorError
         query_text = query_text.strip()
         length = len(query_text)
         if length >= limit_of_length and not if_ignore_limit_of_length:
@@ -155,7 +155,7 @@ class Tse:
         return query_text
 
 
-class TranslatorSeverRegion(Tse):
+class GuestSeverRegion(Tse):
     def __init__(self):
         super().__init__()
         self.get_addr_url = 'https://geolocation.onetrust.com/cookieconsentpub/v1/geo/location'
@@ -165,18 +165,18 @@ class TranslatorSeverRegion(Tse):
         self.default_country = os.environ.get('TRANSLATORS_DEFAULT_COUNTRY', None)
 
     @property
-    def request_server_region_info(self):
+    def get_server_region(self):
         _headers_fn = lambda url: self.get_headers(url, if_api=False, if_referer_for_host=True)
         try:
             try:
                 data = eval(requests.get(self.get_addr_url, headers=_headers_fn(self.get_addr_url)).text[9:-2])
                 sys.stderr.write(f'Using state {data.get("stateName")} server backend.\n')
-                return {'countryCode': data.get('country')}
+                return data.get('country')
             except requests.exceptions.Timeout:
                 ip_address = requests.get(self.get_ip_url, headers=_headers_fn(self.get_ip_url)).json()['origin']
                 form_data = {'ip': ip_address, 'accessKey': 'alibaba-inc'}
                 data = requests.post(url=self.ip_tb_add_url, data=form_data, headers=_headers_fn(self.ip_tb_add_url)).json().get('data')
-                return {'countryCode': data.get('country_id')}
+                return data.get('country_id')
 
         except requests.exceptions.ConnectionError:
             raise TranslatorError('Unable to connect the Internet.\n')
@@ -184,7 +184,7 @@ class TranslatorSeverRegion(Tse):
             warnings.warn('Unable to find server backend.\n')
             country = self.default_country or input('Please input your server region need to visit:\neg: [England, China, ...]\n')
             sys.stderr.write(f'Using country {country} server backend.\n')
-            return {'countryCode': 'CN' if country == 'China' else 'EN'}
+            return 'CN' if country == 'China' else 'EN'
 
 
 class TranslatorError(Exception):
@@ -192,12 +192,12 @@ class TranslatorError(Exception):
 
 
 class GoogleV1(Tse):
-    def __init__(self):
+    def __init__(self, server_region='EN'):
         super().__init__()
         self.host_url = None
         self.cn_host_url = 'https://translate.google.cn'
         self.en_host_url = 'https://translate.google.com'
-        self.request_server_region_info = REQUEST_SERVER_REGION_INFO
+        self.server_region = server_region
         self.host_headers = None
         self.language_map = None
         self.api_url = None
@@ -300,8 +300,7 @@ class GoogleV1(Tse):
                 :param sleep_seconds: float, default `random.random()`.
         :return: str or list
         """
-
-        use_cn_condition = kwargs.get('if_use_cn_host', None) or self.request_server_region_info.get('countryCode') == 'CN'
+        use_cn_condition = kwargs.get('if_use_cn_host', None) or self.server_region == 'CN'
         self.host_url = self.cn_host_url if use_cn_condition else self.en_host_url
         self.host_headers = self.get_headers(self.host_url, if_api=False)
         is_detail_result = kwargs.get('is_detail_result', False)
@@ -335,13 +334,13 @@ class GoogleV1(Tse):
 
 
 class GoogleV2(Tse):
-    def __init__(self):
+    def __init__(self, server_region='EN'):
         super().__init__()
         self.host_url = None
         self.cn_host_url = 'https://translate.google.cn'
         self.en_host_url = 'https://translate.google.com'
         self.api_url = None
-        self.request_server_region_info = REQUEST_SERVER_REGION_INFO
+        self.server_region = server_region
         self.host_headers = None
         self.api_headers = None
         self.language_map = None
@@ -396,7 +395,7 @@ class GoogleV2(Tse):
                 raise TranslatorError('Your [reset_host_url] is wrong.')
             self.host_url = reset_host_url
         else:
-            use_cn_condition = kwargs.get('if_use_cn_host', None) or self.request_server_region_info.get('countryCode') == 'CN'
+            use_cn_condition = kwargs.get('if_use_cn_host', None) or self.server_region == 'CN'
             self.host_url = self.cn_host_url if use_cn_condition else self.en_host_url
         self.api_url = f'{self.host_url}/_/TranslateWebserverUi/data/batchexecute'
 
@@ -900,12 +899,12 @@ class Alibaba(Tse):
 
 
 class Bing(Tse):
-    def __init__(self):
+    def __init__(self, server_region='EN'):
         super().__init__()
         self.host_url = None
         self.cn_host_url = 'https://cn.bing.com/Translator'
         self.en_host_url = 'https://www.bing.com/Translator'
-        self.request_server_region_info = REQUEST_SERVER_REGION_INFO
+        self.server_region = server_region
         self.api_url = None
         self.host_headers = None
         self.api_headers = None
@@ -948,7 +947,7 @@ class Bing(Tse):
                 :param sleep_seconds: float, default `random.random()`.
         :return: str or list
         """
-        use_cn_condition = kwargs.get('if_use_cn_host', None) or self.request_server_region_info.get('countryCode') == 'CN'
+        use_cn_condition = kwargs.get('if_use_cn_host', None) or self.server_region == 'CN'
         self.host_url = self.cn_host_url if use_cn_condition else self.en_host_url
         self.api_url = self.host_url.replace('Translator', 'ttranslatev3')
         self.host_headers = self.get_headers(self.host_url, if_api=False)
@@ -1336,12 +1335,13 @@ class Deepl(Tse):
 class Yandex(Tse):
     def __init__(self):
         super().__init__()
+        self.home_url = 'https://yandex.com'
         self.host_url = 'https://translate.yandex.com'
         self.api_url = 'https://translate.yandex.net/api/v1/tr.json/translate'
         self.api_host = 'https://translate.yandex.net'
         self.detect_language_url = 'https://translate.yandex.net/api/v1/tr.json/detect'
-        self.host_headers = None
-        self.api_headers = None
+        self.host_headers = self.get_headers(self.home_url, if_api=False, if_referer_for_host=True)
+        self.api_headers = self.get_headers(self.host_url, if_api=True)
         self.language_map = None
         self.sid = None
         self.key = None
@@ -1368,12 +1368,10 @@ class Yandex(Tse):
         sid_find = re.compile("SID: '(.*?)',").findall(host_html)[0]
         return '.'.join([w[::-1] for w in sid_find.split('.')])
 
-    def detect_language(self, ss, query_text, sid, timeout, proxies):
-        params = {'sid': sid, 'srv': 'tr-text', 'text': query_text, 'hint': 'en,ru', 'options': 1}
-        self.host_headers.update({'Host': self.api_host})
-        r = ss.get(self.detect_language_url, params=params, headers=self.host_headers, timeout=timeout, proxies=proxies)
+    def detect_language(self, ss, query_text, sid, yu, headers, timeout, proxies):
+        params = {'sid': sid, 'yu': yu, 'text': query_text, 'srv': 'tr-text', 'hint': 'en,ru', 'options': 1}
+        r = ss.get(self.detect_language_url, params=params, headers=headers, timeout=timeout, proxies=proxies)
         r.raise_for_status()
-        self.host_headers.pop('Host')
         return r.json().get('lang')
 
     # @Tse.time_stat
@@ -1398,8 +1396,7 @@ class Yandex(Tse):
                 raise TranslatorError('Your [reset_host_url] is wrong.')
             self.host_url = reset_host_url
         self.host_headers = self.get_headers(self.host_url, if_api=False, if_referer_for_host=True)  # host_html
-        self.host_headers.update({'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8'})
-        self.api_headers = self.get_headers(self.host_url, if_api=True, if_ajax_for_api=True)
+        self.api_headers = self.get_headers(self.api_host, if_api=True, if_ajax_for_api=True)
         is_detail_result = kwargs.get('is_detail_result', False)
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
@@ -1414,7 +1411,9 @@ class Yandex(Tse):
                 self.begin_timestamp = time.time()
                 self.query_count = 0
 
-                r = ss.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+                # _ = ss.get(self.home_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+                _ = ss.get(self.host_url, headers=self.api_headers, timeout=timeout, proxies=proxies)
+                r = ss.get(self.host_url, headers=self.api_headers, timeout=timeout, proxies=proxies)
                 r.raise_for_status()
                 self.yu = r.cookies.get_dict().get('yuidss') or f'{random.randint(int(1e8), int(9e8))}{int(time.time())}'
 
@@ -1425,23 +1424,28 @@ class Yandex(Tse):
                 self.language_map = self.get_language_map(host_html)
 
             from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
-            from_language = self.detect_language(ss, query_text, self.sid, timeout, proxies) if from_language == 'auto' else from_language
+            if from_language == 'auto':
+                from_language = self.detect_language(ss, query_text, self.sid, self.yu, self.api_headers, timeout, proxies)
+
             params = {
                 'id': f'{self.sid}-{self.query_count}-0',
-                'lang': f'{from_language}-{to_language}',
+                'source_lang': from_language,
+                'target_lang': to_language,
                 'srv': 'tr-text',
                 'reason': 'paste',  # 'auto'
                 'format': 'text',
+                'ajax': '1',
                 'yu': self.yu,
+                # 'yum': str(int(time.time() * 10**10)),
             }
             form_data = {'text': query_text, 'options': 4}
-            self.api_headers.update({'Host': self.api_host, 'X-CSRF-Token': self.csrf_token})
+            # self.api_headers.update({'Host': self.api_host, 'X-CSRF-Token': self.csrf_token})
             r = ss.post(self.api_url, headers=self.api_headers, params=params, data=form_data, timeout=timeout, proxies=proxies)
             r.raise_for_status()
             data = r.json()
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return data if is_detail_result else data['text'][0]
+        return data if is_detail_result else '\n'.join(data['text'])
 
 
 class Argos(Tse):
@@ -2473,85 +2477,176 @@ class Mglip(Tse):
         return data if is_detail_result else data['datas'][0]['paragraph'] if data['datas'][0]['type'] == 'trans' else data['datas'][0]['data']
 
 
+class TranslatorsServer:
+    def __init__(self):
+        self.server_region = GuestSeverRegion().get_server_region
+        self._alibaba = Alibaba()
+        self.alibaba = self._alibaba.alibaba_api
+        self._argos = Argos()
+        self.argos = self._argos.argos_api
+        self._baidu = Baidu()
+        self.baidu = self._baidu.baidu_api
+        self._bing = Bing(server_region=self.server_region)
+        self.bing = self._bing.bing_api
+        self._caiyun = Caiyun()
+        self.caiyun = self._caiyun.caiyun_api
+        self._deepl = Deepl()
+        self.deepl = self._deepl.deepl_api
+        self._google = GoogleV2(server_region=self.server_region)
+        self.google = self._google.google_api
+        self._iciba = Iciba()
+        self.iciba = self._iciba.iciba_api
+        self._iflytek = IflytekV2()
+        self.iflytek = self._iflytek.iflytek_api
+        self._itranslate = Itranslate()
+        self.itranslate = self._itranslate.itranslate_api
+        self._lingvanex = Lingvanex()
+        self.lingvanex = self._lingvanex.lingvanex_api
+        self._niutrans = Niutrans()
+        self.niutrans = self._niutrans.niutrans_api
+        self._mglip = Mglip()
+        self.mglip = self._mglip.mglip_api
+        self._papago = Papago()
+        self.papago = self._papago.papago_api
+        self._reverso = Reverso()
+        self.reverso = self._reverso.reverso_api
+        self._sogou = Sogou()
+        self.sogou = self._sogou.sogou_api
+        self._tencent = Tencent()
+        self.tencent = self._tencent.tencent_api
+        self._translateCom = TranslateCom()
+        self.translateCom = self._translateCom.translateCom_api
+        self._utibet = Utibet()
+        self.utibet = self._utibet.utibet_api
+        self._yandex = Yandex()
+        self.yandex = self._yandex.yandex_api
+        self._youdao = Youdao()
+        self.youdao = self._youdao.youdao_api
+        self.translators_dict = {
+            'alibaba': self.alibaba, 'argos': self.argos, 'baidu': self.baidu, 'bing':self.bing,
+            'caiyun': self.caiyun, 'deepl': self.deepl, 'google': self.google, 'iciba': self.iciba,
+            'iflytek': self.iflytek, 'itranslate': self.itranslate, 'lingvanex': self.lingvanex,
+            'niutrans': self.niutrans, 'mglip': self.mglip, 'papago': self.papago, 'reverso': self.reverso,
+            'sogou': self.sogou, 'tencent': self.tencent, 'translateCom': self.translateCom, 'utibet': self.utibet,
+            'yandex': self.yandex, 'youdao': self.youdao,
+        }
+        self.translators_pool = list(self.translators_dict.keys())
 
-REQUEST_SERVER_REGION_INFO = TranslatorSeverRegion().request_server_region_info
+    def translate_text(self,
+                       query_text: str,
+                       translator: str = 'bing',
+                       from_language: str = 'auto',
+                       to_language: str = 'en',
+                       **kwargs
+                       ) -> Union[str, dict]:
+        """
+        :param query_text: str, must.
+        :param translator: str, default 'bing'.
+        :param from_language: str, default 'auto'.
+        :param to_language: str, default 'zh'.
+        :param **kwargs:
+                :param if_ignore_limit_of_length: boolean, default False.
+                :param is_detail_result: boolean, default False.
+                :param timeout: float, default None.
+                :param proxies: dict, default None.
+                :param sleep_seconds: float, default `random.random()`.
+        :return: str or dict
+        """
+        if translator not in self.translators_pool:
+            raise TranslatorError
+        return self.translators_dict[translator](query_text=query_text, from_language=from_language, to_language=to_language, **kwargs)
 
-_alibaba = Alibaba()
-alibaba = _alibaba.alibaba_api
-_argos = Argos()
-argos = _argos.argos_api
-_baidu = Baidu()
-baidu = _baidu.baidu_api
-_bing = Bing()
-bing = _bing.bing_api
-_caiyun = Caiyun()
-caiyun = _caiyun.caiyun_api
-_deepl = Deepl()
-deepl = _deepl.deepl_api
-# _google = GoogleV1()
-_google = GoogleV2()
-google = _google.google_api
-_iciba = Iciba()
-iciba = _iciba.iciba_api
-# _iflytek = IflytekV1()
-_iflytek = IflytekV2()
-iflytek = _iflytek.iflytek_api
-_itranslate = Itranslate()
-itranslate = _itranslate.itranslate_api
-_lingvanex = Lingvanex()
-lingvanex = _lingvanex.lingvanex_api
-_niutrans = Niutrans()
-niutrans = _niutrans.niutrans_api
-_mglip = Mglip()
-mglip = _mglip.mglip_api
-_papago = Papago()
-papago = _papago.papago_api
-_reverso = Reverso()
-reverso = _reverso.reverso_api
-_sogou = Sogou()
-sogou = _sogou.sogou_api
-_tencent = Tencent()
-tencent = _tencent.tencent_api
-_translateCom = TranslateCom()
-translateCom = _translateCom.translateCom_api
-_utibet = Utibet()
-utibet = _utibet.utibet_api
-_yandex = Yandex()
-yandex = _yandex.yandex_api
-_youdao = Youdao()
-youdao = _youdao.youdao_api
+    def translate_html(self,
+                       html_text: str,
+                       translator: str = 'bing',
+                       from_language: str = 'auto',
+                       to_language: str = 'en',
+                       n_jobs: int = -1,
+                       **kwargs
+                       ) -> str:
+        """
+        Translate the displayed content of html without changing the html structure.
+        :param html_text: str, html format.
+        :param from_language: str, default 'auto'.
+        :param to_language: str, default: 'en'.
+        :param translator: str, default 'bing'.
+        :param n_jobs: int, default -1, means os.cpu_cnt().
+        :param **kwargs:
+            :param if_ignore_limit_of_length: boolean, default False.
+            :param timeout: float, default None.
+            :param proxies: dict, default None.
+        :return: str, html format.
+        """
+        if kwargs:
+            for param in ('query_text', 'is_detail_result'):
+                if param in kwargs:
+                    raise TranslatorError(f'{param} should not be in `**kwargs`.')
+        kwargs.update({'sleep_seconds': 0})
+        if translator not in self.translators_pool:
+            raise TranslatorError
+
+        n_jobs = os.cpu_count() if n_jobs <= 0 else n_jobs
+        _ts = self.translators_dict[translator]
+
+        pattern = re.compile(r"(?:^|(?<=>))([\s\S]*?)(?:(?=<)|$)")  # TODO: <code></code> <div class="codetext notranslate">
+        sentence_list = list(set(pattern.findall(html_text)))
+        _map_translate_func = lambda sentence: (sentence, _ts(query_text=sentence, from_language=from_language, to_language=to_language, **kwargs))
+
+        with pathos.multiprocessing.ProcessPool(n_jobs) as pool:
+            result_list = pool.map(_map_translate_func, sentence_list)
+
+        result_dict = {text: ts_text for text, ts_text in result_list}
+        _get_result_func = lambda k: result_dict.get(k.group(1), '')
+        return pattern.sub(repl=_get_result_func, string=html_text)
 
 
-# @Tse.time_stat
-def translate_html(html_text: str, to_language: str = 'en', translator: Callable = 'auto', n_jobs: int = -1, **kwargs) -> str:
-    """
-    Translate the displayed content of html without changing the html structure.
-    :param html_text: str, html format.
-    :param to_language: str, default: 'en'.
-    :param translator: translator, default 'auto', means ts.bing
-    :param n_jobs: int, default -1, means os.cpu_cnt().
-    :param **kwargs:
-        :param if_ignore_limit_of_length: boolean, default False.
-        :param timeout: float, default None.
-        :param proxies: dict, default None.
-    :return: str, html format.
-    """
-    if kwargs:
-        for param in ('query_text', 'to_language', 'is_detail_result'):
-            if param in kwargs:
-                raise TranslatorError(f'{param} should not be in `**kwargs`.')
-    kwargs.update({'sleep_seconds': 0})
+tss = TranslatorsServer()
 
-    n_jobs = os.cpu_count() if n_jobs <= 0 else n_jobs
-    translator = bing if translator == 'auto' else translator
+_alibaba = tss.alibaba
+alibaba = tss.alibaba
+_argos = tss._argos
+argos = tss.argos
+_baidu = tss._baidu
+baidu = tss.baidu
+_bing = tss._bing
+bing = tss.bing
+_caiyun = tss._caiyun
+caiyun = tss.caiyun
+_deepl = tss._deepl
+deepl = tss.deepl
+_google = tss._google
+google = tss.google
+_iciba = tss._iciba
+iciba = tss.iciba
+_iflytek = tss._iflytek
+iflytek = tss.iflytek
+_itranslate = tss._itranslate
+itranslate = tss.itranslate
+_lingvanex = tss._lingvanex
+lingvanex = tss.lingvanex
+_niutrans = tss._niutrans
+niutrans = tss.niutrans
+_mglip = tss._mglip
+mglip = tss.mglip
+_papago = tss._papago
+papago = tss.papago
+_reverso = tss._reverso
+reverso = tss.reverso
+_sogou = tss._sogou
+sogou = tss.sogou
+_tencent = tss._tencent
+tencent = tss.tencent
+_translateCom = tss._translateCom
+translateCom = tss.translateCom
+_utibet = tss._utibet
+utibet = tss.utibet
+_yandex = tss._yandex
+yandex = tss.yandex
+_youdao = tss._youdao
+youdao = tss.youdao
 
-    pattern = re.compile(r"(?:^|(?<=>))([\s\S]*?)(?:(?=<)|$)")  # TODO: <code></code> <div class="codetext notranslate">
-    sentence_list = list(set(pattern.findall(html_text)))
-    _map_translate_func = lambda sentence: (sentence, translator(query_text=sentence, to_language=to_language, **kwargs))
+translate_text = tss.translate_text
+translate_html = tss.translate_html
 
-    with pathos.multiprocessing.ProcessPool(n_jobs) as pool:
-        result_list = pool.map(_map_translate_func, sentence_list)
-
-    result_dict = {text: ts_text for text, ts_text in result_list}
-    _get_result_func = lambda k: result_dict.get(k.group(1), '')
-    return pattern.sub(repl=_get_result_func, string=html_text)
+translators_pool = tss.translators_pool
+# sys.stderr.write(f'Support translators {translators_pool} only.\n')

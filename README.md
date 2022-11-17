@@ -21,6 +21,9 @@
   - [From Source](#from-source)
 - [Getting Started](#getting-started)
   - [Import library](#Import-library)
+  - [Usage](Usage)
+    - [translate_text](translate_text)
+    - [translate_html](translate_html)
   - [Language](#Language)
   - [Professional Field](#Professional-Field)
   - [Property](#Property)
@@ -46,11 +49,7 @@
 ### From PyPI
 
 ```shell
-# Windows, Mac, Linux
-pip install translators --upgrade
-
-# Linux javascript runtime environment:
-# https://nodejs.org/en/download/
+pip install --upgrde translators
 ```
 
 ### From Conda
@@ -61,7 +60,7 @@ conda install -c conda-forge translators
 
 ### From Source
 
-```bash
+```sh
 git clone https://github.com/UlionTse/translators.git
 cd translators
 python setup.py install
@@ -70,11 +69,11 @@ python setup.py install
 ## Getting Started
 
 ```python
-import translators as ts
+import translators as tss
 
 wyw_text = '季姬寂，集鸡，鸡即棘鸡。棘鸡饥叽，季姬及箕稷济鸡。'
 chs_text = '季姬感到寂寞，罗集了一些鸡来养，鸡是出自荆棘丛中的野鸡。野鸡饿了唧唧叫，季姬就拿竹箕中的谷物喂鸡。'
-html_text = '''
+chs_html = '''
 <!DOCTYPE html>
 <html>
 <head>
@@ -86,45 +85,47 @@ html_text = '''
 </html>
 '''
 
+## usage
+print(tss.translators_pool)
+print(tss.translate_text(chs_text))
+print(tss.translate_html(chs_html))
+
 ## language
 # input languages
-print(ts.google(wyw_text)) # default: from_language='auto', to_language='en'
+print(tss.google(wyw_text)) # default: from_language='auto', to_language='en'
 # output language_map
-print(ts._google.language_map)
+print(tss._google.language_map)
 
 ## professional field
-print(ts.alibaba(wyw_text, professional_field='general')) # ("general","message","offer")
-print(ts.baidu(wyw_text, professional_field='common')) # ('common','medicine','electronics','mechanics')
-print(ts.caiyun(wyw_text, from_language='zh', professional_field=None)) # ("medicine","law","machinery")
+print(tss.alibaba(wyw_text, professional_field='general')) # ("general","message","offer")
+print(tss.baidu(wyw_text, professional_field='common')) # ('common','medicine','electronics','mechanics')
+print(tss.caiyun(wyw_text, from_language='zh', professional_field=None)) # ("medicine","law","machinery")
 
 ## property
-rs = [ts.tencent(x) for x in [wyw_text, chs_text]]
-print(ts._tencent.query_count)
-print(dir(ts._tencent))
+rs = [tss.tencent(x) for x in [wyw_text, chs_text]]
+print(tss._tencent.query_count)
+print(dir(tss._tencent))
 
 ## requests
-print(ts.youdao(wyw_text, sleep_seconds=5, timeout=None, proxies=None))
+print(tss.youdao(wyw_text, sleep_seconds=5, timeout=None, proxies=None))
 
 ## host
 # cn
-print(ts.google(wyw_text, if_use_cn_host=True))
-print(ts.bing(wyw_text, if_use_cn_host=False))
+print(tss.google(wyw_text, if_use_cn_host=False))
+print(tss.bing(wyw_text, if_use_cn_host=True))
 # reset host
-print(ts.google(wyw_text, reset_host_url=None))
-print(ts.yandex(wyw_text, reset_host_url=None))
+print(tss.google(wyw_text, reset_host_url=None))
+print(tss.yandex(wyw_text, reset_host_url=None))
 
 ## detail result
-print(ts.sogou(wyw_text, is_detail_result=True))
-
-## translate html
-print(ts.translate_html(html_text, translator=ts.google, to_language='en', n_jobs=-1))
+print(tss.sogou(wyw_text, is_detail_result=True))
 
 ## others
-print(ts._argos.host_pool)
-print(ts.argos(wyw_text, reset_host_url=None))
+print(tss._argos.host_pool)
+print(tss.argos(wyw_text, reset_host_url=None))
 
 ## help
-help(ts.google)
+help(tss.google)
 ```
 
 ## More About Translators
@@ -139,7 +140,7 @@ help(ts.google)
 | [Lingvanex](https://lingvanex.com/demo)                       | 117                           | support translation of different regions but the same language, such as en_US, en_GB, en_AU | [Lingvanex](https://lingvanex.com/about-us/), Cyprus                                                   | stable                               |
 | [Google](https://translate.google.com)                        | 109                           | support more languages in the world                                                         | [Google](https://about.google/), America                                                               | stable(offline in China on Oct 2022) |
 | [Bing](https://www.bing.com/Translator)                       | 102                           | support more languages in the world                                                         | [Microsoft](https://www.microsoft.com/en-us/about), America                                            | stable                               |
-| [yandex](https://translate.yandex.com)                        | 100                           | support more languages in the world, support word to emoji                                  | [Yandex](https://yandex.com/company/), Russia                                                          | /                                    |
+| [yandex](https://translate.yandex.com)                        | 100                           | support more languages in the world, support word to emoji                                  | [Yandex](https://yandex.com/company/), Russia                                                          | stable                               |
 | [Itranslate](https://itranslate.com/webapp)                   | 100                           | support translation of different regions but the same language, such as en-US, en-UK, en-AU | [Itranslate](https://itranslate.com/about), Austria                                                    | stable                               |
 | [Sogou](https://fanyi.sogou.com)                              | 61                            | support more languages in the world                                                         | [Sogou / tencent](https://www.tencent.com/en-us/about.html), China                                     | stable                               |
 | [Reverso](https://www.reverso.net/text-translation)           | 42                            | popular on Mac and Iphone                                                                   | [Reverso](https://www.corporate-translation.reverso.com/about-us), France                              | stable                               |
