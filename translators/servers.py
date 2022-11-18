@@ -2602,7 +2602,7 @@ class TranslatorsServer:
 
 tss = TranslatorsServer()
 
-_alibaba = tss.alibaba
+_alibaba = tss._alibaba
 alibaba = tss.alibaba
 _argos = tss._argos
 argos = tss.argos

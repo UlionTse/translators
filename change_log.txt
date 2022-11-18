@@ -294,7 +294,7 @@ stronger deepl().  #83
 rebuild niutrans().
 stronger parsing data about splitting paragraph.
 
-5.4.9
+5.5.0
 rebuild code structure.
 add func translate_text().
 stronger yandex().
