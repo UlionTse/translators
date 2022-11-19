@@ -49,7 +49,7 @@
 ### From PyPI
 
 ```shell
-pip install --upgrde translators
+pip install --upgrade translators
 ```
 
 ### From Conda
