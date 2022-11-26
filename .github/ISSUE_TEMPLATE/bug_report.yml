@@ -66,7 +66,7 @@ body:
       label: Country/Region
       description: What Country(Region) are you running? (Translation services may be different in different regions)
       placeholder: Tell us what you see!
-      value: "China(example)"
+      value: "Qatar(example)"
     validations:
       required: true
   - type: textarea
