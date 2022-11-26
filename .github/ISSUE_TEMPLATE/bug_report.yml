@@ -17,14 +17,13 @@ body:
       value: "A bug happened!"
     validations:
       required: true
-  - type: dropdown
+  - type: input
     id: app-version
     attributes:
       label: APP Version
       description: What version of App(or PYPI) are you running?
-      options:
-        - 5.5.0 (Default)
-        - older version
+      placeholder: Tell us what you see!
+      value: "0.0.1(example)"
     validations:
       required: true
   - type: dropdown
