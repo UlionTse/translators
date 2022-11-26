@@ -1,0 +1,78 @@
+name: Issue Report
+description: File a issue report
+title: "[Issue]: "
+assignees:
+  - author
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this issue report!
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Also tell us, what did you expect to happen?
+      placeholder: Tell us what you see!
+      value: "A bug happened!"
+    validations:
+      required: true
+  - type: dropdown
+    id: app-version
+    attributes:
+      label: APP Version
+      description: What version of App(or PYPI) are you running?
+      options:
+        - 5.5.0 (Default)
+        - older version
+    validations:
+      required: true
+  - type: dropdown
+    id: python-version
+    attributes:
+      label: Python Version
+      description: What version of python are you running?
+      options:
+        - "3.9 (Default)"
+        - "3.11"
+        - "3.10"
+        - ">=3.6, <=3.8"
+        - "<3.6"
+    validations:
+      required: true
+  - type: dropdown
+    id: runtime-environment
+    attributes:
+      label: Runtime Environment
+      description: What runtime environment are you running?
+      options:
+        - "Linux CentOS (Default)"
+        - "Linux Ubuntu"
+        - "Windows 10"
+        - "MacOS"
+        - "Other"
+    validations:
+      required: true
+  - type: input
+    id: region
+    attributes:
+      label: Country/Region
+      description: What Country(Region) are you running? (Translation services may be different in different regions)
+      placeholder: Tell us what you see!
+      value: "China(example)"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      render: shell
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/UlionTse)
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true
