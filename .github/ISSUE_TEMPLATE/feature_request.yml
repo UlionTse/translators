@@ -70,6 +70,8 @@ body:
       label: Expected Output
       description: Please copy and paste any expected output. This will be automatically formatted into code, so no need for backticks.
       render: sh
+    validations:
+      required: false
   - type: checkboxes
     id: terms
     attributes:

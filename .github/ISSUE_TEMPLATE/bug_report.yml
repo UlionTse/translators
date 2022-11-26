@@ -75,6 +75,18 @@ body:
       label: Relevant log output
       description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
       render: sh
+    validations:
+      required: false
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: "Screenshots"
+      description: If applicable, add screenshots to help explain your problem.
+      value: |
+        ![DESCRIPTION](LINK.png)
+      render: Markdown
+    validations:
+      required: false
   - type: checkboxes
     id: terms
     attributes:
