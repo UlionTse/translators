@@ -8,6 +8,14 @@ body:
     attributes:
       value: |
         Thanks for taking the time to fill out this bug report!
+  - type: checkboxes
+    id: debug-tips
+    attributes:
+      label: Debug Tips
+      description: To improve debug efficiency, please read [Issues of README](https://github.com/UlionTse/translators#issues) first.
+      options:
+        - label: I'm sure I've read this project's Issues of README.
+          required: true
   - type: textarea
     id: what-happened
     attributes:
@@ -61,14 +69,6 @@ body:
       value: "China(example)"
     validations:
       required: true
-  - type: checkboxes
-    id: issue-tips
-    attributes:
-      label: Issue Tips
-      description: To improve debug efficiency, please read [Issues of README](https://github.com/UlionTse/translators#issues) first.
-      options:
-        - label: I'm sure I've read this project's Issues of README.
-          required: true
   - type: textarea
     id: logs
     attributes:
