@@ -45,7 +45,7 @@ body:
     id: expected-runtime-environment
     attributes:
       label: Expected Runtime Environment
-      description: What runtime environment did you expect?
+      description: What runtime environment(OS) did you expect?
       options:
         - "NoArch (Default)"
         - "Linux CentOS"

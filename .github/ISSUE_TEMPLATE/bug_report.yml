@@ -51,7 +51,7 @@ body:
     id: runtime-environment
     attributes:
       label: Runtime Environment
-      description: What runtime environment are you running?
+      description: What runtime environment(OS) are you running?
       options:
         - "Linux CentOS (Default)"
         - "Linux Ubuntu"
