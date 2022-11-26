@@ -23,8 +23,8 @@ body:
       label: Expected APP Version
       description: What version of App(or PYPI) did you expect?
       options:
-        - newest version
-        - future version
+        - next newest version
+        - a future version
     validations:
       required: true
   - type: dropdown
