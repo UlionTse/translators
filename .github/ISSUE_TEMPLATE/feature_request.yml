@@ -1,0 +1,80 @@
+name: Feature Request
+description: File a feature request
+title: "[Feature]: "
+assignees:
+  - UlionTse
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this feature request!
+  - type: textarea
+    id: expect-to-happened
+    attributes:
+      label: Expect to happened
+      description: What happened, and what did you expect to happen?
+      placeholder: Tell us what you see!
+      value: "A feature I have expected ..."
+    validations:
+      required: true
+  - type: dropdown
+    id: expected-app-version
+    attributes:
+      label: Expected APP Version
+      description: What version of App(or PYPI) did you expect?
+      options:
+        - newest version
+        - future version
+    validations:
+      required: true
+  - type: dropdown
+    id: expected-python-version
+    attributes:
+      label: Expected Python Version
+      description: What version of python did you expect?
+      options:
+        - ">=3.6 (Default)"
+        - "3.11"
+        - "3.10"
+        - "3.9"
+        - ">=3.6, <=3.8"
+        - "<3.6"
+    validations:
+      required: true
+  - type: dropdown
+    id: expected-runtime-environment
+    attributes:
+      label: Expected Runtime Environment
+      description: What runtime environment did you expect?
+      options:
+        - "NoArch (Default)"
+        - "Linux CentOS"
+        - "Linux Ubuntu"
+        - "Windows 10"
+        - "MacOS"
+        - "Other"
+    validations:
+      required: true
+  - type: input
+    id: region
+    attributes:
+      label: Country/Region
+      description: What Country(Region) did you expect? (Translation services may be different in different regions)
+      placeholder: Tell us what you see!
+      value: "China(example)"
+    validations:
+      required: true
+  - type: textarea
+    id: expected-output
+    attributes:
+      label: Expected Output
+      description: Please copy and paste any expected output. This will be automatically formatted into code, so no need for backticks.
+      render: sh
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/UlionTse)
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true
