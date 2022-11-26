@@ -1,15 +1,14 @@
 blank_issues_enabled: false
-
-name: Issue Report
-description: File a issue report
-title: "[Issue]: "
+name: Bug Report
+description: File a bug report
+title: "[Bug]: "
 assignees:
   - author
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this issue report!
+        Thanks for taking the time to fill out this bug report!
   - type: textarea
     id: what-happened
     attributes:
