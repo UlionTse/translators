@@ -37,11 +37,11 @@
   - [Features](#features)
   - [Support Language](#support-language)
   - [About Chinese Language](#about-Chinese-language)
-- [Issues]()
+- [Debug Tips](debug-tips)
   - [Linux Runtime Environment](#linux-runtime-environment)
-  - [Supported Country and Region Service](#supported-country-and-region-service)
+  - [Supported Country or Region Service](#supported-country-or-region-service)
   - [HttpError 4xx](#httperror-4xx)
-  - [RequestsError or ProxyError](#requests-error-or-proxy-error)
+  - [NetworkError or ProxyError](#network-error-or-proxy-error)
 - [License](#License)
 
 ## Installation
@@ -69,7 +69,8 @@ python setup.py install
 ## Getting Started
 
 ```python
-import translators as tss
+import translators as ts
+import translators.server as tss
 
 wyw_text = '季姬寂，集鸡，鸡即棘鸡。棘鸡饥叽，季姬及箕稷济鸡。'
 chs_text = '季姬感到寂寞，罗集了一些鸡来养，鸡是出自荆棘丛中的野鸡。野鸡饿了唧唧叫，季姬就拿竹箕中的谷物喂鸡。'
@@ -86,9 +87,9 @@ chs_html = '''
 '''
 
 ## usage
-print(tss.translators_pool)
-print(tss.translate_text(chs_text))
-print(tss.translate_html(chs_html))
+print(ts.translators_pool)
+print(ts.translate_text(chs_text))
+print(ts.translate_html(chs_html))
 
 ## language
 # input languages
@@ -135,23 +136,23 @@ help(tss.google)
 | Translator                                                    | Number of Supported Languages | Advantage                                                                                   | Service                                                                                                | Status                               |
 | ------------------------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------ |
 | [Niutrans](https://niutrans.com/trans)                        | 302                           | support the most languages in the world                                                     | [Northeastern University](http://english.neu.edu.cn/) / [Niutrans](https://github.com/NiuTrans), China | /                                    |
+| [Alibaba](https://translate.alibaba.com)                      | 221                           | support main languages, support professional field                                          | [Alibaba](https://damo.alibaba.com/about), China                                                       | stable                               |
 | [Iciba](https://www.iciba.com/fy)                             | 187                           | support the most languages in the world                                                     | [Kingsoft](https://www.wps.com/about-us/) / [Xiaomi](https://www.mi.com/us/about/), China              | stable                               |
 | [Iflytek](https://fanyi.xfyun.cn/console/trans/text)          | 140                           | support the most languages in the world                                                     | [Iflytek](https://www.iflytek.com/en/about-us.html), China                                             | /                                    |
+| [Google](https://translate.google.com)                        | 134                           | support more languages in the world                                                         | [Google](https://about.google/), America                                                               | stable(offline in China on Oct 2022) |
 | [Lingvanex](https://lingvanex.com/demo)                       | 117                           | support translation of different regions but the same language, such as en_US, en_GB, en_AU | [Lingvanex](https://lingvanex.com/about-us/), Cyprus                                                   | stable                               |
-| [Google](https://translate.google.com)                        | 109                           | support more languages in the world                                                         | [Google](https://about.google/), America                                                               | stable(offline in China on Oct 2022) |
-| [Bing](https://www.bing.com/Translator)                       | 102                           | support more languages in the world                                                         | [Microsoft](https://www.microsoft.com/en-us/about), America                                            | stable                               |
+| [Bing](https://www.bing.com/Translator)                       | 110                           | support more languages in the world                                                         | [Microsoft](https://www.microsoft.com/en-us/about), America                                            | stable                               |
 | [yandex](https://translate.yandex.com)                        | 100                           | support more languages in the world, support word to emoji                                  | [Yandex](https://yandex.com/company/), Russia                                                          | stable                               |
 | [Itranslate](https://itranslate.com/webapp)                   | 100                           | support translation of different regions but the same language, such as en-US, en-UK, en-AU | [Itranslate](https://itranslate.com/about), Austria                                                    | stable                               |
 | [Sogou](https://fanyi.sogou.com)                              | 61                            | support more languages in the world                                                         | [Sogou / tencent](https://www.tencent.com/en-us/about.html), China                                     | stable                               |
 | [Reverso](https://www.reverso.net/text-translation)           | 42                            | popular on Mac and Iphone                                                                   | [Reverso](https://www.corporate-translation.reverso.com/about-us), France                              | stable                               |
 | [Baidu](https://fanyi.baidu.com)                              | 28                            | support main languages, support professional field, support Classical Chinese               | [Baidu](https://ir.baidu.com/company-overview), China                                                  | stable                               |
-| [Deepl](https://www.deepl.com/translator)                     | 24                            | high quality to translate but response slowly                                               | [Deepl](https://jobs.deepl.com/l/en), Germany                                                          | stable                               |
+| [Deepl](https://www.deepl.com/translator)                     | 27                            | high quality to translate but response slowly                                               | [Deepl](https://jobs.deepl.com/l/en), Germany                                                          | stable                               |
 | [Tencent](https://fanyi.qq.com)                               | 17                            | support main languages                                                                      | [Tencent](https://www.tencent.com/en-us/about.html), China                                             | stable                               |
 | [Argos](https://translate.argosopentech.com)                  | 17                            | open-source but the effect is ordinary                                                      | [P.J. Finlay](https://www.argosopentech.com/about/), America                                           | stable                               |
 | [Youdao](https://fanyi.youdao.com)                            | 15                            | support main languages, high quality                                                        | [Netease](https://ir.netease.com/company-overview/corporate-profile), China                            | stable                               |
 | [Papago](https://papago.naver.com)                            | 15                            | good at Korean translation                                                                  | [Naver](https://www.navercorp.com/en/naver/company), South Korea                                       | stable                               |
-| [Alibaba](https://translate.alibaba.com)                      | 12                            | support main languages, support professional field                                          | [Alibaba](https://www.alibabagroup.com/en/about/overview), China                                       | stable                               |
-| [Caiyun](https://fanyi.caiyunapp.com)                         | 6                             | high quality to translate but response slowly, support professional field                   | [ColorfulClouds](http://caiyunapp.com/jobs/), China                                                    | stable                               |
+| [Caiyun](https://fanyi.caiyunapp.com)                         | 7                             | high quality to translate but response slowly, support professional field                   | [ColorfulClouds](http://caiyunapp.com/jobs/), China                                                    | stable                               |
 | [Mglip](http://fy.mglip.com/pc)                               | 3                             | good at Mongolia translation                                                                | [Inner Mongolia University](https://www.imu.edu.cn/yw/Home.htm), China                                 | stable                               |
 | [Utibet](http://mt.utibet.edu.cn/mt)                          | 2                             | good at Tibet translation                                                                   | [Tibet University](http://www.utibet.edu.cn/), China                                                   | stable                               |
 | [TranslateCom](https://www.translate.com/machine-translation) | -                             | ~~from Microsoft~~                                                                          | [TranslateCom](https://www.translate.com/about-us), America                                            | stable                               |
@@ -255,7 +256,7 @@ print(ts._google.language_map)
 | Chinese(苗语)   | hmn                    |                                        |                                        |                                         |                                  |                                          |                                 |                                    |                                  |                                   |                                                      |                                       |                                           |                                              | Y                                           |                                                     |                                                               |                                    |                                      |
 | Chinese(壮语)   | zyb                    |                                        |                                        |                                         |                                  |                                          |                                 |                                    |                                  |                                   |                                                      |                                       |                                           |                                              |                                             |                                                     |                                                               |                                    |                                      |
 
-## Issues
+## Debug Tips
 
 ### Linux Runtime Environment
 
@@ -274,9 +275,9 @@ print(ts._google.language_map)
 3. Detail to solve [HttpError](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) itself.
 4. [Issue me](https://github.com/UlionTse/translators/issues), thanks.
 
-### RequestsError or ProxyError
+### NetworkError or ProxyError
 
-1. Check whether the network is connected correctly, Lol.
+1. Check whether the network is connected correctly.
 2. Check the proxy are enabled on your computer. If it is enabled, try turning it off or otherwise. 
 
 ## License
