@@ -47,7 +47,7 @@ import hashlib
 import functools
 import warnings
 import urllib.parse
-from typing import Union
+from typing import Union, Tuple
 
 import execjs
 import requests
@@ -140,7 +140,7 @@ class Tse:
                        output_zh: str = 'zh',
                        output_en_translator: str = None,
                        output_en: str = 'en-US'
-                       ) -> tuple[str, str]:
+                       ) -> Tuple[str, str]:
 
         if output_en_translator:
             from_language, to_language = self.check_en_lang(from_language, to_language, output_en_translator, output_en)
