@@ -16,46 +16,46 @@
 **Translators** is a library which aims to bring **free, multiple, enjoyable** translation to individuals and students in Python. It based on the translation interface of Google, Yandex, Microsoft(Bing), Baidu, Alibaba, Tencent, NetEase(Youdao), Sogou, Kingsoft(Iciba), Iflytek, Niutrans, Lingvanex, Naver(Papago), Deepl, Reverso, Itranslate, Caiyun, TranslateCom, Mglip, Utibet, Argos, etc.
 
 - [Installation](#installation)
-  - [From PyPI](#from-PyPI)
-  - [From Conda](#from-Conda)
+  - [From PyPI](#from-pypi)
+  - [From Conda](#from-conda)
   - [From Source](#from-source)
 - [Getting Started](#getting-started)
-  - [Import Library](#Import-library)
-  - [Usage](Usage)
-    - [translate_text](translate_text)
-    - [translate_html](translate_html)
-  - [Common Parameters and Functions](common-parameters-and-functions)
-    - [Query Text](query-text)
-    - [Language](#Language)
-    - [Detail Result](#Detail-Result)
-    - [Professional Field](#Professional-Field)
+  - [Import Library](#import-library)
+  - [Usage](#usage)
+    - [translate_text](#translate_text)
+    - [translate_html](#translate_html)
+  - [Common Parameters and Functions](#common-parameters-and-functions)
+    - [Query Text](#query-text)
+    - [Language](#language)
+    - [Detail Result](#detail-result)
+    - [Professional Field](#professional-field)
     - [Host Config](#host-config)
     - [Request Config](#request-config)
-    - [Session Update](session-update)
-    - [Time Stat](time-stat)
-  - [Property](#Property)
+    - [Session Update](#session-update)
+    - [Time Stat](#time-stat)
+  - [Property](#property)
 - [More About Translators](#more-about-translators)
   - [Features](#features)
   - [Supported Language](#supported-language)
   - [About Chinese Language](#about-Chinese-language)
-- [Debug Tips](debug-tips)
+- [Debug Tips](#debug-tips)
   - [Linux Runtime Environment](#linux-runtime-environment)
   - [Supported Country or Region Service](#supported-country-or-region-service)
   - [HttpError 4xx](#httperror-4xx)
   - [NetworkError or ProxyError](#network-error-or-proxy-error)
-- [License](#License)
+- [License](#license)
 
 ## Installation
 
 ### From PyPI
 
-```shell
+```sh
 pip install --upgrade translators
 ```
 
 ### From Conda
 
-```shell
+```sh
 conda install -c conda-forge translators
 ```
 
@@ -99,7 +99,7 @@ print(ts.translate_text(chs_text, if_ignore_empty_query=False, if_ignore_limit_o
 ## language
 # input language
 from_language, to_language = 'zh', 'en'
-print(tss.google(wyw_text, from_language, to_language)
+print(tss.google(wyw_text, from_language, to_language))
 # check input language with language_map
 assert from_language in tss._google.language_map  # request once first, then
 
