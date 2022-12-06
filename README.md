@@ -33,7 +33,6 @@
     - [Request Config](#request-config)
     - [Session Update](session-update)
     - [Time Stat](time-stat)
-  
   - [Property](#Property)
 - [More About Translators](#more-about-translators)
   - [Features](#features)
@@ -135,7 +134,6 @@ print(tss.reverso(wyw_text, if_show_time_stat=True, show_time_stat_precision=4))
 ### property
 print(dir(tss._deepl))
 help(tss.papago)
-
 ```
 
 ## More About Translators
