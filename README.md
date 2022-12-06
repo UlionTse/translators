@@ -20,22 +20,25 @@
   - [From Conda](#from-Conda)
   - [From Source](#from-source)
 - [Getting Started](#getting-started)
-  - [Import library](#Import-library)
+  - [Import Library](#Import-library)
   - [Usage](Usage)
     - [translate_text](translate_text)
+    
     - [translate_html](translate_html)
-  - [Language](#Language)
-  - [Professional Field](#Professional-Field)
+  - [Common Parameters and Functions](common-parameters-and-functions)
+    - [Query Text](query-text)
+    - [Language](#Language)
+    - [Detail Result](#Detail-Result)
+    - [Professional Field](#Professional-Field)
+    - [Host Config](#host-config)
+    - [Request Config](#request-config)
+    - [Session Update](session-update)
+    - [Time Stat](time-stat)
+  
   - [Property](#Property)
-  - [Requests](#Requests)
-  - [Host](#Host)
-  - [Detail Result](#Detail-Result)
-  - [Translate HTML](#translate-html)
-  - [Others](#others)
-  - [Help](#Help)
 - [More About Translators](#more-about-translators)
   - [Features](#features)
-  - [Support Language](#support-language)
+  - [Supported Language](#supported-language)
   - [About Chinese Language](#about-Chinese-language)
 - [Debug Tips](debug-tips)
   - [Linux Runtime Environment](#linux-runtime-environment)
@@ -86,47 +89,54 @@ chs_html = '''
 </html>
 '''
 
-## usage
+### usage
 print(ts.translators_pool)
 print(ts.translate_text(chs_text))
-print(ts.translate_html(chs_html))
+print(ts.translate_html(chs_html, translator='iciba'))
+
+### common parameters and functions
+## query text
+print(ts.translate_text(chs_text, if_ignore_empty_query=False, if_ignore_limit_of_length=False, limit_of_length=5000))
 
 ## language
-# input languages
-print(tss.google(wyw_text)) # default: from_language='auto', to_language='en'
-# output language_map
-print(tss._google.language_map)
+# input language
+from_language, to_language = 'zh', 'en'
+print(tss.google(wyw_text, from_language, to_language)
+# check input language with language_map
+assert from_language in tss._google.language_map  # request once first, then
+
+## detail result
+print(tss.sogou(wyw_text, is_detail_result=True))
 
 ## professional field
-print(tss.alibaba(wyw_text, professional_field='general')) # ("general","message","offer")
-print(tss.baidu(wyw_text, professional_field='common')) # ('common','medicine','electronics','mechanics')
-print(tss.caiyun(wyw_text, from_language='zh', professional_field=None)) # ("medicine","law","machinery")
+print(tss.alibaba(wyw_text, professional_field='general'))  # ("general","message","offer")
+print(tss.baidu(wyw_text, professional_field='common'))  # ('common','medicine','electronics','mechanics')
+print(tss.caiyun(wyw_text, professional_field=None))  # (None,"medicine","law","machinery")
 
-## property
-rs = [tss.tencent(x) for x in [wyw_text, chs_text]]
-print(tss._tencent.query_count)
-print(dir(tss._tencent))
-
-## requests
-print(tss.youdao(wyw_text, sleep_seconds=5, timeout=None, proxies=None))
-
-## host
+## host config
 # cn
 print(tss.google(wyw_text, if_use_cn_host=False))
 print(tss.bing(wyw_text, if_use_cn_host=True))
 # reset host
 print(tss.google(wyw_text, reset_host_url=None))
 print(tss.yandex(wyw_text, reset_host_url=None))
-
-## detail result
-print(tss.sogou(wyw_text, is_detail_result=True))
-
-## others
+# host pool
 print(tss._argos.host_pool)
 print(tss.argos(wyw_text, reset_host_url=None))
 
-## help
-help(tss.google)
+## request config
+print(tss.lingvanex(wyw_text, sleep_seconds=5, timeout=None, proxies=None))
+
+## session update
+print(tss.itranslate(wyw_text, update_session_after_seconds=1.5e3))
+
+## time stat
+print(tss.reverso(wyw_text, if_show_time_stat=True, show_time_stat_precision=4))
+
+### property
+print(dir(tss._deepl))
+help(tss.papago)
+
 ```
 
 ## More About Translators
@@ -142,7 +152,7 @@ help(tss.google)
 | [Google](https://translate.google.com)                        | 134                           | support more languages in the world                                                         | [Google](https://about.google/), America                                                               | stable(offline in China on Oct 2022) |
 | [Lingvanex](https://lingvanex.com/demo)                       | 117                           | support translation of different regions but the same language, such as en_US, en_GB, en_AU | [Lingvanex](https://lingvanex.com/about-us/), Cyprus                                                   | stable                               |
 | [Bing](https://www.bing.com/Translator)                       | 110                           | support more languages in the world                                                         | [Microsoft](https://www.microsoft.com/en-us/about), America                                            | stable                               |
-| [yandex](https://translate.yandex.com)                        | 100                           | support more languages in the world, support word to emoji                                  | [Yandex](https://yandex.com/company/), Russia                                                          | stable                               |
+| [yandex](https://translate.yandex.com)                        | 100                           | support more languages in the world, support word to emoji                                  | [Yandex](https://yandex.com/company/), Russia                                                          | /                                    |
 | [Itranslate](https://itranslate.com/webapp)                   | 100                           | support translation of different regions but the same language, such as en-US, en-UK, en-AU | [Itranslate](https://itranslate.com/about), Austria                                                    | stable                               |
 | [Sogou](https://fanyi.sogou.com)                              | 61                            | support more languages in the world                                                         | [Sogou / tencent](https://www.tencent.com/en-us/about.html), China                                     | stable                               |
 | [Reverso](https://www.reverso.net/text-translation)           | 42                            | popular on Mac and Iphone                                                                   | [Reverso](https://www.corporate-translation.reverso.com/about-us), France                              | stable                               |
@@ -157,7 +167,7 @@ help(tss.google)
 | [Utibet](http://mt.utibet.edu.cn/mt)                          | 2                             | good at Tibet translation                                                                   | [Tibet University](http://www.utibet.edu.cn/), China                                                   | stable                               |
 | [TranslateCom](https://www.translate.com/machine-translation) | -                             | ~~from Microsoft~~                                                                          | [TranslateCom](https://www.translate.com/about-us), America                                            | stable                               |
 
-### Support Language
+### Supported Language
 
 | Language             | Language of Translator | [Google](https://translate.google.com) | [Yandex](https://translate.yandex.com) | [Bing](https://www.bing.com/Translator) | [Baidu](https://fanyi.baidu.com) | [Alibaba](https://translate.alibaba.com) | [Tencent](https://fanyi.qq.com) | [Youdao](https://fanyi.youdao.com) | [Sogou](https://fanyi.sogou.com) | [Deepl](https://www.deepl.com/translator) | [Caiyun](https://fanyi.caiyunapp.com) | [Argos](https://translate.argosopentech.com) | others... |
 | -------------------- | ---------------------- | -------------------------------------- | -------------------------------------- | --------------------------------------- | -------------------------------- | ---------------------------------------- | ------------------------------- | ---------------------------------- | -------------------------------- | ----------------------------------------- | ------------------------------------- | -------------------------------------------- | --------- |
@@ -233,13 +243,6 @@ help(tss.google)
 | emoji                | emj                    |                                        | Y                                      |                                         |                                  |                                          |                                 |                                    |                                  |                                           |                                       |                                              |           |
 | ...                  | ...                    |                                        |                                        |                                         |                                  |                                          |                                 |                                    |                                  |                                           |                                       |                                              |           |
 
-More supported language, eg:
-
-```python
-# request once first, then:
-print(ts._google.language_map)
-```
-
 ### About Chinese Language
 
 | Language      | Language of Translator | [Google](https://translate.google.com) | [Yandex](https://translate.yandex.com) | [Bing](https://www.bing.com/Translator) | [Baidu](https://fanyi.baidu.com) | [Alibaba](https://translate.alibaba.com) | [Tencent](https://fanyi.qq.com) | [Youdao](https://fanyi.youdao.com) | [Sogou](https://fanyi.sogou.com) | [Iciba](https://www.iciba.com/fy) | [Iflytek](https://fanyi.xfyun.cn/console/trans/text) | [Caiyun](https://fanyi.caiyunapp.com) | [Deepl](https://www.deepl.com/translator) | [Argos](https://translate.argosopentech.com) | [Itranslate](https://itranslate.com/webapp) | [Reverso](https://www.reverso.net/text-translation) | [TranslateCom](https://www.translate.com/machine-translation) | [Papago](https://papago.naver.com) | [Utibet](http://mt.utibet.edu.cn/mt) |
@@ -260,13 +263,13 @@ print(ts._google.language_map)
 
 ### Linux Runtime Environment
 
-1. To support javascript runtime environment, you should [Download | Node.js](https://nodejs.org/en/download/).
-2. PS, `ts.baidu()` does not work on Linux without desktop.
+1. To support javascript runtime environment, you should [download and install Node.js](https://nodejs.org/en/download/).
+2. PS, `ts.baidu()` doesn't work on Linux without desktop.
 
 ### Supported Country and Region Service
 
 1. If you have requests error, please check whether this service is provided in your country or region.
-2. Check the website about `eg: help(ts.google)`.
+2. Check the website about `eg: help(tss.google)`.
 
 ### HttpError 4xx
 

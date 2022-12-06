@@ -306,4 +306,7 @@ rebuild func index tree.
 decorator(get_language_map)
 decorator(check_query)
 decorator(time_stat)
-update readme.md
+
+5.5.2
+fix Tuple type < python 3.9  #99
+update readme.md with new parameters(function).
