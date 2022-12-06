@@ -23,7 +23,6 @@
   - [Import Library](#Import-library)
   - [Usage](Usage)
     - [translate_text](translate_text)
-    
     - [translate_html](translate_html)
   - [Common Parameters and Functions](common-parameters-and-functions)
     - [Query Text](query-text)
