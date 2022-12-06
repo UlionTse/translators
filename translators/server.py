@@ -83,12 +83,14 @@ class Tse:
         def _wrapper(*args, **kwargs):
             if_show_time_stat = kwargs.get('if_show_time_stat', False)
             show_time_stat_precision = kwargs.get('show_time_stat_precision', 4)
+            sleep_seconds = kwargs.get('sleep_seconds', 0)
 
             if if_show_time_stat:
                 t1 = time.time()
                 result = func(*args, **kwargs)
                 t2 = time.time()
-                sys.stderr.write(f'CostTime(function: {func.__name__[:-4]}): {round((t2 - t1), show_time_stat_precision)}s\n')
+                cost_time = round((t2 - t1 - sleep_seconds), show_time_stat_precision)
+                sys.stderr.write(f'CostTime(function: {func.__name__[:-4]}): {cost_time}s\n')
                 return result
             return func(*args, **kwargs)
         return _wrapper
@@ -2427,6 +2429,7 @@ class Lingvanex(Tse):
         self.detail_language_map = None
         self.auth_info = None
         self.mode = None
+        self.model_pool = ('B2B', 'B2C',)
         self.query_count = 0
         self.output_zh = 'zh-Hans_CN'
         self.input_limit = 10000
@@ -2467,16 +2470,19 @@ class Lingvanex(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
-                :param mode: str, default "B2C", choose from ("B2B", "B2C").
+                :param lingvanex_mode: str, default "B2C", choose from ("B2B", "B2C").
         :return: str or dict
         """
 
-        mode = kwargs.get('mode', 'B2C')
+        mode = kwargs.get('lingvanex_mode', 'B2C')
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         is_detail_result = kwargs.get('is_detail_result', False)
         sleep_seconds = kwargs.get('sleep_seconds', random.random())
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+
+        if mode not in self.model_pool:
+            raise TranslatorError
 
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and not_update_cond_time and self.language_map and self.auth_info and self.mode == mode):
@@ -2757,15 +2763,25 @@ class TranslatorsServer:
         :param query_text: str, must.
         :param translator: str, default 'bing'.
         :param from_language: str, default 'auto'.
-        :param to_language: str, default 'zh'.
+        :param to_language: str, default 'en'.
         :param **kwargs:
-                :param if_ignore_limit_of_length: boolean, default False.
                 :param is_detail_result: boolean, default False.
+                :param professional_field: str, support baidu(), caiyun(), alibaba() only.
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default `random.random()`.
+                :param update_session_after_seconds: float, default 1500.
+                :param if_use_cn_host: bool, default False.
+                :param reset_host_url: str, default None.
+                :param if_ignore_empty_query: boolean, default False.
+                :param if_ignore_limit_of_length: boolean, default False.
+                :param limit_of_length: int, default 5000.
+                :param if_show_time_stat: boolean, default False.
+                :param show_time_stat_precision: int, default 4.
+                :param lingvanex_model: str, default 'B2C'.
         :return: str or dict
         """
+
         if translator not in self.translators_pool:
             raise TranslatorError
         return self.translators_dict[translator](query_text=query_text, from_language=from_language, to_language=to_language, **kwargs)
@@ -2780,24 +2796,34 @@ class TranslatorsServer:
                        ) -> str:
         """
         Translate the displayed content of html without changing the html structure.
-        :param html_text: str, html format.
-        :param from_language: str, default 'auto'.
-        :param to_language: str, default: 'en'.
+        :param html_text: str, must.
         :param translator: str, default 'bing'.
+        :param from_language: str, default 'auto'.
+        :param to_language: str, default 'en'.
         :param n_jobs: int, default -1, means os.cpu_cnt().
         :param **kwargs:
-            :param if_ignore_limit_of_length: boolean, default False.
-            :param timeout: float, default None.
-            :param proxies: dict, default None.
-        :return: str, html format.
+                :param is_detail_result: boolean, default False.
+                :param professional_field: str, support baidu(), caiyun(), alibaba() only.
+                :param timeout: float, default None.
+                :param proxies: dict, default None.
+                :param sleep_seconds: float, default `random.random()`.
+                :param update_session_after_seconds: float, default 1500.
+                :param if_use_cn_host: bool, default False.
+                :param reset_host_url: str, default None.
+                :param if_ignore_empty_query: boolean, default False.
+                :param if_ignore_limit_of_length: boolean, default False.
+                :param limit_of_length: int, default 5000.
+                :param if_show_time_stat: boolean, default False.
+                :param show_time_stat_precision: int, default 4.
+                :param lingvanex_model: str, default 'B2C'.
+        :return: str
         """
-        if kwargs:
-            for param in ('query_text', 'is_detail_result'):
-                if param in kwargs:
-                    raise TranslatorError(f'{param} should not be in `**kwargs`.')
-        kwargs.update({'sleep_seconds': 0})
-        if translator not in self.translators_pool:
+
+        if translator not in self.translators_pool or kwargs.get('is_detail_result', False):
             raise TranslatorError
+
+        if not kwargs.get('sleep_seconds', None):
+            kwargs.update({'sleep_seconds': 0})
 
         n_jobs = os.cpu_count() if n_jobs <= 0 else n_jobs
         _ts = self.translators_dict[translator]

@@ -307,6 +307,8 @@ decorator(get_language_map)
 decorator(check_query)
 decorator(time_stat)
 
-5.5.2
+5.5.3
 fix Tuple type < python 3.9  #99
 update readme.md with new parameters(function).
+stronger func time_stat().
+stronger func translate_html().
