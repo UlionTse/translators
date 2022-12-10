@@ -312,3 +312,9 @@ fix Tuple type < python 3.9  #99
 update readme.md with new parameters(function).
 stronger func time_stat().
 stronger func translate_html().
+
+5.5.4
+stronger func check_query().
+add youdao_v2(), youdao_v3().
+stronger google() about parsing data.  #100
+update readme.md

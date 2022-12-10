@@ -208,13 +208,17 @@ class Tse:
             if_ignore_empty_query = kwargs.get('if_ignore_empty_query', False)
             if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
             limit_of_length = kwargs.get('limit_of_length', 5000)
+            is_detail_result = kwargs.get('is_detail_result', False)
+
+            query_text = list(args)[1] if len(args) >= 2 else kwargs.get('query_text')
+            query_text = check_query_text(query_text, if_ignore_empty_query, if_ignore_limit_of_length, limit_of_length)
+            if not query_text and if_ignore_empty_query:
+                return {'data': query_text} if is_detail_result else query_text
 
             if len(args) >= 2:
                 new_args = list(args)
-                new_args[1] = check_query_text(new_args[1], if_ignore_empty_query, if_ignore_limit_of_length, limit_of_length)
+                new_args[1] = query_text
                 return func(*tuple(new_args), **kwargs)
-
-            query_text = check_query_text(kwargs.get('query_text'), if_ignore_empty_query, if_ignore_limit_of_length, limit_of_length)
             return func(*args, **{**kwargs, **{'query_text': query_text}})
         return _wrapper
 
@@ -489,7 +493,7 @@ class GoogleV2(Tse):
             self.host_url = self.cn_host_url if use_cn_condition else self.en_host_url
 
         if self.host_url[-2:] == 'cn':
-            raise TranslatorError('Google service was offline on Oct 2022.')
+            raise TranslatorError('Google service was offline in China Mainland on Oct 2022.')
 
         self.api_url = f'{self.host_url}{self.api_url_path}'
         self.host_headers = self.host_headers or self.get_headers(self.host_url, if_api=False)  # reuse cookie header
@@ -516,7 +520,7 @@ class GoogleV2(Tse):
         data = json.loads(json_data[0][2])
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return {'data': data} if is_detail_result else ''.join([x[0] for x in (data[1][0][0][5] or data[1][0])])
+        return {'data': data} if is_detail_result else ''.join([x[0] for x in (data[1][0][0][5] or data[1][0]) if x[0]])
 
 
 class BaiduV1(Tse):
@@ -710,7 +714,7 @@ class BaiduV2(Tse):
         return data if is_detail_result else '\n'.join([x['dst'] for x in data['trans_result']['data']])
 
 
-class Youdao(Tse):
+class YoudaoV1(Tse):
     def __init__(self):
         super().__init__()
         self.host_url = 'https://fanyi.youdao.com'
@@ -817,6 +821,217 @@ class Youdao(Tse):
         time.sleep(sleep_seconds)
         self.query_count += 1
         return data if is_detail_result else '\n'.join([' '.join([it['tgt'] for it in item]) for item in data['translateResult']])
+
+
+class YoudaoV2(Tse):
+    def __init__(self):
+        super().__init__()
+        self.host_url = 'https://fanyi.youdao.com'
+        self.api_url = 'https://dict.youdao.com/webtranslate'
+        self.get_js_url = None
+        self.get_js_pattern = 'js/app.(.*?).js'
+        self.get_sign_url = None
+        self.get_sign_pattern = ''
+        self.login_url = 'https://dict.youdao.com/login/acc/query/accountinfo'
+        self.language_url = 'https://api-overmind.youdao.com/openapi/get/luna/dict/luna-front/prod/langType'
+        self.domain_url = 'https://doctrans-service.youdao.com/common/enums/list?key=domain'
+        self.get_key_url = 'https://dict.youdao.com/webtranslate/key'
+        self.page_banner_url = 'https://api-overmind.youdao.com/openapi/get/luna/dict/dict-common-config/prod/translateMainPageBanner'
+        self.page_popup_url = 'https://api-overmind.youdao.com/openapi/get/luna/dict/dict-common-config/prod/translateMainPagePopup'
+        self.host_headers = self.get_headers(self.host_url, if_api=False)
+        self.api_headers = self.get_headers(self.host_url, if_api=True)
+        self.language_map = None
+        self.session = None
+        self.professional_field = ('0', '1', '2', '3')
+        self.professional_field_description = None
+        self.default_key = None
+        self.secret_key = None
+        self.decode_key = None
+        self.decode_iv = None
+        self.query_count = 0
+        self.output_zh = 'zh-CHS'
+        self.input_limit = 5000
+
+    @Tse.debug_language_map
+    def get_language_map(self, lang_url, ss, headers, timeout, proxies, **kwargs):
+        data = ss.get(lang_url, headers=headers, timeout=timeout, proxies=proxies).json()
+        lang_list = sorted([it['code'] for it in data['data']['value']['textTranslate']['specify']])
+        return {}.fromkeys(lang_list, lang_list)
+
+    def get_default_key(self, js_html):  # asdjnjfenknafdfsdfsd
+        return re.compile('="webfanyi-key-getter",(\w+)="(\w+)";').search(js_html).group(2)
+
+    def get_sign(self, key, timestmp):
+        value = f'client=fanyideskweb&mysticTime={timestmp}&product=webfanyi&key={key}'
+        return hashlib.md5(value.encode()).hexdigest()
+
+    def get_form_data(self, keyid, key, timestamp, **kwargs):
+        if keyid not in ('webfanyi-key-getter', 'webfanyi'):
+            raise TranslatorError
+
+        form_data = {
+            'keyid': keyid,
+            'mysticTime': str(timestamp),
+            'sign': self.get_sign(key, timestamp),
+            'client': 'fanyideskweb',
+            'product': 'webfanyi',
+            'appVersion': '1.0.0',
+            'vendor': 'web',
+            'keyfrom': 'fanyi.web',
+            'pointParam': 'client,mysticTime,product',
+        }
+        return {**kwargs, **form_data} if keyid == 'webfanyi' else form_data
+
+    def decrypt(self, cipher_text, decrypt_dictionary):
+        _ciphertext = ''.join(list(map(lambda k: decrypt_dictionary[k], cipher_text)))
+        return base64.b64decode(_ciphertext).decode()
+
+    @Tse.time_stat
+    @Tse.check_query
+    def youdao_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
+        """
+        https://fanyi.youdao.com
+        :param query_text: str, must.
+        :param from_language: str, default 'auto'.
+        :param to_language: str, default 'en'.
+        :param **kwargs:
+                :param timeout: float, default None.
+                :param proxies: dict, default None.
+                :param sleep_seconds: float, default `random.random()`.
+                :param is_detail_result: boolean, default False.
+                :param if_ignore_limit_of_length: boolean, default False.
+                :param limit_of_length: int, default 5000.
+                :param if_ignore_empty_query: boolean, default False.
+                :param update_session_after_seconds: float, default 1500.
+                :param if_show_time_stat: boolean, default False.
+                :param show_time_stat_precision: int, default 4.
+                :param professional_field: str, default '0'. Choose from ('0','1','2','3')
+        :return: str or dict
+        """
+
+        timeout = kwargs.get('timeout', None)
+        proxies = kwargs.get('proxies', None)
+        is_detail_result = kwargs.get('is_detail_result', False)
+        sleep_seconds = kwargs.get('sleep_seconds', random.random())
+        update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+
+        domain = kwargs.get('professional_field', '0')
+        if domain not in self.professional_field:
+            raise TranslatorError
+
+        not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
+        if not (self.session and not_update_cond_time and self.language_map and self.secret_key):
+            self.session = requests.Session()
+            host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
+            _ = self.session.get(self.login_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+            self.professional_field_description = self.session.get(self.domain_url, headers=self.host_headers, timeout=timeout, proxies=proxies).json()
+            self.language_map = self.get_language_map(self.language_url, self.session, self.host_headers, timeout, proxies,
+                                                      from_language=from_language, to_language=to_language)
+
+            self.get_js_url = ''.join([self.host_url, '/', re.compile(self.get_js_pattern).search(host_html).group()])
+            js_html = self.session.get(self.get_js_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
+
+            self.decode_key = re.compile('decodeKey:"(.*?)",').search(js_html).group(1)
+            self.decode_iv = re.compile('decodeIv:"(.*?)",').search(js_html).group(1)
+            self.default_key = self.get_default_key(js_html)
+
+            params = self.get_form_data(keyid='webfanyi-key-getter', key=self.default_key, timestamp=int(time.time() * 1000))
+            key_r = self.session.get(self.get_key_url, params=params, headers=self.api_headers, timeout=timeout, proxies=proxies)
+            self.secret_key = key_r.json()['data']['secretKey']
+
+            _ = self.session.get(self.page_banner_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+            _ = self.session.get(self.page_popup_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+
+        from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
+        if from_language == 'auto':
+            to_language = ''
+
+        translate_form = {
+            'i': query_text,
+            'from': from_language,
+            'to': to_language,
+            'domain': domain,
+            'dictResult': 'true',
+        }
+        form_data = self.get_form_data(keyid='webfanyi', key=self.default_key, timestamp=int(time.time() * 1000), **translate_form)
+        form_data = urllib.parse.urlencode(form_data)
+        r = self.session.post(self.api_url, data=form_data, headers=self.api_headers, timeout=timeout, proxies=proxies)
+        r.raise_for_status()
+
+        raise TranslatorError('YoudaoV2 has not been completed.')  # TODO
+
+        data = self.decrypt(r.text, decrypt_dictionary=None)
+        time.sleep(sleep_seconds)
+        self.query_count += 1
+        return data if is_detail_result else str(data)
+
+
+class YoudaoV3(Tse):
+    def __init__(self):
+        super().__init__()
+        self.host_url = 'https://ai.youdao.com/product-fanyi-text.s'
+        self.api_url = 'https://aidemo.youdao.com/trans'
+        self.host_headers = self.get_headers(self.host_url, if_api=False)
+        self.api_headers = self.get_headers(self.host_url, if_api=True)
+        self.language_map = None
+        self.session = None
+        self.query_count = 0
+        self.output_zh = 'zh-CHS'
+        self.input_limit = 5000
+
+    @Tse.debug_language_map
+    def get_language_map(self, host_html, **kwargs):
+        et = lxml.etree.HTML(host_html)
+        lang_list = et.xpath('//*[@id="customSelectOption"]/li/a/@val')
+        lang_list = sorted([it.split('2')[1] for it in lang_list if f'{self.output_zh}2' in it])
+        return {**{lang: [self.output_zh] for lang in lang_list}, **{self.output_zh: lang_list}}
+
+    @Tse.time_stat
+    @Tse.check_query
+    def youdao_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
+        """
+        https://ai.youdao.com/product-fanyi-text.s
+        :param query_text: str, must.
+        :param from_language: str, default 'auto'.
+        :param to_language: str, default 'en'.
+        :param **kwargs:
+                :param timeout: float, default None.
+                :param proxies: dict, default None.
+                :param sleep_seconds: float, default `random.random()`.
+                :param is_detail_result: boolean, default False.
+                :param if_ignore_limit_of_length: boolean, default False.
+                :param limit_of_length: int, default 5000.
+                :param if_ignore_empty_query: boolean, default False.
+                :param update_session_after_seconds: float, default 1500.
+                :param if_show_time_stat: boolean, default False.
+                :param show_time_stat_precision: int, default 4.
+        :return: str or dict
+        """
+
+        timeout = kwargs.get('timeout', None)
+        proxies = kwargs.get('proxies', None)
+        is_detail_result = kwargs.get('is_detail_result', False)
+        sleep_seconds = kwargs.get('sleep_seconds', random.random())
+        update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+
+        not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
+        if not (self.session and not_update_cond_time and self.language_map):
+            self.session = requests.Session()
+            host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
+            self.language_map = self.get_language_map(host_html, from_language=from_language, to_language=to_language)
+
+        from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
+        if from_language == 'auto':
+            from_language = to_language = 'Auto'
+
+        form_data = {'q': query_text, 'from': from_language, 'to': to_language}
+        form_data = urllib.parse.urlencode(form_data)
+        r = self.session.post(self.api_url, data=form_data, headers=self.api_headers, timeout=timeout, proxies=proxies)
+        r.raise_for_status()
+        data = r.json()
+        time.sleep(sleep_seconds)
+        self.query_count += 1
+        return data if is_detail_result else data['translation'][0]
 
 
 class Tencent(Tse):
@@ -2740,7 +2955,7 @@ class TranslatorsServer:
         self.utibet = self._utibet.utibet_api
         self._yandex = Yandex()
         self.yandex = self._yandex.yandex_api
-        self._youdao = Youdao()
+        self._youdao = YoudaoV3()
         self.youdao = self._youdao.youdao_api
         self.translators_dict = {
             'alibaba': self.alibaba, 'argos': self.argos, 'baidu': self.baidu, 'bing':self.bing,
