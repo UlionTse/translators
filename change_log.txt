@@ -318,3 +318,7 @@ stronger func check_query().
 add youdao_v2(), youdao_v3().
 stronger google() about parsing data.  #100
 update readme.md
+
+5.5.5
+stronger func time_stat().
+stronger google() about parsing data.  #101

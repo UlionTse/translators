@@ -83,9 +83,12 @@ class Tse:
         def _wrapper(*args, **kwargs):
             if_show_time_stat = kwargs.get('if_show_time_stat', False)
             show_time_stat_precision = kwargs.get('show_time_stat_precision', 4)
-            sleep_seconds = kwargs.get('sleep_seconds', 0)
+            sleep_seconds = kwargs.get('sleep_seconds', None)
 
-            if if_show_time_stat:
+            if if_show_time_stat and sleep_seconds is None:
+                raise TranslatorError('Uncertainty of measurement! Please specify parameter [sleep_seconds].')
+
+            if if_show_time_stat and sleep_seconds >= 0:
                 t1 = time.time()
                 result = func(*args, **kwargs)
                 t2 = time.time()
@@ -520,7 +523,7 @@ class GoogleV2(Tse):
         data = json.loads(json_data[0][2])
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return {'data': data} if is_detail_result else ''.join([x[0] for x in (data[1][0][0][5] or data[1][0]) if x[0]])
+        return {'data': data} if is_detail_result else ' '.join([x[0] for x in (data[1][0][0][5] or data[1][0]) if x[0]])
 
 
 class BaiduV1(Tse):
