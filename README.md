@@ -130,7 +130,7 @@ print(tss.lingvanex(wyw_text, sleep_seconds=5, timeout=None, proxies=None))
 print(tss.itranslate(wyw_text, update_session_after_seconds=1.5e3))
 
 ## time stat
-print(tss.reverso(wyw_text, if_show_time_stat=True, show_time_stat_precision=4))
+print(tss.reverso(wyw_text, if_show_time_stat=True, show_time_stat_precision=4, sleep_seconds=0.1))
 
 ## old server
 baidu_v1 = tss.BaiduV1().baidu_api
