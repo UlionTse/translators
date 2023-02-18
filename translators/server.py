@@ -46,7 +46,8 @@ import random
 import hashlib
 import functools
 import warnings
-import urllib
+import urllib.parse
+import urllib.request
 from typing import Union, Tuple
 
 import execjs
