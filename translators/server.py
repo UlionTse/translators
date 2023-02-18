@@ -46,7 +46,7 @@ import random
 import hashlib
 import functools
 import warnings
-import urllib.parse
+import urllib
 from typing import Union, Tuple
 
 import execjs
@@ -234,19 +234,22 @@ class GuestSeverRegion(Tse):
         self.ip_api_addr_url = 'http://ip-api.com/json'  # must http.
         self.ip_tb_add_url = 'https://ip.taobao.com/outGetIpInfo'
         self.default_country = os.environ.get('translators_default_country', None)
+        self.proxies = urllib.request.getproxies()
+        if self.proxies != {}:
+            self.proxies = {'http': self.proxies['http'], 'https': self.proxies['http']}
 
     @property
     def get_server_region(self):
         _headers_fn = lambda url: self.get_headers(url, if_api=False, if_referer_for_host=True)
         try:
             try:
-                data = eval(requests.get(self.get_addr_url, headers=_headers_fn(self.get_addr_url)).text[9:-2])
+                data = eval(requests.get(self.get_addr_url, headers=_headers_fn(self.get_addr_url), proxies=self.proxies).text[9:-2])
                 sys.stderr.write(f'Using state {data.get("stateName")} server backend.\n')
                 return data.get('country')
             except requests.exceptions.Timeout:
-                ip_address = requests.get(self.get_ip_url, headers=_headers_fn(self.get_ip_url)).json()['origin']
+                ip_address = requests.get(self.get_ip_url, headers=_headers_fn(self.get_ip_url), proxies=self.proxies).json()['origin']
                 form_data = {'ip': ip_address, 'accessKey': 'alibaba-inc'}
-                data = requests.post(url=self.ip_tb_add_url, data=form_data, headers=_headers_fn(self.ip_tb_add_url)).json().get('data')
+                data = requests.post(url=self.ip_tb_add_url, data=form_data, headers=_headers_fn(self.ip_tb_add_url), proxies=self.proxies).json().get('data')
                 return data.get('country_id')
 
         except requests.exceptions.ConnectionError:
