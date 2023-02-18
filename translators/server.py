@@ -235,8 +235,6 @@ class GuestSeverRegion(Tse):
         self.ip_tb_add_url = 'https://ip.taobao.com/outGetIpInfo'
         self.default_country = os.environ.get('translators_default_country', None)
         self.proxies = urllib.request.getproxies()
-        if self.proxies != {}:
-            self.proxies = {'http': self.proxies['http'], 'https': self.proxies['http']}
 
     @property
     def get_server_region(self):
