@@ -49,10 +49,10 @@ setup(
         "Programming Language :: Python :: 3.11",
     ],
     keywords=[
-        'translate', 'translator', 'fanyi', 'translate_html',
-        'Google', 'Yandex', 'Bing', 'Baidu', 'Alibaba', 'Tencent', 'Youdao', 'Sogou',
-        'Iciba', 'Iflytek', 'Deepl', 'Niutrans', 'Lingvanex', 'Reverso', 'Itranslate',
-        'Papago', 'Caiyun', 'Mglip', 'Utibet', 'Argos', 'TranslateCom',
+        'translate', 'translate_html',
+        'alibaba', 'argos', 'baidu', 'bing', 'caiyun', 'deepl', 'google', 'iciba', 'iflytek', 'iflyrec',
+        'itranslate', 'lingvanex', 'mglip', 'modernMt', 'myMemory', 'niutrans', 'papago', 'qqFanyi', 'qqTranSmart',
+        'reverso', 'sogou', 'translateCom', 'utibet', 'volcEngine', 'yandex', 'youdao',
     ],
     install_requires=[
         'requests>=2.28.1',

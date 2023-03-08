@@ -45,14 +45,12 @@ import translators as ts
 </html>
 """
 
-# @Tse.time_stat
-# @loguru.logger.catch
+
 def test0():
     r = translate_html(html_text, to_language='zh', translator=translators_pool[0], n_jobs=4)
     print(r)
 
 
-# @loguru.logger.catch
 def test1():
     # for query_text in [query_text1, query_text2, query_text3]:
     for query_text in [query_text2]:
@@ -64,21 +62,25 @@ def test1():
         print('deepl:\n', deepl(query_text))
         print('google:\n', google(query_text))
         print('icaba:\n', iciba(query_text))
-        print('iflytek:\n', iflytek(query_text))  # todo
+        # print('iflytek:\n', iflytek(query_text))  # todo
         print('itranslate:\n', itranslate(query_text))
         print('lingvanex:\n', lingvanex(query_text))
         print('mglip:\n', mglip(query_text, 'zh', 'mon'))
-        print('niutrans:\n', niutrans(query_text))  # todo
+        print('modernMt:\n', modernMt(query_text))
+        print('myMemory:\n', myMemory(query_text))
+        # print('niutrans:\n', niutrans(query_text))  # todo
         print('papago:\n', papago(query_text))
+        print('qqFanyi:\n', qqFanyi(query_text))
+        print('qqTranSmart:\n', qqTranSmart(query_text))
         print('reverso:\n', reverso(query_text))
         print('sogou:\n', sogou(query_text))
-        print('tencent:\n', tencent(query_text))
         print('translateCom:\n', translateCom(query_text))
         print('utibet:\n', utibet(query_text, 'zh', 'ti'))
-        print('yandex:\n', yandex(query_text))
+        # print('volcEngine:\n', volcEngine(query_text))  # todo
+        # print('yandex:\n', yandex(query_text))  # todo
         print('youdao:\n', youdao(query_text))
 
 
 if __name__ == "__main__":
-    test0()
+    # test0()
     test1()
