@@ -13,7 +13,7 @@
 
 * * *
 
-**Translators** is a library which aims to bring **free, multiple, enjoyable** translation to individuals and students in Python. (Currently, [26](#more-about-translators) translation services are supported.)
+**Translators** is a library which aims to bring **free, multiple, enjoyable** translation to individuals and students in Python. (Currently, [**26**](#more-about-translators) translation services are supported.)
 
 - [Installation](#installation)
   - [From PyPI](#from-pypi)

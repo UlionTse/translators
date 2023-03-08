@@ -3635,7 +3635,8 @@ class TranslatorsServer:
                 :param limit_of_length: int, default 5000.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
-                :param lingvanex_model: str, default 'B2C'.
+                :param lingvanex_model: str, default 'B2C', choose from ("B2C", "B2B").
+                :param myMemory_mode: str, default "web", choose from ("web", "api").
         :return: str
         """
 
