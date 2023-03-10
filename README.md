@@ -20,31 +20,17 @@
   - [From Conda](#from-conda)
   - [From Source](#from-source)
 - [Getting Started](#getting-started)
-  - [Import Library](#import-library)
   - [Usage](#usage)
-    - [preaccelerate](#preaccelerate)
-    - [translate_text](#translate_text)
-    - [translate_html](#translate_html)
-  - [Common Parameters and Functions](#common-parameters-and-functions)
-    - [Query Text](#query-text)
-    - [Language](#language)
-    - [Detail Result](#detail-result)
-    - [Professional Field](#professional-field)
-    - [Host Config](#host-config)
-    - [Request Config](#request-config)
-    - [Session Update](#session-update)
-    - [Time Stat](#time-stat)
-    - [Old Server](#old-server)
-  - [Property](#property)
+  - [Common Parameters](#common-parameters)
 - [More About Translators](#more-about-translators)
   - [Features](#features)
   - [Supported Language](#supported-language)
-  - [About Chinese Language](#about-Chinese-language)
+  - [About Chinese Language](#about-chinese-language)
 - [Debug Tips](#debug-tips)
   - [Linux Runtime Environment](#linux-runtime-environment)
-  - [Supported Country or Region Service](#supported-country-or-region-service)
+  - [Supported Region Service](#supported-region-service)
   - [HttpError 4xx](#httperror-4xx)
-  - [NetworkError or ProxyError](#network-error-or-proxy-error)
+  - [NetworkError or ProxyError](#networkerror-or-proxyerror)
 - [License](#license)
 
 ## Installation
@@ -74,29 +60,28 @@ python setup.py install
 ```python
 import translators as ts
 
-wyw_text = '季姬寂，集鸡，鸡即棘鸡。棘鸡饥叽，季姬及箕稷济鸡。'
-chs_text = '季姬感到寂寞，罗集了一些鸡来养，鸡是出自荆棘丛中的野鸡。野鸡饿了唧唧叫，季姬就拿竹箕中的谷物喂鸡。'
-chs_html = '''
-<!DOCTYPE html><html><head><title>《季姬击鸡记》</title></head>
-<body><p>还有另一篇文章《施氏食狮史》。其它有《羿裔熠》、《侄治痔》等。</p></body></html>
-'''
+q_text = '季姬寂，集鸡，鸡即棘鸡。棘鸡饥叽，季姬及箕稷济鸡。'
+q_html = '''<!DOCTYPE html><html><head><title>《季姬击鸡记》</title></head><body><p>还有另一篇文章《施氏食狮史》。</p></body></html>'''
+
 ### usage
-ts.preaccelerate()  #Caching sessions in advance, which can help improve access speed.
+ts.preaccelerate()  # Optional. Caching sessions in advance, which can help improve access speed.
 
 print(ts.translators_pool)
-print(ts.translate_text(chs_text))
-print(ts.translate_html(chs_html, translator='iciba'))
+print(ts.translate_text(q_text))
+print(ts.translate_html(q_html, translator='alibaba'))
 
-### common parameters and functions
+### common parameters
 help(ts.translate_text)
-translate_text(query_text: str, translator: str = 'bing', from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict] method of translators.server.TranslatorsServer instance
+
+"""
+translate_text(query_text: str, translator: str = 'bing', from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]
     :param query_text: str, must.
     :param translator: str, default 'bing'.
     :param from_language: str, default 'auto'.
     :param to_language: str, default 'en'.
     :param **kwargs:
             :param is_detail_result: boolean, default False.
-            :param professional_field: str, support baidu(), caiyun(), alibaba(), volcEngine(). only.
+            :param professional_field: str, support baidu(), caiyun(), alibaba(), volcEngine() only.
             :param timeout: float, default None.
             :param proxies: dict, default None.
             :param sleep_seconds: float, default 0.
@@ -113,6 +98,7 @@ translate_text(query_text: str, translator: str = 'bing', from_language: str = '
             :param lingvanex_model: str, default 'B2C', choose from ("B2C", "B2B").
             :param myMemory_mode: str, default "web", choose from ("web", "api").
     :return: str or dict
+"""
 ```
 
 ## More About Translators
