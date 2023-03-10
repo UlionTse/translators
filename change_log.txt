@@ -339,3 +339,8 @@ add func and parameter `update_session_after_freq`.
 stronger func get_server_region().
 change sleep_seconds from `random.random()` to default=0.
 update readme.md
+
+5.6.1
+add preaccelerate().
+stronger caiyun(), youdaoV1().
+update readme.md

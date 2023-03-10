@@ -49,6 +49,7 @@ import warnings
 import urllib.parse
 from typing import Union, Tuple
 
+import tqdm
 import execjs
 import requests
 import lxml.etree
@@ -166,6 +167,11 @@ class Tse:
         elif from_language == to_language:
             raise TranslatorError(f'from_language[{from_language}] and to_language[{to_language}] should not be same.')
         return from_language, to_language
+    
+    def warning_auto_lang(self, translator: str, if_print_warning: bool = True) -> None:
+        if if_print_warning:
+            warnings.warn(f'Unsupported [from_language=auto] with [{translator}]! Please specify it.')
+        return
 
     @staticmethod
     def debug_language_map(func):
@@ -181,7 +187,7 @@ class Tse:
             try:
                 return func(*args, **kwargs)
             except Exception as e:
-                warnings.warn(str(e))
+                # warnings.warn(str(e))
                 return make_temp_language_map(kwargs.get('from_language'), kwargs.get('to_language'))
         return _wrapper
 
@@ -204,7 +210,6 @@ class Tse:
                 raise TranslatorError('The length of `query_text` exceeds the limit.')
             else:
                 if qt_length >= limit_of_length:
-                    warnings.warn(f'The translation ignored the excess.')
                     warnings.warn(f'The length of `query_text` is {qt_length}, above {limit_of_length}.')
                     return query_text[:limit_of_length - 1]
             return query_text
@@ -377,6 +382,7 @@ class GoogleV1(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
                 :param if_use_cn_host: boolean, default None.
                 :param reset_host_url: str, default None.
         :return: str or dict
@@ -399,6 +405,7 @@ class GoogleV1(Tse):
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -487,6 +494,7 @@ class GoogleV2(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
                 :param if_use_cn_host: boolean, default None.
                 :param reset_host_url: str, default None.
         :return: str or dict
@@ -511,6 +519,7 @@ class GoogleV2(Tse):
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -588,12 +597,14 @@ class BaiduV1(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
         :return: str or dict
         """
 
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -696,6 +707,7 @@ class BaiduV2(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
                 :param professional_field: str, default 'common'. Choose from ('common', 'medicine', 'electronics', 'mechanics', 'novel')
         :return: str or dict
         """
@@ -707,6 +719,7 @@ class BaiduV2(Tse):
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -756,6 +769,7 @@ class YoudaoV1(Tse):
         super().__init__()
         self.host_url = 'https://fanyi.youdao.com'
         self.api_url = 'https://fanyi.youdao.com/translate_o?smartresult=dict&smartresult=rule'
+        self.language_url = 'https://api-overmind.youdao.com/openapi/get/luna/dict/luna-front/prod/langType'
         self.get_sign_old_url = 'https://shared.ydstatic.com/fanyi/newweb/v1.0.29/scripts/newweb/fanyi.min.js'
         self.get_sign_url = None
         self.get_sign_pattern = 'https://shared.ydstatic.com/fanyi/newweb/(.*?)/scripts/newweb/fanyi.min.js'
@@ -768,15 +782,21 @@ class YoudaoV1(Tse):
         self.output_zh = 'zh-CHS'
         self.input_limit = int(5e3)
 
+    # @Tse.debug_language_map
+    # def get_language_map(self, host_html, **kwargs):
+    #     et = lxml.etree.HTML(host_html)
+    #     lang_list = et.xpath('//*[@id="languageSelect"]/li/@data-value')
+    #     lang_list = [(x.split('2')[0], [x.split('2')[1]]) for x in lang_list if '2' in x]
+    #     lang_map = dict(map(lambda x: x, lang_list))
+    #     lang_map.pop('zh-CHS')
+    #     lang_map.update({'zh-CHS': list(lang_map.keys())})
+    #     return lang_map
+
     @Tse.debug_language_map
-    def get_language_map(self, host_html, **kwargs):
-        et = lxml.etree.HTML(host_html)
-        lang_list = et.xpath('//*[@id="languageSelect"]/li/@data-value')
-        lang_list = [(x.split('2')[0], [x.split('2')[1]]) for x in lang_list if '2' in x]
-        lang_map = dict(map(lambda x: x, lang_list))
-        lang_map.pop('zh-CHS')
-        lang_map.update({'zh-CHS': list(lang_map.keys())})
-        return lang_map
+    def get_language_map(self, lang_url, ss, headers, timeout, proxies, **kwargs):
+        data = ss.get(lang_url, headers=headers, timeout=timeout, proxies=proxies).json()
+        lang_list = sorted([it['code'] for it in data['data']['value']['textTranslate']['specify']])
+        return {}.fromkeys(lang_list, lang_list)
 
     def get_sign_key(self, host_html, ss, timeout, proxies):
         try:
@@ -834,12 +854,14 @@ class YoudaoV1(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
         :return: str or dict
         """
 
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -850,7 +872,8 @@ class YoudaoV1(Tse):
             self.session = requests.Session()
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             self.sign_key = self.get_sign_key(host_html, self.session, timeout, proxies)
-            self.language_map = self.get_language_map(host_html, from_language=from_language, to_language=to_language)
+            self.language_map = self.get_language_map(self.language_url, self.session, self.host_headers, timeout, proxies,
+                                                      from_language=from_language, to_language=to_language)
 
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
 
@@ -947,6 +970,7 @@ class YoudaoV2(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
                 :param professional_field: str, default '0'. Choose from ('0','1','2','3')
         :return: str or dict
         """
@@ -958,6 +982,7 @@ class YoudaoV2(Tse):
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -1044,12 +1069,14 @@ class YoudaoV3(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
         :return: str or dict
         """
 
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -1122,12 +1149,14 @@ class QQFanyi(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
         :return: str or dict
         """
 
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -1213,12 +1242,14 @@ class QQTranSmart(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
         :return: str or dict
         """
 
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -1235,7 +1266,7 @@ class QQTranSmart(Tse):
                                                       from_language=from_language, to_language=to_language)
 
         if from_language == 'auto':
-            warnings.warn('Unsupported [from_language=auto] with [qqTranSmart]! Please specify it.')
+            self.warning_auto_lang(translator='qqTranSmart', if_print_warning=if_print_warning)
             from_language = self.output_zh
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
 
@@ -1337,6 +1368,7 @@ class AlibabaV1(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
                 :param professional_field: str, default 'message', choose from ("general","message","offer")
         :return: str or dict
         """
@@ -1348,6 +1380,7 @@ class AlibabaV1(Tse):
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -1435,6 +1468,7 @@ class AlibabaV2(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
                 :param professional_field: str, default 'message', choose from ("general",)
         :return: str or dict
         """
@@ -1446,6 +1480,7 @@ class AlibabaV2(Tse):
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -1538,6 +1573,7 @@ class Bing(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
                 :param if_use_cn_host: boolean, default None.
         :return: str or dict
         """
@@ -1551,6 +1587,7 @@ class Bing(Tse):
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -1654,12 +1691,14 @@ class Sogou(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
         :return: str or dict
         """
 
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -1696,15 +1735,12 @@ class Caiyun(Tse):
         self.language_map = None
         self.session = None
         self.professional_field = (None, "medicine", "law", "machinery",)
-        self.browser_pool = [
-            'd8bab270cec5dc600525d424be1da0bb',
-            '2c011fd3dbab6f3f763c5e7406317fdf',
-            '74231a3a95c91c2fa8eba3082a8cc4d6'
-        ]
-        self.browser_data = {'browser_id': random.choice(self.browser_pool)}
+        self.browser_data = {'browser_id': ''.join(random.sample('abcdefghijklmnopqrstuvwxyz0123456789', 32))}
+        self.normal_key = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz' + '0123456789' + '=.+-_/'
+        self.cipher_key = 'NOPQRSTUVWXYZABCDEFGHIJKLMnopqrstuvwxyzabcdefghijklm' + '0123456789' + '=.+-_/'
+        self.decrypt_dictionary = self.crypt(if_de=True)
         self.tk = None
         self.jwt = None
-        self.decrypt_dictionary = self.crypt(if_de=True)
         self.query_count = 0
         self.output_zh = 'zh'
         self.input_limit = int(5e3)
@@ -1721,11 +1757,9 @@ class Caiyun(Tse):
         return ss.post(self.get_jwt_url, json=data, headers=api_headers, timeout=timeout, proxies=proxies).json()['jwt']
 
     def crypt(self, if_de=True):
-        normal_key = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz' + '0123456789' + '=.+-_/'
-        cipher_key = 'NOPQRSTUVWXYZABCDEFGHIJKLMnopqrstuvwxyzabcdefghijklm' + '0123456789' + '=.+-_/'
         if if_de:
-            return {k: v for k, v in zip(cipher_key, normal_key)}
-        return {v: k for k, v in zip(cipher_key, normal_key)}
+            return {k: v for k, v in zip(self.cipher_key, self.normal_key)}
+        return {v: k for k, v in zip(self.cipher_key, self.normal_key)}
 
     def encrypt(self, plain_text):
         encrypt_dictionary = self.crypt(if_de=False)
@@ -1756,6 +1790,7 @@ class Caiyun(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
                 :param professional_field: str, default None, choose from (None, "medicine","law","machinery")
         :return: str or dict
         """
@@ -1767,6 +1802,7 @@ class Caiyun(Tse):
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -1915,12 +1951,14 @@ class Deepl(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
         :return: str or dict
         """
 
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -2026,6 +2064,7 @@ class Yandex(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
                 :param reset_host_url: str, default None. eg: 'https://translate.yandex.fr'
         :return: str or dict
         """
@@ -2039,6 +2078,7 @@ class Yandex(Tse):
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -2128,6 +2168,7 @@ class Argos(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
                 :param reset_host_url: str, default None.
         :return: str or dict
         """
@@ -2143,6 +2184,7 @@ class Argos(Tse):
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -2207,12 +2249,14 @@ class Iciba(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
         :return: str or dict
         """
 
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -2291,12 +2335,14 @@ class IflytekV1(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
         :return: str or dict
         """
 
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -2312,7 +2358,7 @@ class IflytekV1(Tse):
                                                       from_language=from_language, to_language=to_language)
 
         if from_language == 'auto':
-            warnings.warn('Unsupported [from_language=auto] with [iflytek]! Please specify it.')
+            self.warning_auto_lang(translator='iflytek', if_print_warning=if_print_warning)
             from_language = self.output_zh
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
 
@@ -2377,12 +2423,14 @@ class IflytekV2(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
         :return: str or dict
         """
 
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -2456,12 +2504,14 @@ class Iflyrec(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
         :return: str or dict
         """
 
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -2544,12 +2594,14 @@ class Reverso(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
         :return: str or dict
         """
 
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -2565,7 +2617,7 @@ class Reverso(Tse):
             self.language_map = self.get_language_map(lang_html, from_language=from_language, to_language=to_language)
 
         if from_language == 'auto':
-            warnings.warn('Unsupported [from_language=auto] with [Reverso]! Please specify it.')
+            self.warning_auto_lang(translator='reverso', if_print_warning=if_print_warning)
             from_language = self.output_zh
 
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
@@ -2637,12 +2689,14 @@ class Itranslate(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
         :return: str or dict
         """
 
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -2720,12 +2774,14 @@ class TranslateCom(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
         :return: str or dict
         """
 
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -2779,12 +2835,12 @@ class Utibet(Tse):
 
     @Tse.time_stat
     @Tse.check_query
-    def utibet_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'zh', **kwargs) -> Union[str, dict]:
+    def utibet_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'ti', **kwargs) -> Union[str, dict]:
         """
         http://mt.utibet.edu.cn/mt
         :param query_text: str, must.
-        :param from_language: str, default 'auto', equals to 'tibet'.
-        :param to_language: str, default 'zh'.
+        :param from_language: str, default 'auto', equals to 'zh'.
+        :param to_language: str, default 'ti'.
         :param **kwargs:
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
@@ -2797,12 +2853,14 @@ class Utibet(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
         :return: str or dict
         """
 
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -2814,8 +2872,8 @@ class Utibet(Tse):
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
 
         if from_language == 'auto':
-            warnings.warn('Unsupported [from_language=auto] with [utibet]! Please specify it.')
-            from_language = 'ti'
+            self.warning_auto_lang(translator='utibet', if_print_warning=if_print_warning)
+            from_language = self.output_zh
 
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
         form_data = {
@@ -2888,12 +2946,14 @@ class Papago(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
         :return: str or dict
         """
 
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -2997,6 +3057,7 @@ class Lingvanex(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
                 :param lingvanex_mode: str, default "B2C", choose from ("B2B", "B2C").
         :return: str or dict
         """
@@ -3005,6 +3066,7 @@ class Lingvanex(Tse):
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -3032,7 +3094,7 @@ class Lingvanex(Tse):
             self.detail_language_map = self.get_d_lang_map(self.language_url, self.session, self.host_headers, timeout, proxies)
 
         if from_language == 'auto':
-            warnings.warn('Unsupported [from_language=auto] with [lingvanex]! Please specify it.')
+            self.warning_auto_lang(translator='lingvanex', if_print_warning=if_print_warning)
             from_language = self.output_zh
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh,
                                                          output_en_translator='Lingvanex', output_en='en_GB')
@@ -3116,12 +3178,14 @@ class Niutrans(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
         :return: str or dict
         """
 
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -3184,12 +3248,12 @@ class Mglip(Tse):
 
     @Tse.time_stat
     @Tse.check_query
-    def mglip_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'zh', **kwargs) -> Union[str, dict]:
+    def mglip_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'mon', **kwargs) -> Union[str, dict]:
         """
         http://fy.mglip.com/pc
         :param query_text: str, must.
-        :param from_language: str, default 'auto'.
-        :param to_language: str, default 'zh'.
+        :param from_language: str, default 'auto', equals 'zh'.
+        :param to_language: str, default 'mon'.
         :param **kwargs:
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
@@ -3202,12 +3266,14 @@ class Mglip(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
         :return: str or dict
         """
 
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -3219,8 +3285,8 @@ class Mglip(Tse):
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
 
         if from_language == 'auto':
-            warnings.warn('Unsupported [from_language=auto] with [mglip]! Please specify it.')
-            from_language = 'mon'
+            self.warning_auto_lang(translator='mglip', if_print_warning=if_print_warning)
+            from_language = self.output_zh
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
 
         form_data = {'userInput': query_text, 'from': from_language, 'to': to_language}
@@ -3294,6 +3360,7 @@ class VolcEngine(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
                 :param professional_field: str, default '', choose from ('', 'clean')
         :return: str or dict
         """
@@ -3305,6 +3372,7 @@ class VolcEngine(Tse):
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -3381,12 +3449,14 @@ class ModernMt(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
         :return: str or dict
         """
 
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -3459,6 +3529,7 @@ class MyMemory(Tse):
                 :param update_session_after_seconds: float, default 1500.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
                 :param myMemory_mode: str, default "web", choose from ("web", "api").
         :return: str or dict
         """
@@ -3467,6 +3538,7 @@ class MyMemory(Tse):
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
@@ -3479,7 +3551,7 @@ class MyMemory(Tse):
             self.language_map = self.get_language_map(host_html, from_language=from_language, to_language=to_language)
 
         if from_language == 'auto':
-            warnings.warn('Unsupported [from_language=auto] with [myMemory]! Please specify it.')
+            self.warning_auto_lang(translator='myMemory', if_print_warning=if_print_warning)
             from_language = self.output_zh
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh,
                                                          output_en_translator='MyMemory', output_en='en-GB')
@@ -3504,6 +3576,7 @@ class MyMemory(Tse):
 
 class TranslatorsServer:
     def __init__(self):
+        self.pre_acceleration_label = False
         self.cpu_cnt = os.cpu_count()
         self.server_region = GuestSeverRegion().get_server_region
         self._alibaba = AlibabaV2()
@@ -3596,6 +3669,7 @@ class TranslatorsServer:
                 :param limit_of_length: int, default 5000.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
                 :param lingvanex_model: str, default 'B2C', choose from ("B2C", "B2B").
                 :param myMemory_mode: str, default "web", choose from ("web", "api").
         :return: str or dict
@@ -3603,6 +3677,7 @@ class TranslatorsServer:
 
         if translator not in self.translators_pool:
             raise TranslatorError
+
         return self.translators_dict[translator](query_text=query_text, from_language=from_language, to_language=to_language, **kwargs)
 
     def translate_html(self,
@@ -3611,6 +3686,7 @@ class TranslatorsServer:
                        from_language: str = 'auto',
                        to_language: str = 'en',
                        n_jobs: int = -1,
+                       if_use_preacceleration: bool = True,
                        **kwargs
                        ) -> str:
         """
@@ -3620,6 +3696,7 @@ class TranslatorsServer:
         :param from_language: str, default 'auto'.
         :param to_language: str, default 'en'.
         :param n_jobs: int, default -1, means os.cpu_cnt().
+        :param if_use_preacceleration: bool, default True.
         :param **kwargs:
                 :param is_detail_result: boolean, default False.
                 :param professional_field: str, support baidu(), caiyun(), alibaba() only.
@@ -3635,6 +3712,7 @@ class TranslatorsServer:
                 :param limit_of_length: int, default 5000.
                 :param if_show_time_stat: boolean, default False.
                 :param show_time_stat_precision: int, default 4.
+                :param if_print_warning: bool, default True.
                 :param lingvanex_model: str, default 'B2C', choose from ("B2C", "B2B").
                 :param myMemory_mode: str, default "web", choose from ("web", "api").
         :return: str
@@ -3643,19 +3721,41 @@ class TranslatorsServer:
         if translator not in self.translators_pool or kwargs.get('is_detail_result', False) or n_jobs > self.cpu_cnt:
             raise TranslatorError
 
-        n_jobs = self.cpu_cnt if n_jobs <= 0 else n_jobs
-        _ts = self.translators_dict[translator]
+        if not self.pre_acceleration_label and if_use_preacceleration:
+            _ = self.preaccelerate()
+
+        def _translate_text(sentence):
+            return sentence, self.translators_dict[translator](query_text=sentence, from_language=from_language, to_language=to_language, **kwargs)
 
         pattern = re.compile(r"(?:^|(?<=>))([\s\S]*?)(?:(?=<)|$)")  # TODO: <code></code> <div class="codetext notranslate">
         sentence_list = list(set(pattern.findall(html_text)))
-        _map_translate_func = lambda sentence: (sentence, _ts(query_text=sentence, from_language=from_language, to_language=to_language, **kwargs))
 
+        n_jobs = self.cpu_cnt if n_jobs <= 0 else n_jobs
         with pathos.multiprocessing.ProcessPool(n_jobs) as pool:
-            result_list = pool.map(_map_translate_func, sentence_list)
+            result_list = pool.map(_translate_text, sentence_list)
 
         result_dict = {text: ts_text for text, ts_text in result_list}
         _get_result_func = lambda k: result_dict.get(k.group(1), '')
         return pattern.sub(repl=_get_result_func, string=html_text)
+
+    def preaccelerate(self) -> dict:
+        success_pool, fail_pool = [], []
+
+        if not self.pre_acceleration_label:
+            not_en_langs = {'utibet': 'ti', 'mglip': 'mon'}
+            for i in tqdm.tqdm(range(len(self.translators_pool)), desc='Pre-acceleration Process', ncols=80):
+                _ts = self.translators_pool[i]
+                try:
+                    if _ts not in not_en_langs:
+                        _ = translate_text('你好', translator=_ts, to_language='en', if_print_warning=False)
+                    else:
+                        _ = translate_text('你好', translator=_ts, to_language=not_en_langs[_ts], if_print_warning=False)
+                    success_pool.append(_ts)
+                except:
+                    fail_pool.append(_ts)
+
+                self.pre_acceleration_label = True
+        return {'success': success_pool, 'fail': fail_pool}  # after first request, empty list forever.
 
 
 tss = TranslatorsServer()
@@ -3715,6 +3815,7 @@ youdao = tss.youdao
 
 translate_text = tss.translate_text
 translate_html = tss.translate_html
-
 translators_pool = tss.translators_pool
+
+preaccelerate = tss.preaccelerate
 # sys.stderr.write(f'Support translators {translators_pool} only.\n')

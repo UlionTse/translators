@@ -47,7 +47,8 @@ import translators as ts
 
 
 def test0():
-    r = translate_html(html_text, to_language='zh', translator=translators_pool[0], n_jobs=4)
+    r = translate_html(html_text, to_language='en', translator=translators_pool[0], n_jobs=8,
+                       if_ignore_empty_query=True, if_show_time_stat=True)
     print(r)
 
 
@@ -65,7 +66,7 @@ def test1():
         # print('iflytek:\n', iflytek(query_text))  # todo
         print('itranslate:\n', itranslate(query_text))
         print('lingvanex:\n', lingvanex(query_text))
-        print('mglip:\n', mglip(query_text, 'zh', 'mon'))
+        print('mglip:\n', mglip(query_text))
         print('modernMt:\n', modernMt(query_text))
         print('myMemory:\n', myMemory(query_text))
         # print('niutrans:\n', niutrans(query_text))  # todo
@@ -75,12 +76,15 @@ def test1():
         print('reverso:\n', reverso(query_text))
         print('sogou:\n', sogou(query_text))
         print('translateCom:\n', translateCom(query_text))
-        print('utibet:\n', utibet(query_text, 'zh', 'ti'))
+        print('utibet:\n', utibet(query_text))
         # print('volcEngine:\n', volcEngine(query_text))  # todo
         # print('yandex:\n', yandex(query_text))  # todo
         print('youdao:\n', youdao(query_text))
 
 
 if __name__ == "__main__":
-    # test0()
+    ts_status_list = preaccelerate()
+    print(ts_status_list)
+
+    test0()
     test1()

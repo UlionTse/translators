@@ -22,6 +22,7 @@
 - [Getting Started](#getting-started)
   - [Import Library](#import-library)
   - [Usage](#usage)
+    - [preaccelerate](#preaccelerate)
     - [translate_text](#translate_text)
     - [translate_html](#translate_html)
   - [Common Parameters and Functions](#common-parameters-and-functions)
@@ -83,12 +84,13 @@ chs_html = '''
     <title>《季姬击鸡记》</title>
 </head>
 <body>
-<p>还有另一篇文章《施氏食狮史》。</p>
+<p>还有另一篇文章《施氏食狮史》。其它有《羿裔熠》、《侄治痔》等。</p>
 </body>
 </html>
 '''
-
 ### usage
+ts.preaccelerate()  #Caching sessions in advance, which can help improve access speed.
+
 print(ts.translators_pool)
 print(ts.translate_text(chs_text))
 print(ts.translate_html(chs_html, translator='iciba'))
@@ -99,7 +101,7 @@ print(ts.translate_text(chs_text, if_ignore_empty_query=False, if_ignore_limit_o
 
 ## language
 # input language
-from_language, to_language = 'zh', 'en'
+from_language, to_language = ('zh', 'en')
 print(tss.google(wyw_text, from_language, to_language))
 # check input language with language_map
 assert from_language in tss._google.language_map  # request once first, then ...
@@ -135,8 +137,7 @@ print(tss.reverso(wyw_text, if_show_time_stat=True, show_time_stat_precision=4, 
 ## old server
 baidu_v1 = tss.BaiduV1().baidu_api
 baidu_v2 = tss.BaiduV2().baidu_api
-print(baidu_v1(wyw_text))
-assert baidu_v2(wyw_text) == tss.baidu(wyw_text)
+assert baidu_v1(wyw_text) == baidu_v2(wyw_text)
 
 ### property
 print(dir(tss._deepl))
@@ -168,7 +169,7 @@ help(tss.papago)
 | 17  | [QQTranSmart](https://transmart.qq.com)                       | 22                            | support main languages                                                                      | [Tencent](https://www.tencent.com/en-us/about.html), China                                             | stable                                          |
 | 18  | [QQFanyi](https://fanyi.qq.com)                               | 17                            | support main languages                                                                      | [Tencent](https://www.tencent.com/en-us/about.html), China                                             | stable                                          |
 | 19  | [Argos](https://translate.argosopentech.com)                  | 17                            | open-source                                                                                 | [Argos](https://github.com/argosopentech) / [Libre](https://github.com/LibreTranslate), America        | stable                                          |
-| 20  | [Youdao](https://fanyi.youdao.com)                            | 15                            | support main languages, high quality                                                        | [Netease](https://ir.netease.com/company-overview/corporate-profile), China                            | stable                                          |
+| 20  | [Youdao](https://ai.youdao.com/product-fanyi-text.s)          | 15                            | support main languages, high quality                                                        | [Netease](https://ir.netease.com/company-overview/corporate-profile), China                            | stable                                          |
 | 21  | [Papago](https://papago.naver.com)                            | 15                            | good at Korean translation                                                                  | [Naver](https://www.navercorp.com/en/naver/company), South Korea                                       | stable                                          |
 | 22  | [Iflyrec](https://fanyi.iflyrec.com)                          | 12                            | good at Chinese translation                                                                 | [Iflytek](https://www.iflytek.com/en/about-us.html), China                                             | stable                                          |
 | 23  | [Caiyun](https://fanyi.caiyunapp.com)                         | 7                             | high quality to translate but response slowly, support professional field                   | [ColorfulClouds](http://caiyunapp.com/jobs/), China                                                    | stable                                          |

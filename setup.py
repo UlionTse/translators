@@ -58,6 +58,7 @@ setup(
         'requests>=2.28.1',
         'PyExecJS>=1.5.1',
         'lxml>=4.9.1',
+        'tqdm>=4.65.0',
         'pathos>=0.2.9',
         'cryptography>=38.0.1',
     ],
