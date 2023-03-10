@@ -28,7 +28,6 @@
   - [About Chinese Language](#about-chinese-language)
 - [Debug Tips](#debug-tips)
   - [Linux Runtime Environment](#linux-runtime-environment)
-  - [Supported Region Service](#supported-region-service)
   - [HttpError 4xx](#httperror-4xx)
   - [NetworkError or ProxyError](#networkerror-or-proxyerror)
 - [License](#license)
@@ -231,17 +230,11 @@ translate_text(query_text: str, translator: str = 'bing', from_language: str = '
 ### Linux Runtime Environment
 
 1. To support javascript runtime environment, you should [download and install Node.js](https://nodejs.org/en/download/).
-2. PS, `tss.baidu()` doesn't work on Linux without desktop.
-
-### Supported Country and Region Service
-
-1. If you have requests error, please check whether this service is provided in your country or region.
-2. Check the website about `eg: help(tss.google)`.
 
 ### HttpError 4xx
 
-1. Check whether you made high frequency requests.
-2. Check whether this service is provided in your country or region.
+1. Check whether you made high frequency requests, especially httperror 429.
+2. Check whether this service is provided in your region.
 3. Detail to solve [HttpError](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) itself.
 4. [Issue me](https://github.com/UlionTse/translators/issues), thanks.
 
