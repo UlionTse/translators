@@ -21,7 +21,7 @@
   - [From Source](#from-source)
 - [Getting Started](#getting-started)
   - [Usage](#usage)
-  - [Common Parameters](#common-parameters)
+  - [Parameters](#parameters)
 - [More About Translators](#more-about-translators)
   - [Features](#features)
   - [Supported Language](#supported-language)
@@ -69,7 +69,7 @@ print(ts.translators_pool)
 print(ts.translate_text(q_text))
 print(ts.translate_html(q_html, translator='alibaba'))
 
-### common parameters
+### parameters
 help(ts.translate_text)
 
 """
