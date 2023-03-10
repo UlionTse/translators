@@ -73,12 +73,20 @@ python setup.py install
 
 ```python
 import translators as ts
+import translators.server as tss
 
 wyw_text = '季姬寂，集鸡，鸡即棘鸡。棘鸡饥叽，季姬及箕稷济鸡。'
 chs_text = '季姬感到寂寞，罗集了一些鸡来养，鸡是出自荆棘丛中的野鸡。野鸡饿了唧唧叫，季姬就拿竹箕中的谷物喂鸡。'
 chs_html = '''
-<!DOCTYPE html><html><head><title>《季姬击鸡记》</title></head>
-<body><p>还有另一篇文章《施氏食狮史》。其它有《羿裔熠》、《侄治痔》等。</p></body></html>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>《季姬击鸡记》</title>
+</head>
+<body>
+<p>还有另一篇文章《施氏食狮史》。其它有《羿裔熠》、《侄治痔》等。</p>
+</body>
+</html>
 '''
 ### usage
 ts.preaccelerate()  #Caching sessions in advance, which can help improve access speed.
@@ -88,31 +96,52 @@ print(ts.translate_text(chs_text))
 print(ts.translate_html(chs_html, translator='iciba'))
 
 ### common parameters and functions
-help(ts.translate_text)
-translate_text(query_text: str, translator: str = 'bing', from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict] method of translators.server.TranslatorsServer instance
-    :param query_text: str, must.
-    :param translator: str, default 'bing'.
-    :param from_language: str, default 'auto'.
-    :param to_language: str, default 'en'.
-    :param **kwargs:
-            :param is_detail_result: boolean, default False.
-            :param professional_field: str, support baidu(), caiyun(), alibaba(), volcEngine(). only.
-            :param timeout: float, default None.
-            :param proxies: dict, default None.
-            :param sleep_seconds: float, default 0.
-            :param update_session_after_freq: int, default 1000.
-            :param update_session_after_seconds: float, default 1500.
-            :param if_use_cn_host: bool, default False.
-            :param reset_host_url: str, default None.
-            :param if_ignore_empty_query: boolean, default False.
-            :param if_ignore_limit_of_length: boolean, default False.
-            :param limit_of_length: int, default 5000.
-            :param if_show_time_stat: boolean, default False.
-            :param show_time_stat_precision: int, default 4.
-            :param if_print_warning: bool, default True.
-            :param lingvanex_model: str, default 'B2C', choose from ("B2C", "B2B").
-            :param myMemory_mode: str, default "web", choose from ("web", "api").
-    :return: str or dict
+## query text
+print(ts.translate_text(chs_text, if_ignore_empty_query=False, if_ignore_limit_of_length=False, limit_of_length=5000))
+
+## language
+# input language
+from_language, to_language = ('zh', 'en')
+print(tss.google(wyw_text, from_language, to_language))
+# check input language with language_map
+assert from_language in tss._google.language_map  # request once first, then ...
+
+## detail result
+print(tss.sogou(wyw_text, is_detail_result=True))
+
+## professional field
+print(tss.alibaba(wyw_text, professional_field='general'))  # ("general","message","offer")
+print(tss.baidu(wyw_text, professional_field='common'))  # ('common','medicine','electronics','mechanics')
+print(tss.caiyun(wyw_text, professional_field=None))  # (None,"medicine","law","machinery")
+
+## host config
+# cn
+print(tss.google(wyw_text, if_use_cn_host=False))
+print(tss.bing(wyw_text, if_use_cn_host=True))
+# reset host
+print(tss.google(wyw_text, reset_host_url=None))
+print(tss.yandex(wyw_text, reset_host_url=None))
+# host pool
+print(tss._argos.host_pool)
+print(tss.argos(wyw_text, reset_host_url=None))
+
+## request config
+print(tss.lingvanex(wyw_text, sleep_seconds=5, timeout=None, proxies=None))
+
+## session update
+print(tss.itranslate(wyw_text, update_session_after_freq=1000, update_session_after_seconds=1.5e3))
+
+## time stat
+print(tss.reverso(wyw_text, if_show_time_stat=True, show_time_stat_precision=4, sleep_seconds=0.1))
+
+## old server
+baidu_v1 = tss.BaiduV1().baidu_api
+baidu_v2 = tss.BaiduV2().baidu_api
+assert baidu_v1(wyw_text) == baidu_v2(wyw_text)
+
+### property
+print(dir(tss._deepl))
+help(tss.papago)
 ```
 
 ## More About Translators
