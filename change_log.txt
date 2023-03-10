@@ -333,7 +333,7 @@ add qqTranSmart().
 add modernMT().
 add myMemory().
 add iflyrec().
-add volcengine() but not completed.  #106
+add volcEngine() but not completed.  #106
 follow to change and stronger baidu(), itranslate(), lingvanex().
 add func and parameter `update_session_after_freq`.
 stronger func get_server_region().
@@ -344,3 +344,7 @@ update readme.md
 add preaccelerate().
 stronger caiyun(), youdaoV1().
 update readme.md
+
+5.6.2
+stronger preaccelerate().
+update and change structure of readme.md

@@ -3741,7 +3741,9 @@ class TranslatorsServer:
     def preaccelerate(self) -> dict:
         success_pool, fail_pool = [], []
 
-        if not self.pre_acceleration_label:
+        if self.pre_acceleration_label:
+            raise TranslatorError('Pre-acceleration can only be performed once.')
+        else:
             not_en_langs = {'utibet': 'ti', 'mglip': 'mon'}
             for i in tqdm.tqdm(range(len(self.translators_pool)), desc='Pre-acceleration Process', ncols=80):
                 _ts = self.translators_pool[i]
@@ -3754,7 +3756,7 @@ class TranslatorsServer:
                 except:
                     fail_pool.append(_ts)
 
-                self.pre_acceleration_label = True
+            self.pre_acceleration_label = True
         return {'success': success_pool, 'fail': fail_pool}  # after first request, empty list forever.
 
 
