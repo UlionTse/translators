@@ -15,16 +15,12 @@
 
 **Translators** is a library which aims to bring **free, multiple, enjoyable** translation to individuals and students in Python. 
 
-
-
 - [Supported Translation Services](#supported-translation-services)
 - [Installation](#installation)
 - [Getting Started](#getting-started)
 - [Supported Languages](#supported-languages)
 - [Debug Tips](#debug-tips)
 - [License](#license)
-
-
 
 ## Supported Translation Services
 
@@ -96,6 +92,7 @@ translate_text(query_text: str, translator: str = 'bing', from_language: str = '
     :param translator: str, default 'bing'.
     :param from_language: str, default 'auto'.
     :param to_language: str, default 'en'.
+    :param if_use_preacceleration: bool, default False.
     :param **kwargs:
             :param is_detail_result: boolean, default False.
             :param professional_field: str, support baidu(), caiyun(), alibaba(), volcEngine() only.

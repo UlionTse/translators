@@ -3641,12 +3641,14 @@ class TranslatorsServer:
             'yandex': self.yandex, 'youdao': self.youdao,
         }
         self.translators_pool = list(self.translators_dict.keys())
+        self.not_en_langs = {'utibet': 'ti', 'mglip': 'mon'}
 
     def translate_text(self,
                        query_text: str,
                        translator: str = 'bing',
                        from_language: str = 'auto',
                        to_language: str = 'en',
+                       if_use_preacceleration: bool = False,
                        **kwargs
                        ) -> Union[str, dict]:
         """
@@ -3654,6 +3656,7 @@ class TranslatorsServer:
         :param translator: str, default 'bing'.
         :param from_language: str, default 'auto'.
         :param to_language: str, default 'en'.
+        :param if_use_preacceleration: bool, default False.
         :param **kwargs:
                 :param is_detail_result: boolean, default False.
                 :param professional_field: str, support baidu(), caiyun(), alibaba() only.
@@ -3678,6 +3681,9 @@ class TranslatorsServer:
         if translator not in self.translators_pool:
             raise TranslatorError
 
+        if not self.pre_acceleration_label and if_use_preacceleration:
+            _ = self.preaccelerate()
+
         return self.translators_dict[translator](query_text=query_text, from_language=from_language, to_language=to_language, **kwargs)
 
     def translate_html(self,
@@ -3686,7 +3692,7 @@ class TranslatorsServer:
                        from_language: str = 'auto',
                        to_language: str = 'en',
                        n_jobs: int = -1,
-                       if_use_preacceleration: bool = True,
+                       if_use_preacceleration: bool = False,
                        **kwargs
                        ) -> str:
         """
@@ -3696,7 +3702,7 @@ class TranslatorsServer:
         :param from_language: str, default 'auto'.
         :param to_language: str, default 'en'.
         :param n_jobs: int, default -1, means os.cpu_cnt().
-        :param if_use_preacceleration: bool, default True.
+        :param if_use_preacceleration: bool, default False.
         :param **kwargs:
                 :param is_detail_result: boolean, default False.
                 :param professional_field: str, support baidu(), caiyun(), alibaba() only.
@@ -3742,16 +3748,13 @@ class TranslatorsServer:
         success_pool, fail_pool = [], []
 
         if self.pre_acceleration_label:
-            raise TranslatorError('Pre-acceleration can only be performed once.')
+            raise TranslatorError('Preacceleration can only be performed once.')
         else:
-            not_en_langs = {'utibet': 'ti', 'mglip': 'mon'}
-            for i in tqdm.tqdm(range(len(self.translators_pool)), desc='Pre-acceleration Process', ncols=80):
+            for i in tqdm.tqdm(range(len(self.translators_pool)), desc='Preacceleration Process', ncols=80):
                 _ts = self.translators_pool[i]
                 try:
-                    if _ts not in not_en_langs:
-                        _ = translate_text('你好', translator=_ts, to_language='en', if_print_warning=False)
-                    else:
-                        _ = translate_text('你好', translator=_ts, to_language=not_en_langs[_ts], if_print_warning=False)
+                    to_language = self.not_en_langs[_ts] if _ts in self.not_en_langs else 'en'
+                    _ = self.translators_dict[_ts]('你好', translator=_ts, to_language=to_language, if_print_warning=False, timeout=5)  # argos cost large time.
                     success_pool.append(_ts)
                 except:
                     fail_pool.append(_ts)
