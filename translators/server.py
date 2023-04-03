@@ -167,7 +167,7 @@ class Tse:
         elif from_language == to_language:
             raise TranslatorError(f'from_language[{from_language}] and to_language[{to_language}] should not be same.')
         return from_language, to_language
-    
+
     def warning_auto_lang(self, translator: str, if_print_warning: bool = True) -> None:
         if if_print_warning:
             warnings.warn(f'Unsupported [from_language=auto] with [{translator}]! Please specify it.')
@@ -252,7 +252,7 @@ class GuestSeverRegion(Tse):
         _headers_fn = lambda url: self.get_headers(url, if_api=False, if_referer_for_host=True)
         try:
             try:
-                data = eval(requests.get(self.get_addr_url, headers=_headers_fn(self.get_addr_url)).text[9:-2])
+                data = json.loads(requests.get(self.get_addr_url, headers=_headers_fn(self.get_addr_url)).text[9:-2])
                 sys.stderr.write(f'Using region {data.get("stateName")} server backend.\n')
                 return data.get('country') if if_judge_cn else data.get("stateName")
             except requests.exceptions.Timeout:
