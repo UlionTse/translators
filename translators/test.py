@@ -8,7 +8,6 @@ query_text1 = '季姬寂，集鸡，鸡即棘鸡。棘鸡饥叽，季姬及箕�
 query_text2 = "北国风光，千里冰封，万里雪飘。\n望长城内外，惟余莽莽；大河上下，顿失滔滔。\n山舞银蛇，原驰蜡象，欲与天公试比高。\n"
 query_text3 = 'All the past, a number of heroes, but also look at the present.'
 
-
 html_text = """
 <!DOCTYPE html>
 <html>

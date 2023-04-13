@@ -351,3 +351,16 @@ update and change structure of readme.md
 
 5.6.3
 stronger preaccelerate() and add it to translate_text().
+
+5.7.0
+add sysTran()
+add apertium()
+add cloudYi()
+add tilde()
+add translateMe()
+add marai()  #119
+add yeekit()
+add languageWire()
+add elia()
+add judic()
+stronger preaccelerate()
