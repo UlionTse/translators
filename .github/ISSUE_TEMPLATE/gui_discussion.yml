@@ -1,0 +1,76 @@
+name: GUI Discussion
+description: File a GUI discussion
+title: "[GUI]: "
+assignees:
+  - UlionTse
+  - Azornes
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this GUI discussion!
+  - type: checkboxes
+    id: discussion-tips
+    attributes:
+      label: discussion Tips
+      description: To improve discussion efficiency, please read [GUI(ocrTranslator) from third-party](https://github.com/UlionTse/translators/issues/120#issuecomment-1523482625) first.
+      options:
+        - label: I'm sure I've read this project's README.
+          required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened about GUI(more backend)?
+      description: Also tell us, what did you expect to happen?
+      placeholder: Tell us what you see!
+      value: "A bug happened!"
+    validations:
+      required: true
+  - type: dropdown
+    id: runtime-environment
+    attributes:
+      label: Runtime Environment
+      description: What runtime environment(OS) are you running?
+      options:
+        - "Linux CentOS (Default)"
+        - "Linux Ubuntu"
+        - "Windows 10"
+        - "MacOS"
+        - "Other"
+    validations:
+      required: true
+  - type: input
+    id: region
+    attributes:
+      label: Country/Region
+      description: What Country(Region) are you running? (Translation services may be different in different regions)
+      placeholder: Tell us what you see!
+      value: "Qatar(example)"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      render: sh
+    validations:
+      required: false
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: "Screenshots"
+      description: If applicable, add screenshots to help explain your problem.
+      value: |
+        ![DESCRIPTION](LINK.png)
+      render: Markdown
+    validations:
+      required: false
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/UlionTse/translators/blob/master/LICENSE)
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true
