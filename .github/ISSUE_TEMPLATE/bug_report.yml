@@ -43,8 +43,8 @@ body:
         - "3.9 (Default)"
         - "3.11"
         - "3.10"
-        - ">=3.6, <=3.8"
-        - "<3.6"
+        - "=3.8"
+        - "<3.8"
     validations:
       required: true
   - type: dropdown

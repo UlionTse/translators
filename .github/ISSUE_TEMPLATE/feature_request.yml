@@ -33,12 +33,12 @@ body:
       label: Expected Python Version
       description: What version of python did you expect?
       options:
-        - ">=3.6 (Default)"
+        - ">=3.8 (Default)"
         - "3.11"
         - "3.10"
         - "3.9"
-        - ">=3.6, <=3.8"
-        - "<3.6"
+        - "3.8"
+        - "<3.8"
     validations:
       required: true
   - type: dropdown

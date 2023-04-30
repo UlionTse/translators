@@ -105,19 +105,20 @@ translate_text(query_text: str, translator: str = 'bing', from_language: str = '
     :param if_use_preacceleration: bool, default False.
     :param **kwargs:
             :param is_detail_result: boolean, default False.
-            :param professional_field: str, support baidu(), caiyun(), alibaba(), volcEngine() only.
+            :param professional_field: str, support alibaba(), baidu(), caiyun(), cloudYi(), elia(), sysTran(), youdao(), volcEngine() only.
             :param timeout: float, default None.
             :param proxies: dict, default None.
             :param sleep_seconds: float, default 0.
             :param update_session_after_freq: int, default 1000.
             :param update_session_after_seconds: float, default 1500.
-            :param if_use_cn_host: bool, default False.
+            :param if_use_cn_host: bool, default False. Support google(), bing() only.
             :param reset_host_url: str, default None.
+            :param if_check_reset_host_url: bool, default True.
             :param if_ignore_empty_query: boolean, default False.
             :param if_ignore_limit_of_length: boolean, default False.
             :param limit_of_length: int, default 5000.
             :param if_show_time_stat: boolean, default False.
-            :param show_time_stat_precision: int, default 4.
+            :param show_time_stat_precision: int, default 2.
             :param if_print_warning: bool, default True.
             :param lingvanex_model: str, default 'B2C', choose from ("B2C", "B2B").
             :param myMemory_mode: str, default "web", choose from ("web", "api").
@@ -222,6 +223,7 @@ translate_text(query_text: str, translator: str = 'bing', from_language: str = '
 ### Linux Runtime Environment
 
 1. To support javascript runtime environment, you should [download and install Node.js](https://nodejs.org/en/download/).
+2. baidu() doesn't work on Linux without desktop.
 
 ### HttpError 4xx
 

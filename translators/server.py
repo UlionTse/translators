@@ -89,7 +89,7 @@ class Tse:
         @functools.wraps(func)
         def _wrapper(*args, **kwargs):
             if_show_time_stat = kwargs.get('if_show_time_stat', False)
-            show_time_stat_precision = kwargs.get('show_time_stat_precision', 4)
+            show_time_stat_precision = kwargs.get('show_time_stat_precision', 2)
             sleep_seconds = kwargs.get('sleep_seconds', 0)
 
             if if_show_time_stat and sleep_seconds >= 0:
@@ -172,7 +172,8 @@ class Tse:
             raise TranslatorError(f'from_language[{from_language}] and to_language[{to_language}] should not be same.')
         return from_language, to_language
 
-    def warning_auto_lang(self, translator: str, default_from_language: str, if_print_warning: bool = True) -> str:
+    @staticmethod
+    def warning_auto_lang(translator: str, default_from_language: str, if_print_warning: bool = True) -> str:
         if if_print_warning:
             warnings.warn(f'Unsupported [from_language=auto({default_from_language})] with [{translator}]! Please specify it.')
         return default_from_language
@@ -190,10 +191,15 @@ class Tse:
         def _wrapper(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
-            except Exception as e:
+            except Exception:
                 # warnings.warn(str(e))
                 return make_temp_language_map(kwargs.get('from_language'), kwargs.get('to_language'))
         return _wrapper
+    
+    @staticmethod
+    def check_input_limit(query_text: str, input_limit: int) -> None:
+        if len(query_text) > input_limit:
+            raise TranslatorError
 
     @staticmethod
     def check_query(func):
@@ -222,7 +228,7 @@ class Tse:
         def _wrapper(*args, **kwargs):
             if_ignore_empty_query = kwargs.get('if_ignore_empty_query', False)
             if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
-            limit_of_length = kwargs.get('limit_of_length', 5000)
+            limit_of_length = kwargs.get('limit_of_length', 20000)
             is_detail_result = kwargs.get('is_detail_result', False)
 
             query_text = list(args)[1] if len(args) >= 2 else kwargs.get('query_text')
@@ -293,7 +299,8 @@ class GoogleV1(Tse):
         self.output_zh = 'zh-CN'
         self.input_limit = int(5e3)
 
-    def _xr(self, a, b):
+    @staticmethod
+    def _xr(a, b):
         size_b = len(b)
         c = 0
         while c < size_b - 2:
@@ -304,7 +311,8 @@ class GoogleV1(Tse):
             c += 3
         return a
 
-    def _ints(self, text):
+    @staticmethod
+    def _ints(text):
         ints = []
         for v in text:
             int_v = ord(v)
@@ -358,7 +366,7 @@ class GoogleV1(Tse):
 
     @Tse.debug_language_map
     def get_language_map(self, host_html, **kwargs):
-        lang_list_str = re.compile("source_code_name:\[(.*?)\],").findall(host_html)[0]
+        lang_list_str = re.compile("source_code_name:\\[(.*?)],").findall(host_html)[0]  # '\\[]' == '\\[\\]'
         lang_list_str = ''.join(['[', lang_list_str, ']']).replace('code', '"code"').replace('name', '"name"')
         lang_list = [x['code'] for x in eval(lang_list_str) if x['code'] != 'auto']
         return {}.fromkeys(lang_list, lang_list)
@@ -378,25 +386,26 @@ class GoogleV1(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
-                :param if_use_cn_host: boolean, default None.
+                :param if_use_cn_host: bool, default None.
                 :param reset_host_url: str, default None.
+                :param if_check_reset_host_url: bool, default True.
         :return: str or dict
         """
 
         reset_host_url = kwargs.get('reset_host_url', None)
         if reset_host_url and reset_host_url != self.host_url:
-            if not reset_host_url[:25] == 'https://translate.google.':
+            if kwargs.get('if_check_reset_host_url', True) and not reset_host_url[:25] == 'https://translate.google.':
                 raise TranslatorError
-            self.host_url = reset_host_url
+            self.host_url = reset_host_url.strip('/')
         else:
             use_cn_condition = kwargs.get('if_use_cn_host', None) or self.server_region == 'CN'
             self.host_url = self.cn_host_url if use_cn_condition else self.en_host_url
@@ -413,6 +422,7 @@ class GoogleV1(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -490,25 +500,25 @@ class GoogleV2(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
-                :param if_use_cn_host: boolean, default None.
                 :param reset_host_url: str, default None.
+                :param if_check_reset_host_url: bool, default True.
         :return: str or dict
         """
 
         reset_host_url = kwargs.get('reset_host_url', None)
         if reset_host_url and reset_host_url != self.host_url:
-            if not reset_host_url[:25] == 'https://translate.google.':
+            if kwargs.get('if_check_reset_host_url', True) and not reset_host_url[:25] == 'https://translate.google.':
                 raise TranslatorError
-            self.host_url = reset_host_url
+            self.host_url = reset_host_url.strip('/')
         else:
             use_cn_condition = kwargs.get('if_use_cn_host', None) or self.server_region == 'CN'
             self.host_url = self.cn_host_url if use_cn_condition else self.en_host_url
@@ -527,6 +537,7 @@ class GoogleV2(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -577,7 +588,7 @@ class BaiduV1(Tse):
     def get_language_map(self, lang_url, ss, headers, timeout, proxies, **kwargs):
         js_html = ss.get(lang_url, headers=headers, timeout=timeout, proxies=proxies).text
         lang_str = re.compile('exports={auto:(.*?)}}}},').search(js_html).group()[8:-3]
-        lang_list = re.compile('(\w+):{zhName:').findall(lang_str)
+        lang_list = re.compile('(\\w+):{zhName:').findall(lang_str)
         lang_list = sorted(list(set(lang_list)))
         return {}.fromkeys(lang_list, lang_list)
 
@@ -593,14 +604,14 @@ class BaiduV1(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -612,6 +623,7 @@ class BaiduV1(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -668,7 +680,7 @@ class BaiduV2(Tse):
     def get_language_map(self, lang_url, ss, headers, timeout, proxies, **kwargs):
         js_html = ss.get(lang_url, headers=headers, timeout=timeout, proxies=proxies).text
         lang_str = re.compile('exports={auto:(.*?)}}}},').search(js_html).group()[8:-3]
-        lang_list = re.compile('(\w+):{zhName:').findall(lang_str)
+        lang_list = re.compile('(\\w+):{zhName:').findall(lang_str)
         lang_list = sorted(list(set(lang_list)))
         return {}.fromkeys(lang_list, lang_list)
 
@@ -703,14 +715,14 @@ class BaiduV2(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
                 :param professional_field: str, default 'common'. Choose from ('common', 'medicine', 'electronics', 'mechanics', 'novel')
         :return: str or dict
@@ -727,6 +739,7 @@ class BaiduV2(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -811,7 +824,7 @@ class YoudaoV1(Tse):
         except:
             r = ss.get(self.get_sign_old_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             r.raise_for_status()
-        sign = re.compile('md5\("fanyideskweb" \+ e \+ i \+ "(.*?)"\)').findall(r.text)
+        sign = re.compile('md5\\("fanyideskweb" \\+ e \\+ i \\+ "(.*?)"\\)').findall(r.text)
         return sign[0] if sign and sign != [''] else "Ygy_4c=r#e#4EX^NUGUc5"  # v1.1.10
 
     def get_form(self, query_text, from_language, to_language, sign_key):
@@ -850,14 +863,14 @@ class YoudaoV1(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -869,6 +882,7 @@ class YoudaoV1(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -926,7 +940,7 @@ class YoudaoV2(Tse):
         return {}.fromkeys(lang_list, lang_list)
 
     def get_default_key(self, js_html):  # asdjnjfenknafdfsdfsd
-        return re.compile('="webfanyi-key-getter",(\w+)="(\w+)";').search(js_html).group(2)
+        return re.compile('="webfanyi-key-getter",(\\w+)="(\\w+)";').search(js_html).group(2)
 
     def get_sign(self, key, timestmp):
         value = f'client=fanyideskweb&mysticTime={timestmp}&product=webfanyi&key={key}'
@@ -965,14 +979,14 @@ class YoudaoV2(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
                 :param professional_field: str, default '0'. Choose from ('0','1','2','3')
         :return: str or dict
@@ -989,6 +1003,7 @@ class YoudaoV2(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -1064,14 +1079,14 @@ class YoudaoV3(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -1083,6 +1098,7 @@ class YoudaoV3(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -1126,7 +1142,7 @@ class QQFanyi(Tse):
     def get_language_map(self, ss, language_url, timeout, proxies, **kwargs):
         r = ss.get(language_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
         r.raise_for_status()
-        lang_map_str = re.compile(pattern='C={(.*?)}|languagePair = {(.*?)}', flags=re.S).search(r.text).group()  # C=
+        lang_map_str = re.compile('C={(.*?)}|languagePair = {(.*?)}', flags=re.S).search(r.text).group()  # C=
         return execjs.eval(lang_map_str)
 
     def get_qt(self, ss, timeout, proxies):
@@ -1144,14 +1160,14 @@ class QQFanyi(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -1163,6 +1179,7 @@ class QQFanyi(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -1213,7 +1230,7 @@ class QQTranSmart(Tse):
     @Tse.debug_language_map
     def get_language_map(self, lang_url, ss, timeout, proxies, **kwargs):
         js_html = ss.get(lang_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
-        lang_str_list = re.compile('lngs:\[(.*?)\]').findall(js_html)
+        lang_str_list = re.compile('lngs:\\[(.*?)]').findall(js_html)  # 'lngs:\\[(.*?)\\]'
         lang_list = [execjs.eval(f'[{x}]') for x in lang_str_list]
         lang_list = sorted(list(set([lang for langs in lang_list for lang in langs])))
         return {}.fromkeys(lang_list, lang_list)
@@ -1238,14 +1255,14 @@ class QQTranSmart(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -1257,6 +1274,7 @@ class QQTranSmart(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -1327,15 +1345,15 @@ class AlibabaV1(Tse):
 
     def get_dmtrack_pageid(self, host_response):
         try:
-            e = re.compile("dmtrack_pageid='(\w+)';").findall(host_response.text)[0]
+            e = re.compile("dmtrack_pageid='(\\w+)';").findall(host_response.text)[0]
         except:
             e = ''
         if not e:
             e = host_response.cookies.get_dict().get("cna", "001")
-            e = re.compile(pattern='[^a-z\d]').sub(repl='', string=e.lower())[:16]
+            e = re.compile('[^a-z\\d]').sub(repl='', string=e.lower())[:16]
         else:
             n, r = e[0:16], e[16:26]
-            i = hex(int(r, 10))[2:] if re.compile('^[\-+]?[0-9]+$').match(r) else r
+            i = hex(int(r, 10))[2:] if re.compile('^[\\-+]?[0-9]+$').match(r) else r
             e = n + i
 
         s = int(time.time() * 1000)
@@ -1363,14 +1381,14 @@ class AlibabaV1(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
                 :param professional_field: str, default 'message', choose from ("general","message","offer")
         :return: str or dict
@@ -1387,6 +1405,7 @@ class AlibabaV1(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -1463,14 +1482,14 @@ class AlibabaV2(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
                 :param professional_field: str, default 'message', choose from ("general",)
         :return: str or dict
@@ -1487,6 +1506,7 @@ class AlibabaV2(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -1568,16 +1588,16 @@ class Bing(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
-                :param if_use_cn_host: boolean, default None.
+                :param if_use_cn_host: bool, default None.
         :return: str or dict
         """
 
@@ -1594,6 +1614,7 @@ class Bing(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -1650,7 +1671,7 @@ class Sogou(Tse):
         except:
             lang_html = ss.get(lang_old_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
 
-        lang_list = eval(re.compile('"ALL":\[(.*?)\]').search(lang_html).group().replace('!', '')[6:])
+        lang_list = eval(re.compile('"ALL":\\[(.*?)]').search(lang_html).group().replace('!', '')[6:])
         lang_list = [x['lang'] for x in lang_list]
         return {}.fromkeys(lang_list, lang_list)
 
@@ -1686,14 +1707,14 @@ class Sogou(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -1705,6 +1726,7 @@ class Sogou(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -1750,10 +1772,10 @@ class Caiyun(Tse):
 
     @Tse.debug_language_map
     def get_language_map(self, js_html, **kwargs):
-        return execjs.eval(re.compile('={auto:\[(.*?)}').search(js_html).group()[1:])
+        return execjs.eval(re.compile('={auto:\\[(.*?)}').search(js_html).group()[1:])
 
     def get_tk(self, js_html):
-        return re.compile('headers\["X-Authorization"\]="(.*?)",').findall(js_html)[0]
+        return re.compile('headers\\["X-Authorization"]="(.*?)",').findall(js_html)[0]
 
     def get_jwt(self, browser_id, api_headers, ss, timeout, proxies):
         data = {"browser_id": browser_id}
@@ -1785,14 +1807,14 @@ class Caiyun(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
                 :param professional_field: str, default None, choose from (None, "medicine","law","machinery")
         :return: str or dict
@@ -1809,6 +1831,7 @@ class Caiyun(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -1878,7 +1901,7 @@ class Deepl(Tse):
 
     @Tse.debug_language_map
     def get_language_map(self, host_html, **kwargs):
-        lang_list = list(set(re.compile('translateIntoLang\.(\w+)":').findall(host_html)))
+        lang_list = list(set(re.compile('translateIntoLang\\.(\\w+)":').findall(host_html)))
         return {}.fromkeys(lang_list, lang_list)
 
     def split_sentences_param(self, query_text, from_language):
@@ -1946,14 +1969,14 @@ class Deepl(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -1965,6 +1988,7 @@ class Deepl(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -2017,7 +2041,7 @@ class Yandex(Tse):
 
     @Tse.debug_language_map
     def get_language_map(self, host_html, **kwargs):
-        lang_str = re.compile(pattern='TRANSLATOR_LANGS: {(.*?)},').findall(host_html)[0]
+        lang_str = re.compile('TRANSLATOR_LANGS: {(.*?)},').findall(host_html)[0]
         lang_dict = eval('{' + lang_str + '}')
         lang_list = sorted(list(lang_dict.keys()))
         return {}.fromkeys(lang_list, lang_list)
@@ -2059,14 +2083,14 @@ class Yandex(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
                 :param reset_host_url: str, default None. eg: 'https://translate.yandex.fr'
         :return: str or dict
@@ -2085,6 +2109,7 @@ class Yandex(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -2163,14 +2188,14 @@ class Argos(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
                 :param reset_host_url: str, default None.
         :return: str or dict
@@ -2191,6 +2216,7 @@ class Argos(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -2244,14 +2270,14 @@ class Iciba(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -2263,6 +2289,7 @@ class Iciba(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -2315,7 +2342,7 @@ class IflytekV1(Tse):
             r = ss.get(self.language_old_url, headers=headers, timeout=timeout, proxies=proxies)
 
         js_html = r.text
-        lang_str = re.compile('languageList:\(e={(.*?)}').search(js_html).group()[16:]
+        lang_str = re.compile('languageList:\\(e={(.*?)}').search(js_html).group()[16:]
         lang_list = sorted(list(execjs.eval(lang_str).keys()))
         return {}.fromkeys(lang_list, lang_list)
 
@@ -2331,14 +2358,14 @@ class IflytekV1(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -2350,6 +2377,7 @@ class IflytekV1(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -2418,14 +2446,14 @@ class IflytekV2(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -2437,6 +2465,7 @@ class IflytekV2(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -2499,14 +2528,14 @@ class Iflyrec(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -2518,6 +2547,7 @@ class Iflyrec(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -2590,14 +2620,14 @@ class Reverso(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -2609,6 +2639,7 @@ class Reverso(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -2663,7 +2694,7 @@ class Itranslate(Tse):
 
     @Tse.debug_language_map
     def get_language_map(self, lang_html, **kwargs):
-        lang_str = re.compile('\[{dialect:"auto",(.*?)}\]').search(lang_html).group()
+        lang_str = re.compile('\\[{dialect:"auto",(.*?)}]').search(lang_html).group()
         lang_origin_list = execjs.eval(lang_str)
         lang_list = sorted(list(set([dd['dialect'] for dd in lang_origin_list])))
         return {}.fromkeys(lang_list, lang_list)
@@ -2683,14 +2714,14 @@ class Itranslate(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -2702,6 +2733,7 @@ class Itranslate(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -2768,14 +2800,14 @@ class TranslateCom(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -2787,6 +2819,7 @@ class TranslateCom(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -2848,14 +2881,14 @@ class Utibet(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -2867,6 +2900,7 @@ class Utibet(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -2939,14 +2973,14 @@ class Papago(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -2958,6 +2992,7 @@ class Papago(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -3051,14 +3086,14 @@ class Lingvanex(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
                 :param lingvanex_mode: str, default "B2C", choose from ("B2B", "B2C").
         :return: str or dict
@@ -3072,6 +3107,7 @@ class Lingvanex(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -3171,14 +3207,14 @@ class Niutrans(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -3190,6 +3226,7 @@ class Niutrans(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -3260,14 +3297,14 @@ class Mglip(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -3279,6 +3316,7 @@ class Mglip(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -3353,14 +3391,14 @@ class VolcEngine(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
                 :param professional_field: str, default '', choose from ('', 'clean')
         :return: str or dict
@@ -3377,6 +3415,7 @@ class VolcEngine(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -3441,14 +3480,14 @@ class ModernMt(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -3460,6 +3499,7 @@ class ModernMt(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -3522,14 +3562,14 @@ class MyMemory(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
                 :param myMemory_mode: str, default "web", choose from ("web", "api").
         :return: str or dict
@@ -3543,6 +3583,7 @@ class MyMemory(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -3597,7 +3638,7 @@ class Mirai(Tse):
     @Tse.debug_language_map
     def get_language_map(self, lang_url, ss, headers, timeout, proxies, **kwargs):
         js_html = ss.get(lang_url, headers=headers, timeout=timeout, proxies=proxies).text
-        lang_pairs = re.compile('"/trial/(\w{2})/(\w{2})"').findall(js_html)
+        lang_pairs = re.compile('"/trial/(\\w{2})/(\\w{2})"').findall(js_html)
         return {f_lang: [v for k, v in lang_pairs if k == f_lang] for f_lang, t_lang in lang_pairs}
 
     @Tse.time_stat
@@ -3612,14 +3653,14 @@ class Mirai(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -3631,6 +3672,7 @@ class Mirai(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -3716,14 +3758,14 @@ class Apertium(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -3735,6 +3777,7 @@ class Apertium(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -3809,14 +3852,14 @@ class Tilde(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -3828,6 +3871,7 @@ class Tilde(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -3904,14 +3948,14 @@ class CloudYi(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
                 :param professional_field: str, default 'general'.
         :return: str or dict
@@ -3925,6 +3969,7 @@ class CloudYi(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -4007,7 +4052,7 @@ class SysTran(Tse):
 
     def get_client_data(self, client_url, ss, headers, timeout, proxies):
         js_html = ss.get(client_url, headers=headers, timeout=timeout, proxies=proxies).text
-        search_groups = re.compile('"https://translate.systran.net/oidc",\w{1}="(.*?)",\w{1}="(.*?)";').search(js_html)
+        search_groups = re.compile('"https://translate.systran.net/oidc",\\w="(.*?)",\\w="(.*?)";').search(js_html)  # \\w{1} == \\w
         client_data = {
             'grant_type': 'client_credentials',
             'client_id': search_groups.group(1),
@@ -4027,14 +4072,14 @@ class SysTran(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
                 :param professional_field: str, default None.
         :return: str or dict
@@ -4048,6 +4093,7 @@ class SysTran(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -4132,14 +4178,14 @@ class TranslateMe(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -4151,6 +4197,7 @@ class TranslateMe(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -4230,14 +4277,14 @@ class Elia(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
                 :param professional_field: str, default 'general'. Choose from ('general', 'admin').
         :return: str or dict
@@ -4251,6 +4298,7 @@ class Elia(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -4258,7 +4306,7 @@ class Elia(Tse):
             self.session = requests.Session()
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             self.token = re.compile('"csrfmiddlewaretoken": "(.*?)"').search(host_html).group(1)
-            d_lang_str = re.compile('var languagePairs = JSON.parse\((.*?)\);').search(host_html).group()
+            d_lang_str = re.compile('var languagePairs = JSON.parse\\((.*?)\\);').search(host_html).group()
             d_lang_map = json.loads(d_lang_str[43:-4].replace('&quot;', '"'))
             self.language_map = self.get_language_map(d_lang_map, from_language=from_language, to_language=to_language)
             self.professional_field = self.get_professional_field_list(d_lang_map)
@@ -4342,14 +4390,14 @@ class LanguageWire(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -4361,6 +4409,7 @@ class LanguageWire(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -4419,14 +4468,14 @@ class Judic(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -4438,6 +4487,7 @@ class Judic(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -4496,14 +4546,14 @@ class Yeekit(Tse):
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
-                :param is_detail_result: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_ignore_empty_query: boolean, default False.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
         :return: str or dict
         """
@@ -4515,6 +4565,7 @@ class Yeekit(Tse):
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
 
         not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
@@ -4646,8 +4697,8 @@ class TranslatorsServer:
         :param to_language: str, default 'en'.
         :param if_use_preacceleration: bool, default False.
         :param **kwargs:
-                :param is_detail_result: boolean, default False.
-                :param professional_field: str, support baidu(), caiyun(), alibaba() only.
+                :param is_detail_result: bool, default False.
+                :param professional_field: str, support alibaba(), baidu(), caiyun(), cloudYi(), elia(), sysTran(), youdao(), volcEngine() only.
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
@@ -4655,11 +4706,12 @@ class TranslatorsServer:
                 :param update_session_after_seconds: float, default 1500.
                 :param if_use_cn_host: bool, default False.
                 :param reset_host_url: str, default None.
-                :param if_ignore_empty_query: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_check_reset_host_url: bool, default True.
+                :param if_ignore_empty_query: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
                 :param lingvanex_model: str, default 'B2C', choose from ("B2C", "B2B").
                 :param myMemory_mode: str, default "web", choose from ("web", "api").
@@ -4692,8 +4744,8 @@ class TranslatorsServer:
         :param n_jobs: int, default -1, means os.cpu_cnt().
         :param if_use_preacceleration: bool, default False.
         :param **kwargs:
-                :param is_detail_result: boolean, default False.
-                :param professional_field: str, support baidu(), caiyun(), alibaba() only.
+                :param is_detail_result: bool, default False.
+                :param professional_field: str, support alibaba(), baidu(), caiyun(), cloudYi(), elia(), sysTran(), youdao(), volcEngine() only.
                 :param timeout: float, default None.
                 :param proxies: dict, default None.
                 :param sleep_seconds: float, default 0.
@@ -4701,11 +4753,12 @@ class TranslatorsServer:
                 :param update_session_after_seconds: float, default 1500.
                 :param if_use_cn_host: bool, default False.
                 :param reset_host_url: str, default None.
-                :param if_ignore_empty_query: boolean, default False.
-                :param if_ignore_limit_of_length: boolean, default False.
-                :param limit_of_length: int, default 5000.
-                :param if_show_time_stat: boolean, default False.
-                :param show_time_stat_precision: int, default 4.
+                :param if_check_reset_host_url: bool, default True.
+                :param if_ignore_empty_query: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
                 :param lingvanex_model: str, default 'B2C', choose from ("B2C", "B2B").
                 :param myMemory_mode: str, default "web", choose from ("web", "api").
@@ -4721,7 +4774,7 @@ class TranslatorsServer:
         def _translate_text(sentence):
             return sentence, self.translators_dict[translator](query_text=sentence, from_language=from_language, to_language=to_language, **kwargs)
 
-        pattern = re.compile(r"(?:^|(?<=>))([\s\S]*?)(?:(?=<)|$)")  # TODO: <code></code> <div class="codetext notranslate">
+        pattern = re.compile("(?:^|(?<=>))([\\s\\S]*?)(?:(?=<)|$)")  # TODO: <code></code> <div class="codetext notranslate">
         sentence_list = list(set(pattern.findall(html_text)))
 
         n_jobs = self.cpu_cnt if n_jobs <= 0 else n_jobs
@@ -4732,7 +4785,12 @@ class TranslatorsServer:
         _get_result_func = lambda k: result_dict.get(k.group(1), '')
         return pattern.sub(repl=_get_result_func, string=html_text)
 
-    def preaccelerate(self) -> dict:
+    def preaccelerate(self, timeout: int = 5, if_show_time_stat: bool = False) -> dict:
+        """
+        :param timeout: int, default 5.
+        :param if_show_time_stat: bool, default False.
+        :return: dict
+        """
         query_text = '你好。\n欢迎你！'
         success_pool, fail_pool = [], []
 
@@ -4744,8 +4802,14 @@ class TranslatorsServer:
                 try:
                     from_language = self.not_zh_langs[_ts] if _ts in self.not_zh_langs else 'auto'
                     to_language = self.not_en_langs[_ts] if _ts in self.not_en_langs else 'en'
-                    _ = self.translators_dict[_ts](query_text, translator=_ts, from_language=from_language,
-                                                   to_language=to_language, if_print_warning=False, timeout=5)
+                    _ = self.translators_dict[_ts](query_text=query_text,
+                                                   translator=_ts,
+                                                   from_language=from_language,
+                                                   to_language=to_language,
+                                                   if_print_warning=False,
+                                                   timeout=timeout,
+                                                   if_show_time_stat=if_show_time_stat
+                                                   )
                     success_pool.append(_ts)
                 except:
                     fail_pool.append(_ts)

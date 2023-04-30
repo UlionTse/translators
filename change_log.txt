@@ -364,3 +364,11 @@ add languageWire()
 add elia()
 add judic()
 stronger preaccelerate()
+
+5.7.1
+python_requires='>=3.8'.
+add parameter `if_check_reset_host_url=True`.  #124
+fix parameter `input_limit` vs `limit_of_length`.
+add information of `professional_field`.
+stronger regex.
+stronger preaccelerate().
