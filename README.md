@@ -111,16 +111,16 @@ translate_text(query_text: str, translator: str = 'bing', from_language: str = '
             :param sleep_seconds: float, default 0.
             :param update_session_after_freq: int, default 1000.
             :param update_session_after_seconds: float, default 1500.
-            :param if_use_cn_host: bool, default False. Support google(), bing() only.
-            :param reset_host_url: str, default None.
-            :param if_check_reset_host_url: bool, default True.
+            :param if_use_cn_host: bool, default False. Support google(), bing() only                
+            :param reset_host_url: str, default None. Support google(), argos(), yandex() only.
+            :param if_check_reset_host_url: bool, default True. Support google(), yandex() only.
             :param if_ignore_empty_query: bool, default False.
-            :param if_ignore_limit_of_length: bool, default False.
             :param limit_of_length: int, default 20000.
+            :param if_ignore_limit_of_length: bool, default False.
             :param if_show_time_stat: bool, default False.
             :param show_time_stat_precision: int, default 2.
             :param if_print_warning: bool, default True.
-            :param lingvanex_model: str, default 'B2C', choose from ("B2C", "B2B").
+            :param lingvanex_mode: str, default 'B2C', choose from ("B2C", "B2B").
             :param myMemory_mode: str, default "web", choose from ("web", "api").
     :return: str or dict
 """
