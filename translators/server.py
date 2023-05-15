@@ -150,7 +150,7 @@ class Tse:
             api_headers.update({'X-HTTP-Method-Override': 'GET'})
         return host_headers if not if_api else api_headers
 
-    def check_en_lang(self, from_lang: str, to_lang: str, default_translator: str = None, default_lang: str = 'en-US'):
+    def check_en_lang(self, from_lang: str, to_lang: str, default_translator: str = None, default_lang: str = 'en-US') -> Tuple[str, str]:
         if default_translator in self.transform_en_translator_pool:
             from_lang = default_lang if from_lang == 'en' else from_lang
             to_lang = default_lang if to_lang == 'en' else to_lang
@@ -272,15 +272,15 @@ class Tse:
                 raise TranslatorError(f'{raise_tips1} {raise_tips2}')
         return _wrapper
 
-    @staticmethod
-    def certified(func):
-        @functools.wraps(func)
-        def _wrapper(*args, **kwargs):
-            try:
-                return func(*args, **kwargs)
-            except Exception as e:
-                raise TranslatorError(e)
-        return _wrapper
+    # @staticmethod
+    # def certified(func):
+    #     @functools.wraps(func)
+    #     def _wrapper(*args, **kwargs):
+    #         try:
+    #             return func(*args, **kwargs)
+    #         except Exception as e:
+    #             raise TranslatorError(e)
+    #     return _wrapper
 
 
 class GuestSeverRegion(Tse):
@@ -735,8 +735,8 @@ class BaiduV2(Tse):
         tk_list = re.compile("""token: '(.*?)',|token: "(.*?)",""").findall(host_html)[0]
         return tk_list[0] or tk_list[1]
 
-    def get_acs_token(self):
-        pass
+    # def get_acs_token(self):
+    #     pass
 
     @Tse.time_stat
     @Tse.check_query
@@ -4259,7 +4259,7 @@ class TranslateMe(Tse):
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh,
                                                          output_en_translator='translateMe', output_en=self.output_en)
         if self.output_en not in (from_language, to_language):
-            raise TranslatorError('Use English as an intermediate translation.')
+            raise TranslatorError('Must use English as an intermediate translation.')
 
         data_list = []
         paragraphs = [paragraph for paragraph in query_text.split('\n') if paragraph.strip()]
@@ -4833,7 +4833,7 @@ class TranslatorsServer:
         if not self.pre_acceleration_label and if_use_preacceleration:
             _ = self.preaccelerate()
 
-        def _translate_text(sentence):
+        def _translate_text(sentence: str) -> Tuple[str, str]:
             return sentence, self.translators_dict[translator](query_text=sentence, from_language=from_language, to_language=to_language, **kwargs)
 
         pattern = re.compile("(?:^|(?<=>))([\\s\\S]*?)(?:(?=<)|$)")  # TODO: <code></code> <div class="codetext notranslate">
