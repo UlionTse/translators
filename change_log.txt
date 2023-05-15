@@ -380,7 +380,8 @@ check yeekit(), server is bad now.  #129
 update keywords of setup.py
 update readme.md
 
-5.7.4
+5.7.5
 stronger uncertified().
 stronger debug_language_map().
 stronger parameter type.
+drop all eval().

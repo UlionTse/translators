@@ -401,9 +401,8 @@ class GoogleV1(Tse):
 
     @Tse.debug_language_map
     def get_language_map(self, host_html: str, **kwargs: LangMapKwargsType) -> dict:
-        lang_list_str = re.compile("source_code_name:\\[(.*?)],").findall(host_html)[0]  # '\\[]' == '\\[\\]'
-        lang_list_str = ''.join(['[', lang_list_str, ']']).replace('code', '"code"').replace('name', '"name"')
-        lang_list = [x['code'] for x in eval(lang_list_str) if x['code'] != 'auto']
+        et = lxml.etree.HTML(host_html)
+        lang_list = sorted(list(set(et.xpath('//*/@data-language-code'))))
         return {}.fromkeys(lang_list, lang_list)
 
     def get_tkk(self, host_html: str) -> str:
@@ -2081,8 +2080,8 @@ class Yandex(Tse):
 
     @Tse.debug_language_map
     def get_language_map(self, host_html: str, **kwargs: LangMapKwargsType) -> dict:
-        lang_str = re.compile('TRANSLATOR_LANGS: {(.*?)},').findall(host_html)[0]
-        lang_dict = eval('{' + lang_str + '}')
+        lang_str = re.compile('TRANSLATOR_LANGS: {(.*?)},').search(host_html).group(0)[18:-1]
+        lang_dict = json.loads(lang_str)
         lang_list = sorted(list(lang_dict.keys()))
         return {}.fromkeys(lang_list, lang_list)
 
@@ -2451,7 +2450,7 @@ class IflytekV1(Tse):
         data = r.json()
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return data if is_detail_result else eval(data['data'])['trans_result']['dst']
+        return data if is_detail_result else json.loads(data['data'])['trans_result']['dst']
 
 
 class IflytekV2(Tse):
@@ -2538,7 +2537,7 @@ class IflytekV2(Tse):
         data = r.json()
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return data if is_detail_result else eval(data['data'])['trans_result']['dst']
+        return data if is_detail_result else json.loads(data['data'])['trans_result']['dst']
 
 
 class Iflyrec(Tse):
@@ -3510,8 +3509,8 @@ class ModernMt(Tse):
     @Tse.debug_language_map
     def get_language_map(self, lang_url: str, ss: SessionType, headers: dict, timeout: float, proxies: dict, **kwargs: LangMapKwargsType) -> dict:
         lang_html = ss.get(lang_url, headers=headers, timeout=timeout, proxies=proxies).text
-        d_lang_map = eval(eval(re.compile('''('{(.*?)}')''').search(lang_html).group()))  # JSON.parse('{"sq":
-        lang_list = sorted(d_lang_map)
+        d_lang_map = json.loads(re.compile('''('{(.*?)}')''').search(lang_html).group(0)[1:-1])
+        lang_list = sorted(d_lang_map.keys())
         return {}.fromkeys(lang_list, lang_list)
 
     @Tse.time_stat

@@ -1,5 +1,6 @@
 include *.md
 include *.txt
+include *.cfg
+include *.toml
 include LICENSE
-include MANIFEST
 recursive-include translators *.py
