@@ -372,3 +372,10 @@ fix parameter `input_limit` vs `limit_of_length`.
 add information of `professional_field`.
 stronger regex.
 stronger preaccelerate().
+
+5.7.2
+stronger languageWire().  #127
+add func uncertified().  #128
+check yeekit(), server is bad now.  #129
+update keywords of setup.py
+update readme.md

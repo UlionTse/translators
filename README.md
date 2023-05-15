@@ -55,7 +55,7 @@
 | 27  | [Papago](https://papago.naver.com)                                                | 15                            | good at Korean translation                                                                  | [Naver](https://www.navercorp.com/en/naver/company), South Korea                                                  | stable                          |
 | 28  | [Marai](https://miraitranslate.com/trial/)                                        | 15                            | good at Japanese translation                                                                | [MaraiTranslate](https://miraitranslate.com/en/company/), Japan                                                   | /                               |
 | 29  | [Iflyrec](https://fanyi.iflyrec.com)                                              | 12                            | good at Chinese translation                                                                 | [Iflytek](https://www.iflytek.com/en/about-us.html), China                                                        | stable                          |
-| 30  | [Yeekit](https://www.yeekit.com/site/translate)                                   | 10                            | support main languages                                                                      | [CTC](https://www.ctpc.com.cn/cms/enAboutUs.htm), China                                                           | stable                          |
+| 30  | [Yeekit](https://www.yeekit.com/site/translate)                                   | 10                            | support main languages                                                                      | [CTC](https://www.ctpc.com.cn/cms/enAboutUs.htm), China                                                           | /                               |
 | 31  | [LanguageWire](https://www.languagewire.com/en/technology/languagewire-translate) | 8                             | good at English translation                                                                 | [LanguageWire](https://www.languagewire.com/about-us), Denmark                                                    | stable                          |
 | 32  | [Caiyun](https://fanyi.caiyunapp.com)                                             | 7                             | high quality to translate but response slowly, support professional field                   | [ColorfulClouds](http://caiyunapp.com/jobs/), China                                                               | stable                          |
 | 33  | [Elia](https://elia.eus/translator)                                               | 6                             | good at Basque translation                                                                  | [Elhuyar](https://www.elhuyar.eus/eu/nor-gara), Spain                                                             | stable                          |
@@ -87,7 +87,7 @@ q_text = '季姬寂，集鸡，鸡即棘鸡。棘鸡饥叽，季姬及箕稷济�
 q_html = '''<!DOCTYPE html><html><head><title>《季姬击鸡记》</title></head><body><p>还有另一篇文章《施氏食狮史》。</p></body></html>'''
 
 ### usage
-ts.preaccelerate()  # Optional. Caching sessions in advance, which can help improve access speed.
+ts.preaccelerate(timeout=5)  # Optional. Caching sessions in advance, which can help improve access speed.
 
 print(ts.translators_pool)
 print(ts.translate_text(q_text))

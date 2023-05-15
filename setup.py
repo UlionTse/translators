@@ -14,7 +14,8 @@ AUTHOR_EMAIL = "shinalone@outlook.com"
 HOMEPAGE_URL = "https://github.com/uliontse/translators"
 DESCRIPTION = "Translators is a library which aims to bring free, multiple, enjoyable translation to individuals and students in Python."
 LONG_DESCRIPTION = pathlib.Path('README.md').read_text(encoding='utf-8')
-VERSION = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', pathlib.Path('translators/__init__.py').read_text(), re.M).group(1)
+VERSION_TEXT = pathlib.Path(f'{PACKAGE}/__init__.py').read_text(encoding='utf-8')
+VERSION = re.compile('^__version__\\s*=\\s*[\'"]([^\'"]*)[\'"]', re.MULTILINE).search(VERSION_TEXT).group(1)
 
 
 setup(
@@ -47,10 +48,11 @@ setup(
         "Programming Language :: Python :: 3.11",
     ],
     keywords=[
-        'translate', 'translate_html',
-        'alibaba', 'argos', 'baidu', 'bing', 'caiyun', 'deepl', 'google', 'iciba', 'iflytek', 'iflyrec',
-        'itranslate', 'lingvanex', 'mglip', 'modernMt', 'myMemory', 'niutrans', 'papago', 'qqFanyi', 'qqTranSmart',
-        'reverso', 'sogou', 'translateCom', 'utibet', 'volcEngine', 'yandex', 'youdao',
+        'translate', 'translate_text', 'translate_html',
+        'alibaba', 'apertium', 'argos', 'baidu', 'bing', 'caiyun', 'cloudYi', 'deepl', 'elia', 'google',
+        'iciba', 'iflytek', 'iflyrec', 'itranslate', 'judic', 'languageWire', 'lingvanex', 'mglip', 'mirai', 'modernMt',
+        'myMemory', 'niutrans', 'papago', 'qqFanyi', 'qqTranSmart', 'reverso', 'sogou', 'sysTran', 'tilde', 'translateCom',
+        'translateMe', 'utibet', 'volcEngine', 'yandex', 'yeekit', 'youdao',
     ],
     install_requires=[
         'requests>=2.28.1',

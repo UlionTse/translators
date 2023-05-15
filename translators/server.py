@@ -175,7 +175,8 @@ class Tse:
     @staticmethod
     def warning_auto_lang(translator: str, default_from_language: str, if_print_warning: bool = True) -> str:
         if if_print_warning:
-            warnings.warn(f'Unsupported [from_language=auto({default_from_language})] with [{translator}]! Please specify it.')
+            warn_tips = f'Unsupported [from_language=auto({default_from_language} instead)] with [{translator}]!'
+            warnings.warn(f'{warn_tips} Please specify it.')
         return default_from_language
 
     @staticmethod
@@ -243,6 +244,18 @@ class Tse:
             return func(*args, **{**kwargs, **{'query_text': query_text}})
         return _wrapper
 
+    @staticmethod
+    def uncertified(func):
+        def _wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except:
+                raise_tips1 = f'The function {func.__name__[:-4]}() has been not certified yet.'
+                raise_tips2_url = 'https://github.com/UlionTse/translators#supported-translation-services'
+                raise_tips2 = f'Please read for details: Status of Translator on this webpage({raise_tips2_url}).'
+                raise TranslatorError(f'{raise_tips1} {raise_tips2}')
+        return _wrapper
+
 
 class GuestSeverRegion(Tse):
     def __init__(self):
@@ -254,7 +267,7 @@ class GuestSeverRegion(Tse):
         self.default_region = os.environ.get('translators_default_region', None)
 
     @property
-    def get_server_region(self, if_judge_cn=True):
+    def get_server_region(self, if_judge_cn: bool = True) -> str:
         if self.default_region:
             sys.stderr.write(f'Using customized region {self.default_region} server backend.\n')
             return ('CN' if self.default_region == 'China' else 'EN') if if_judge_cn else self.default_region
@@ -2071,6 +2084,7 @@ class Yandex(Tse):
         lang = r.json().get('lang')
         return lang if lang else 'en'
 
+    @Tse.uncertified
     @Tse.time_stat
     @Tse.check_query
     def yandex_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
@@ -2346,6 +2360,7 @@ class IflytekV1(Tse):
         lang_list = sorted(list(execjs.eval(lang_str).keys()))
         return {}.fromkeys(lang_list, lang_list)
 
+    @Tse.uncertified
     @Tse.time_stat
     @Tse.check_query
     def iflytek_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
@@ -2434,6 +2449,7 @@ class IflytekV2(Tse):
         lang_list = sorted(list(set(lang_list)))
         return {}.fromkeys(lang_list, lang_list)
 
+    @Tse.uncertified
     @Tse.time_stat
     @Tse.check_query
     def iflytek_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
@@ -3195,6 +3211,7 @@ class Niutrans(Tse):
         )).decode()
         return cipher_text  # TODO
 
+    @Tse.uncertified
     @Tse.time_stat
     @Tse.check_query
     def niutrans_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
@@ -3379,6 +3396,7 @@ class VolcEngine(Tse):
         }
         return data
 
+    @Tse.uncertified
     @Tse.time_stat
     @Tse.check_query
     def volcEngine_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
@@ -3641,6 +3659,7 @@ class Mirai(Tse):
         lang_pairs = re.compile('"/trial/(\\w{2})/(\\w{2})"').findall(js_html)
         return {f_lang: [v for k, v in lang_pairs if k == f_lang] for f_lang, t_lang in lang_pairs}
 
+    @Tse.uncertified
     @Tse.time_stat
     @Tse.check_query
     def mirai_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'ja', **kwargs) -> Union[str, dict]:
@@ -3840,6 +3859,7 @@ class Tilde(Tse):
     def get_langpair_ids(self, sys_data):
         return {f"{item['SourceLanguage']['Code']}-{item['TargetLanguage']['Code']}": item['ID'] for item in sys_data['System'] if 'General' in item['Domain']}
 
+    @Tse.uncertified
     @Tse.time_stat
     @Tse.check_query
     def tilde_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
@@ -4363,6 +4383,7 @@ class LanguageWire(Tse):
         self.query_count = 0
         self.output_zh = None  # unsupported
         self.input_limit = int(5e3)
+        self.default_from_language = 'fr'
         self.default_en_to_language = 'en-US'
 
     @Tse.debug_language_map
@@ -4370,11 +4391,18 @@ class LanguageWire(Tse):
         d_lang_map = ss.get(lang_url, headers=headers, timeout=timeout, proxies=proxies).json()
         return {ii['sourceLanguage']['mmtCode']: [jj['targetLanguage']['mmtCode'] for jj in d_lang_map if jj['sourceLanguage']['mmtCode'] == ii['sourceLanguage']['mmtCode']] for ii in d_lang_map}
 
-    def get_lwt_data(self, lwt_js_url, ss, headers, timeout, proxies):
-        js_html = ss.get(lwt_js_url, headers=headers, timeout=timeout, proxies=proxies).text
+    # def get_lwt_data(self, lwt_js_url, ss, headers, timeout, proxies):
+    #     js_html = ss.get(lwt_js_url, headers=headers, timeout=timeout, proxies=proxies).text
+    #     lwt_data = {
+    #         'x-lwt-application-id': re.compile('"X-LWT-Application-ID":"(.*?)"').search(js_html).group(1),
+    #         'x-lwt-build-id': re.compile('"X-LWT-Build-ID":"(.*?)"').search(js_html).group(1),
+    #     }
+    #     return lwt_data
+
+    def get_lwt_data(self):
         lwt_data = {
-            'x-lwt-application-id': re.compile('"X-LWT-Application-ID":"(.*?)"').search(js_html).group(1),
-            'x-lwt-build-id': re.compile('"X-LWT-Build-ID":"(.*?)"').search(js_html).group(1),
+            'x-lwt-application-id': 'LWT_WEB',
+            'x-lwt-build-id': '346775',
         }
         return lwt_data
 
@@ -4416,18 +4444,23 @@ class LanguageWire(Tse):
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
-            self.lwt_data = self.get_lwt_data(self.lwt_js_url, self.session, headers=self.host_headers, timeout=timeout, proxies=proxies)
+            self.lwt_data = self.get_lwt_data()
             self.api_headers.update(self.lwt_data)
 
             _ = self.session.post(self.cookie_url, headers=self.api_headers, timeout=timeout, proxies=proxies)
             self.language_map = self.get_language_map(self.lang_url, self.session, self.api_headers, timeout, proxies,
                                                       from_language=from_language, to_language=to_language)
 
+        if from_language == 'auto':
+            from_language = self.warning_auto_lang('translateMe', self.default_from_language, if_print_warning)
         to_language = self.default_en_to_language if to_language == 'en' else to_language
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, if_check_lang_reverse=False)
 
-        payload = {'sourceText': query_text, 'targetLanguage': to_language}
-        payload = {**payload, **{'sourceLanguage': from_language}} if from_language != 'auto' else payload
+        payload = {
+            'sourceText': query_text,
+            'sourceLanguage': from_language,
+            'targetLanguage': to_language,
+        }
         r = self.session.post(self.api_url, json=payload, headers=self.api_headers, timeout=timeout, proxies=proxies)
         r.raise_for_status()
         data = r.json()
@@ -4534,6 +4567,7 @@ class Yeekit(Tse):
     def get_language_map(self, lang_list, **kwargs):
         return {}.fromkeys(lang_list, lang_list)
 
+    @Tse.uncertified  # not code, but server.
     @Tse.time_stat
     @Tse.check_query
     def yeekit_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]:
@@ -4785,9 +4819,9 @@ class TranslatorsServer:
         _get_result_func = lambda k: result_dict.get(k.group(1), '')
         return pattern.sub(repl=_get_result_func, string=html_text)
 
-    def preaccelerate(self, timeout: int = 5, if_show_time_stat: bool = False) -> dict:
+    def preaccelerate(self, timeout: float = None, if_show_time_stat: bool = False) -> dict:
         """
-        :param timeout: int, default 5.
+        :param timeout: float, default None.
         :param if_show_time_stat: bool, default False.
         :return: dict
         """
