@@ -55,7 +55,7 @@ setup(
         'translateMe', 'utibet', 'volcEngine', 'yandex', 'yeekit', 'youdao',
     ],
     install_requires=[
-        'requests>=2.28.1',
+        'requests>=2.29.0',
         'PyExecJS>=1.5.1',
         'lxml>=4.9.1',
         'tqdm>=4.65.0',

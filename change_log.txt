@@ -379,3 +379,8 @@ add func uncertified().  #128
 check yeekit(), server is bad now.  #129
 update keywords of setup.py
 update readme.md
+
+5.7.3
+stronger uncertified().
+stronger parameter type.
+stronger debug_language_map().
