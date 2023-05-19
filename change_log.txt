@@ -385,3 +385,10 @@ stronger uncertified().
 stronger debug_language_map().
 stronger parameter type.
 drop all eval().
+
+5.7.6
+stronger translateMe().
+stronger preaccelerate().
+add preaccelerate_and_speedtest().
+stronger debug_language_map().
+fix debug_language_map() with from_language=auto but translator doesn't support auto.

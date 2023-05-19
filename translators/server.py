@@ -48,7 +48,7 @@ import datetime
 import warnings
 import functools
 import urllib.parse
-from typing import Union, Tuple, List
+from typing import Optional, Union, Tuple, List
 
 import tqdm
 import execjs
@@ -150,8 +150,8 @@ class Tse:
             api_headers.update({'X-HTTP-Method-Override': 'GET'})
         return host_headers if not if_api else api_headers
 
-    def check_en_lang(self, from_lang: str, to_lang: str, default_translator: str = None, default_lang: str = 'en-US') -> Tuple[str, str]:
-        if default_translator in self.transform_en_translator_pool:
+    def check_en_lang(self, from_lang: str, to_lang: str, default_translator: Optional[str] = None, default_lang: str = 'en-US') -> Tuple[str, str]:
+        if default_translator and default_translator in self.transform_en_translator_pool:
             from_lang = default_lang if from_lang == 'en' else from_lang
             to_lang = default_lang if to_lang == 'en' else to_lang
             from_lang = default_lang.replace('-', '_') if default_translator == 'lingvanex' and from_lang[:3] == 'en-' else from_lang
@@ -164,7 +164,7 @@ class Tse:
                        language_map: dict,
                        output_auto: str = 'auto',
                        output_zh: str = 'zh',
-                       output_en_translator: str = None,
+                       output_en_translator: Optional[str] = None,
                        output_en: str = 'en-US',
                        if_check_lang_reverse: bool = True,
                        ) -> Tuple[str, str]:
@@ -194,13 +194,22 @@ class Tse:
         return default_from_language
 
     @staticmethod
+    def debug_lang_kwargs(from_language: str, to_language: str, default_from_language: str, if_print_warning: bool = True) -> dict:
+        kwargs = {
+            'from_language': from_language,
+            'to_language': to_language,
+            'default_from_language': default_from_language,
+            'if_print_warning': if_print_warning,
+        }
+        return kwargs
+
+    @staticmethod
     def debug_language_map(func):
-        def make_temp_language_map(from_language: str, to_language: str) -> dict:
+        def make_temp_language_map(from_language: str, to_language: str, default_from_language: str) -> dict:
             if not (to_language != 'auto' and from_language != to_language):
                 raise TranslatorError
-            lang_list = [from_language, to_language]
-            auto_lang_dict = {from_language: [to_language], to_language: [to_language]}
-            return {}.fromkeys(lang_list, lang_list) if from_language != 'auto' else auto_lang_dict
+
+            return {**{from_language: [to_language]}, **({default_from_language: [to_language]} if default_from_language != to_language else {})}
 
         @functools.wraps(func)
         def _wrapper(*args, **kwargs):
@@ -208,8 +217,8 @@ class Tse:
                 return func(*args, **kwargs)
             except TranslatorError as e:
                 if kwargs.get('if_print_warning', True):
-                    warnings.warn(f'GetLanguageMapError: {str(e)}.\nThe function make_temp_language_map() starts.')
-                return make_temp_language_map(kwargs.get('from_language'), kwargs.get('to_language'))
+                    warnings.warn(f'GetLanguageMapError: {str(e)}.\nThe function make_temp_language_map() works.')
+                return make_temp_language_map(kwargs.get('from_language'), kwargs.get('to_language'), kwargs.get('default_from_language'))
         return _wrapper
     
     @staticmethod
@@ -295,14 +304,14 @@ class GuestSeverRegion(Tse):
     @property
     def get_server_region(self, if_judge_cn: bool = True) -> str:
         if self.default_region:
-            sys.stderr.write(f'Using customized region {self.default_region} server backend.\n')
+            sys.stderr.write(f'Using customized region {self.default_region} server backend.\n\n')
             return ('CN' if self.default_region == 'China' else 'EN') if if_judge_cn else self.default_region
 
         _headers_fn = lambda url: self.get_headers(url, if_api=False, if_referer_for_host=True)
         try:
             try:
                 data = json.loads(requests.get(self.get_addr_url, headers=_headers_fn(self.get_addr_url)).text[9:-2])
-                sys.stderr.write(f'Using region {data.get("stateName")} server backend.\n')
+                sys.stderr.write(f'Using region {data.get("stateName")} server backend.\n\n')
                 return data.get('country') if if_judge_cn else data.get("stateName")
             except requests.exceptions.Timeout:
                 ip_address = requests.get(self.get_ip_url, headers=_headers_fn(self.get_ip_url)).json()['origin']
@@ -311,11 +320,11 @@ class GuestSeverRegion(Tse):
                 return data.get('country_id')  # region_id
 
         except requests.exceptions.ConnectionError:
-            raise TranslatorError('Unable to connect the Internet.\n')
+            raise TranslatorError('Unable to connect the Internet.\n\n')
         except:
-            warnings.warn('Unable to find server backend.\n')
-            region = input('Please input your server region need to visit:\neg: [Qatar, China, ...]\n')
-            sys.stderr.write(f'Using region {region} server backend.\n')
+            warnings.warn('Unable to find server backend.\n\n')
+            region = input('Please input your server region need to visit:\neg: [Qatar, China, ...]\n\n')
+            sys.stderr.write(f'Using region {region} server backend.\n\n')
             return 'CN' if region == 'China' else 'EN'
 
 
@@ -333,6 +342,7 @@ class GoogleV1(Tse):
         self.query_count = 0
         self.output_zh = 'zh-CN'
         self.input_limit = int(5e3)
+        self.default_from_language = self.output_zh
 
     @staticmethod
     def _xr(a: int, b: str) -> int:
@@ -463,8 +473,9 @@ class GoogleV1(Tse):
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.api_url):
             self.session = requests.Session()
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
-            self.language_map = self.get_language_map(host_html, self.session, timeout, proxies,
-                                                      from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(host_html, self.session, timeout, proxies, **debug_lang_kwargs)
             from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
 
             tkk = self.get_tkk(host_html)
@@ -500,6 +511,7 @@ class GoogleV2(Tse):
         self.query_count = 0
         self.output_zh = 'zh-CN'
         self.input_limit = int(5e3)
+        self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
     def get_language_map(self, host_html: str, **kwargs: LangMapKwargsType) -> dict:
@@ -584,7 +596,8 @@ class GoogleV2(Tse):
                 host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             else:
                 host_html = r.text
-            self.language_map = self.get_language_map(host_html, from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(host_html, **debug_lang_kwargs)
 
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
 
@@ -613,6 +626,7 @@ class BaiduV1(Tse):
         self.query_count = 0
         self.output_zh = 'zh'
         self.input_limit = int(5e3)
+        self.default_from_language = self.output_zh
 
     # @Tse.debug_language_map
     # def get_language_map(self, host_html: str, **kwargs: LangMapKwargsType) -> dict:
@@ -666,12 +680,12 @@ class BaiduV1(Tse):
             self.session = requests.Session()
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)  # must twice, send cookies.
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
-            # self.language_map = self.get_language_map(host_html, from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
 
             if not self.get_lang_url:
                 self.get_lang_url = re.compile(self.get_lang_url_pattern).search(host_html).group()
-            self.language_map = self.get_language_map(self.get_lang_url, self.session, self.host_headers, timeout, proxies,
-                                                      from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(self.get_lang_url, self.session, self.host_headers, timeout, proxies, **debug_lang_kwargs)
 
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
 
@@ -710,6 +724,7 @@ class BaiduV2(Tse):
         self.query_count = 0
         self.output_zh = 'zh'
         self.input_limit = int(5e3)
+        self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
     def get_language_map(self, lang_url: str, ss: SessionType, headers: dict, timeout: float, proxies: dict, **kwargs: LangMapKwargsType) -> dict:
@@ -786,8 +801,9 @@ class BaiduV2(Tse):
 
             if not self.get_lang_url:
                 self.get_lang_url = re.compile(self.get_lang_url_pattern).search(host_html).group()
-            self.language_map = self.get_language_map(self.get_lang_url, self.session, self.host_headers, timeout, proxies,
-                                                      from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(self.get_lang_url, self.session, self.host_headers, timeout, proxies, **debug_lang_kwargs)
 
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
         if from_language == 'auto':
@@ -832,6 +848,7 @@ class YoudaoV1(Tse):
         self.query_count = 0
         self.output_zh = 'zh-CHS'
         self.input_limit = int(5e3)
+        self.default_from_language = self.output_zh
 
     # @Tse.debug_language_map
     # def get_language_map(self, host_html: str, **kwargs: LangMapKwargsType) -> dict:
@@ -924,8 +941,8 @@ class YoudaoV1(Tse):
             self.session = requests.Session()
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             self.sign_key = self.get_sign_key(host_html, self.session, timeout, proxies)
-            self.language_map = self.get_language_map(self.language_url, self.session, self.host_headers, timeout, proxies,
-                                                      from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(self.language_url, self.session, self.host_headers, timeout, proxies, **debug_lang_kwargs)
 
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
 
@@ -966,6 +983,7 @@ class YoudaoV2(Tse):
         self.query_count = 0
         self.output_zh = 'zh-CHS'
         self.input_limit = int(5e3)
+        self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
     def get_language_map(self, lang_url: str, ss: SessionType, headers: dict, timeout: float, proxies: dict, **kwargs: LangMapKwargsType) -> dict:
@@ -1047,8 +1065,8 @@ class YoudaoV2(Tse):
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             _ = self.session.get(self.login_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             self.professional_field_map = self.session.get(self.domain_url, headers=self.host_headers, timeout=timeout, proxies=proxies).json()['data']
-            self.language_map = self.get_language_map(self.language_url, self.session, self.host_headers, timeout, proxies,
-                                                      from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(self.language_url, self.session, self.host_headers, timeout, proxies, **debug_lang_kwargs)
 
             self.get_js_url = ''.join([self.host_url, '/', re.compile(self.get_js_pattern).search(host_html).group()])
             js_html = self.session.get(self.get_js_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -1092,6 +1110,7 @@ class YoudaoV3(Tse):
         self.query_count = 0
         self.output_zh = 'zh-CHS'
         self.input_limit = int(1e3)
+        self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
     def get_language_map(self, host_html: str, **kwargs: LangMapKwargsType) -> dict:
@@ -1138,7 +1157,8 @@ class YoudaoV3(Tse):
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
-            self.language_map = self.get_language_map(host_html, from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(host_html, **debug_lang_kwargs)
 
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
         if from_language == 'auto':
@@ -1170,6 +1190,7 @@ class QQFanyi(Tse):
         self.query_count = 0
         self.output_zh = 'zh'
         self.input_limit = int(2e3)
+        self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
     def get_language_map(self, ss: SessionType, language_url: str, timeout: float, proxies: dict, **kwargs: LangMapKwargsType) -> dict:
@@ -1220,8 +1241,8 @@ class QQFanyi(Tse):
             self.session = requests.Session()
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             self.qtv_qtk = self.get_qt(self.session, timeout, proxies)
-            self.language_map = self.get_language_map(self.session, self.get_language_url, timeout, proxies,
-                                                      from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(self.session, self.get_language_url, timeout, proxies, **debug_lang_kwargs)
 
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
 
@@ -1317,8 +1338,8 @@ class QQTranSmart(Tse):
 
             if not self.get_lang_url:
                 self.get_lang_url = f'{self.host_url}{re.compile(self.get_lang_url_pattern).search(host_html).group()}'
-            self.language_map = self.get_language_map(self.get_lang_url, self.session, timeout, proxies,
-                                                      from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(self.get_lang_url, self.session, timeout, proxies, **debug_lang_kwargs)
 
         if from_language == 'auto':
             from_language = self.warning_auto_lang('qqTranSmart', self.default_from_language, if_print_warning)
@@ -1375,6 +1396,7 @@ class AlibabaV1(Tse):
         self.query_count = 0
         self.output_zh = 'zh'
         self.input_limit = int(5e3)
+        self.default_from_language = self.output_zh
 
     def get_dmtrack_pageid(self, host_response: ResponseType) -> str:
         try:
@@ -1446,8 +1468,8 @@ class AlibabaV1(Tse):
             self.session = requests.Session()
             host_response = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             self.dmtrack_pageid = self.get_dmtrack_pageid(host_response)
-            self.language_map = self.get_language_map(self.session, self.get_language_url, use_domain, self.dmtrack_pageid, timeout, proxies,
-                                                      from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(self.session, self.get_language_url, use_domain, self.dmtrack_pageid, timeout, proxies, **debug_lang_kwargs)
 
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
         payload = {
@@ -1485,6 +1507,7 @@ class AlibabaV2(Tse):
         self.query_count = 0
         self.output_zh = 'zh'
         self.input_limit = int(5e3)
+        self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
     def get_language_map(self, lang_html: str, **kwargs: LangMapKwargsType) -> dict:
@@ -1548,7 +1571,8 @@ class AlibabaV2(Tse):
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             self.get_language_url = f'https:{re.compile(self.get_language_pattern).search(host_html).group()}'
             lang_html = self.session.get(self.get_language_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
-            self.language_map = self.get_language_map(lang_html, from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(lang_html, **debug_lang_kwargs)
             self.detail_language_map = self.get_d_lang_map(lang_html)
 
             _ = self.session.get(self.csrf_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
@@ -1589,6 +1613,7 @@ class Bing(Tse):
         self.output_auto = 'auto-detect'
         self.output_zh = 'zh-Hans'
         self.input_limit = int(1e3)
+        self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
     def get_language_map(self, host_html: str, **kwargs: LangMapKwargsType) -> dict:
@@ -1656,7 +1681,8 @@ class Bing(Tse):
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             self.tk = self.get_tk(host_html)
             self.ig_iid = self.get_ig_iid(host_html)
-            self.language_map = self.get_language_map(host_html, from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(host_html, **debug_lang_kwargs)
 
         from_language, to_language = self.check_language(from_language, to_language, self.language_map,
                                                          output_zh=self.output_zh, output_auto=self.output_auto)
@@ -1694,6 +1720,7 @@ class Sogou(Tse):
         self.query_count = 0
         self.output_zh = 'zh-CHS'
         self.input_limit = int(5e3)
+        self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
     def get_language_map(self, host_html: str, lang_old_url: str, ss: SessionType, timeout: float, proxies: dict, **kwargs: LangMapKwargsType) -> dict:
@@ -1772,8 +1799,8 @@ class Sogou(Tse):
             self.uuid = str(uuid.uuid4())
             self.session = requests.Session()
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
-            self.language_map = self.get_language_map(host_html, self.get_language_old_url, self.session, timeout, proxies,
-                                                      from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(host_html, self.get_language_old_url, self.session, timeout, proxies, **debug_lang_kwargs)
 
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
 
@@ -1808,6 +1835,7 @@ class Caiyun(Tse):
         self.query_count = 0
         self.output_zh = 'zh'
         self.input_limit = int(5e3)
+        self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
     def get_language_map(self, js_html: str, **kwargs: LangMapKwargsType) -> dict:
@@ -1881,7 +1909,8 @@ class Caiyun(Tse):
             self.get_js_url = ''.join([self.host_url, js_url_path])
             js_html = self.session.get(self.get_js_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             self.tk = self.get_tk(js_html)
-            self.language_map = self.get_language_map(js_html, from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(js_html, **debug_lang_kwargs)
 
             self.api_headers.update({
                 "app-name": "xy",
@@ -1937,6 +1966,7 @@ class Deepl(Tse):
         self.query_count = 0
         self.output_zh = 'zh'
         self.input_limit = int(5e3)
+        self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
     def get_language_map(self, host_html: str, **kwargs: LangMapKwargsType) -> dict:
@@ -2034,7 +2064,8 @@ class Deepl(Tse):
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
-            self.language_map = self.get_language_map(host_html, from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(host_html, **debug_lang_kwargs)
 
         from_language, to_language = self.check_language(from_language, to_language, language_map=self.language_map, output_zh=self.output_zh, output_auto='auto')
         from_language = from_language.upper() if from_language != 'auto' else from_language
@@ -2077,6 +2108,7 @@ class Yandex(Tse):
         self.query_count = 0
         self.output_zh = 'zh'
         self.input_limit = int(1e4)  # ten thousand.
+        self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
     def get_language_map(self, host_html: str, **kwargs: LangMapKwargsType) -> dict:
@@ -2167,9 +2199,10 @@ class Yandex(Tse):
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
 
-            self.language_map = self.get_language_map(host_html, from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
-            self.sid = self.get_sid(host_html)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(host_html, **debug_lang_kwargs)
 
+            self.sid = self.get_sid(host_html)
             self.yum = self.get_yum()
             self.yu = self.session.cookies.get_dict().get('yuidss') or f'{random.randint(int(1e8), int(9e8))}{int(time.time())}'
             self.sprvk = self.session.cookies.get_dict().get('spravka')
@@ -2217,6 +2250,7 @@ class Argos(Tse):
         self.query_count = 0
         self.output_zh = 'zh'
         self.input_limit = int(5e3)  # unknown
+        self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
     def get_language_map(self, lang_url: str, ss: SessionType, headers: dict, timeout: float, proxies: dict, **kwargs: LangMapKwargsType) -> dict:
@@ -2271,8 +2305,8 @@ class Argos(Tse):
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
-            self.language_map = self.get_language_map(self.language_url, self.session, self.language_headers, timeout, proxies,
-                                                      from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(self.language_url, self.session, self.language_headers, timeout, proxies, **debug_lang_kwargs)
 
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
         payload = {'q': query_text, 'source': from_language, 'target': to_language, 'format': 'text'}
@@ -2298,6 +2332,7 @@ class Iciba(Tse):
         self.query_count = 0
         self.output_zh = 'zh'
         self.input_limit = int(3e3)
+        self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
     def get_language_map(self, api_url: str, ss: SessionType, headers: dict, timeout: float, proxies: dict, **kwargs: LangMapKwargsType) -> dict:
@@ -2344,8 +2379,8 @@ class Iciba(Tse):
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
-            self.language_map = self.get_language_map(self.api_url, self.session, self.language_headers, timeout, proxies,
-                                                      from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(self.api_url, self.session, self.language_headers, timeout, proxies, **debug_lang_kwargs)
 
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
 
@@ -2435,8 +2470,8 @@ class IflytekV1(Tse):
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             _ = self.session.get(self.cookies_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             _ = self.session.get(self.info_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
-            self.language_map = self.get_language_map(host_html, self.session, self.host_headers, timeout, proxies,
-                                                      from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(host_html, self.session, self.host_headers, timeout, proxies, **debug_lang_kwargs)
 
         if from_language == 'auto':
             from_language = self.warning_auto_lang('iflytek', self.default_from_language, if_print_warning)
@@ -2468,6 +2503,7 @@ class IflytekV2(Tse):
         self.query_count = 0
         self.output_zh = 'cn'
         self.input_limit = int(2e3)
+        self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
     def get_language_map(self, host_html: str, ss: SessionType, headers: dict, timeout: float, proxies: dict, **kwargs: LangMapKwargsType) -> dict:
@@ -2522,8 +2558,8 @@ class IflytekV2(Tse):
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
-            self.language_map = self.get_language_map(host_html, self.session, self.host_headers, timeout, proxies,
-                                                      from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(host_html, self.session, self.host_headers, timeout, proxies, **debug_lang_kwargs)
 
         if from_language == 'auto':
             params = {'text': query_text}
@@ -2556,6 +2592,7 @@ class Iflyrec(Tse):
         self.query_count = 0
         self.output_zh = 'zh'
         self.input_limit = int(2e3)
+        self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
     def get_language_map(self, lang_index: dict, **kwargs: LangMapKwargsType) -> dict:
@@ -2601,7 +2638,8 @@ class Iflyrec(Tse):
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
-            self.language_map = self.get_language_map(self.lang_index, from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(self.lang_index, **debug_lang_kwargs)
 
         if from_language == 'auto':
             params = {'t': self.get_timestamp()}
@@ -2696,7 +2734,8 @@ class Reverso(Tse):
             self.language_url = re.compile(self.language_pattern).search(host_html).group()
             lang_html = self.session.get(self.language_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             self.decrypt_language_map = self.decrypt_lang_map(lang_html)
-            self.language_map = self.get_language_map(lang_html, from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(lang_html, **debug_lang_kwargs)
 
         if from_language == 'auto':
             from_language = self.warning_auto_lang('reverso', self.default_from_language, if_print_warning)
@@ -2738,6 +2777,7 @@ class Itranslate(Tse):
         self.query_count = 0
         self.output_zh = 'zh-CN'
         self.input_limit = int(1e3)
+        self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
     def get_language_map(self, lang_html: str, **kwargs: LangMapKwargsType) -> dict:
@@ -2793,7 +2833,9 @@ class Itranslate(Tse):
                 self.language_url = manifest_data.get('main.js')
 
             lang_html = self.session.get(self.language_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
-            self.language_map = self.get_language_map(lang_html, from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(lang_html, **debug_lang_kwargs)
+
             self.api_key = self.get_apikey(lang_html)
             self.api_headers.update({'API-KEY': self.api_key})
 
@@ -2827,6 +2869,7 @@ class TranslateCom(Tse):
         self.query_count = 0
         self.output_zh = 'zh'
         self.input_limit = int(1.5e4)  # fifteen thousand letters left today.
+        self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
     def get_language_map(self, lang_desc: dict, **kwargs: LangMapKwargsType) -> dict:
@@ -2872,7 +2915,8 @@ class TranslateCom(Tse):
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             lang_r = self.session.get(self.language_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             self.language_description = lang_r.json()
-            self.language_map = self.get_language_map(self.language_description, from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(self.language_description, **debug_lang_kwargs)
 
         if from_language == 'auto':
             detect_form = {'text_to_translate': query_text}
@@ -2987,6 +3031,7 @@ class Papago(Tse):
         self.query_count = 0
         self.output_zh = 'zh-CN'
         self.input_limit = int(5e3)
+        self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
     def get_language_map(self, lang_html: str, **kwargs: LangMapKwargsType) -> dict:
@@ -3046,7 +3091,8 @@ class Papago(Tse):
             url_path = re.compile(self.language_url_pattern).search(host_html).group()
             self.language_url = ''.join([self.host_url, url_path])
             lang_html = self.session.get(self.language_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
-            self.language_map = self.get_language_map(lang_html, from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(lang_html, **debug_lang_kwargs)
             self.auth_key = self.get_auth_key(lang_html)
 
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
@@ -3171,8 +3217,8 @@ class Lingvanex(Tse):
                 self.api_headers.update({'authorization': self.auth_info[f'{mode}_AUTH_TOKEN']})
                 self.api_headers.update({'referer': urllib.parse.urlparse(self.auth_info[f'{mode}_BASE_URL']).netloc})
 
-            self.language_map = self.get_language_map(self.language_url, self.session, self.host_headers, timeout, proxies,
-                                                      from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(self.language_url, self.session, self.host_headers, timeout, proxies, **debug_lang_kwargs)
             self.detail_language_map = self.get_d_lang_map(self.language_url, self.session, self.host_headers, timeout, proxies)
 
         if from_language == 'auto':
@@ -3217,6 +3263,7 @@ class Niutrans(Tse):
         self.query_count = 0
         self.output_zh = 'zh'
         self.input_limit = int(5e3)
+        self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
     def get_language_map(self, lang_url: str, ss: SessionType, headers: dict, timeout: float, proxies: dict, **kwargs: LangMapKwargsType) -> dict:
@@ -3295,8 +3342,8 @@ class Niutrans(Tse):
             self.session.cookies.update({'Admin-Token': self.account_info['token']})
             # info_data = ss.get(self.info_url, headers=self.host_headers, timeout=timeout, proxies=proxies).json()
 
-            self.language_map = self.get_language_map(self.get_language_url, self.session, self.api_headers, timeout, proxies,
-                                                     from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(self.get_language_url, self.session, self.api_headers, timeout, proxies, **debug_lang_kwargs)
 
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
         if from_language == 'auto':
@@ -3398,6 +3445,7 @@ class VolcEngine(Tse):
         self.output_auto = 'detect'
         self.output_zh = 'zh'
         self.input_limit = int(5e3)
+        self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
     def get_language_map(self, host_html: str, **kwargs: LangMapKwargsType) -> dict:
@@ -3467,7 +3515,8 @@ class VolcEngine(Tse):
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
-            self.language_map = self.get_language_map(host_html, from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(host_html, **debug_lang_kwargs)
 
         from_language, to_language = self.check_language(from_language, to_language, self.language_map,
                                                          output_auto=self.output_auto, output_zh=self.output_zh)
@@ -3505,6 +3554,7 @@ class ModernMt(Tse):
         self.query_count = 0
         self.output_zh = 'zh-CN'
         self.input_limit = int(5e3)
+        self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
     def get_language_map(self, lang_url: str, ss: SessionType, headers: dict, timeout: float, proxies: dict, **kwargs: LangMapKwargsType) -> dict:
@@ -3551,8 +3601,8 @@ class ModernMt(Tse):
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
-            self.language_map = self.get_language_map(self.language_url, self.session, self.host_headers, timeout, proxies,
-                                                      from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(self.language_url, self.session, self.host_headers, timeout, proxies, **debug_lang_kwargs)
 
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
 
@@ -3635,7 +3685,8 @@ class MyMemory(Tse):
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
-            self.language_map = self.get_language_map(host_html, from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(host_html, **debug_lang_kwargs)
 
         if from_language == 'auto':
             from_language = self.warning_auto_lang('myMemory', self.default_from_language, if_print_warning)
@@ -3679,6 +3730,7 @@ class Mirai(Tse):
         self.query_count = 0
         self.output_zh = 'zh'
         self.input_limit = int(2e3)
+        self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
     def get_language_map(self, lang_url: str, ss: SessionType, headers: dict, timeout: float, proxies: dict, **kwargs: LangMapKwargsType) -> dict:
@@ -3729,8 +3781,8 @@ class Mirai(Tse):
             self.tran_key = re.compile('var tran = "(.*?)";').search(host_html).group(1)
             lang_url_part = re.compile(self.lang_url_pattern).search(host_html).group()
             self.lang_url = f'https://miraitranslate.com/trial/inmt/{lang_url_part}'
-            self.language_map = self.get_language_map(self.lang_url, self.session, self.api_json_headers, timeout, proxies,
-                                                      from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(self.lang_url, self.session, self.api_json_headers, timeout, proxies, **debug_lang_kwargs)
 
         if from_language == 'auto':
             r = self.session.post(self.detect_lang_url, headers=self.api_json_headers, json={'text': query_text}, timeout=timeout, proxies=proxies)
@@ -3785,6 +3837,7 @@ class Apertium(Tse):
         self.output_zh = None  # unsupported
         self.output_en = 'eng'
         self.input_limit = int(1e4)  # almost no limit.
+        self.default_from_language = 'spa'
 
     @Tse.debug_language_map
     def get_language_map(self, lang_url: str, ss: SessionType, headers: dict, timeout: float, proxies: dict, **kwargs: LangMapKwargsType) -> dict:
@@ -3830,8 +3883,8 @@ class Apertium(Tse):
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
-            self.language_map = self.get_language_map(self.get_lang_url, self.session, self.host_headers, timeout, proxies,
-                                                      from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(self.get_lang_url, self.session, self.host_headers, timeout, proxies, **debug_lang_kwargs)
 
         if from_language == 'auto':
             payload = urllib.parse.urlencode({'q': query_text})
@@ -3876,7 +3929,7 @@ class Tilde(Tse):
         self.output_zh = None  # unsupported
         self.output_en = 'eng'
         self.input_limit = int(5e3)  # unknown
-        self.default_from_language = 'lv'
+        self.default_from_language = 'lv'  # 'fr'
 
     @Tse.debug_language_map
     def get_language_map(self, sys_data: dict, **kwargs: LangMapKwargsType) -> dict:
@@ -3932,7 +3985,8 @@ class Tilde(Tse):
             params = {'appID': self.config_data['mt']['api']['appID'], 'uiLanguageID': self.config_data['mt']['api']['uiLanguageID']}
             self.sys_data = self.session.get(sys_url, params=params, headers=self.api_headers, timeout=timeout, proxies=proxies).json()  # test
             self.langpair_ids = self.get_langpair_ids(self.sys_data)
-            self.language_map = self.get_language_map(self.sys_data, from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(self.sys_data, **debug_lang_kwargs)
 
         if from_language == 'auto':
             from_language = self.warning_auto_lang('tilde', self.default_from_language, if_print_warning)
@@ -3972,6 +4026,7 @@ class CloudYi(Tse):
         self.output_en = 'en-us'
         self.output_auto = 'all'
         self.input_limit = int(5e3)
+        self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
     def get_language_map(self, d_lang_map: dict, **kwargs: LangMapKwargsType) -> dict:
@@ -4025,7 +4080,8 @@ class CloudYi(Tse):
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             _ = self.session.get(self.get_cookie_url, headers=self.api_headers, timeout=timeout, proxies=proxies)
             d_lang_map = self.session.get(self.get_lang_url, headers=self.api_headers, timeout=timeout, proxies=proxies).json()
-            self.language_map = self.get_language_map(d_lang_map, from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(d_lang_map, **debug_lang_kwargs)
             self.langpair_domain = self.get_langpair_domain(d_lang_map)
             self.professional_field = self.get_professional_field_list(d_lang_map)
 
@@ -4158,7 +4214,8 @@ class SysTran(Tse):
             self.api_json_headers.update(header_params)
 
             d_lang_map = self.session.get(self.get_lang_url, headers=self.api_json_headers, timeout=timeout, proxies=proxies).json()
-            self.language_map = self.get_language_map(d_lang_map, from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(d_lang_map, **debug_lang_kwargs)
             self.professional_field = self.get_professional_field_list(d_lang_map)
             self.langpair_domain = self.get_langpair_domain(d_lang_map)
 
@@ -4213,6 +4270,73 @@ class TranslateMe(Tse):
         lang_list = sorted(list(set(lang_list)))
         return {}.fromkeys(lang_list, lang_list)
 
+    # @Tse.time_stat
+    # @Tse.check_query
+    def _translateMe_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs: ApiKwargsType) -> Union[str, dict]:
+        """
+        https://translateme.network/
+        :param query_text: str, must.
+        :param from_language: str, default 'auto'.
+        :param to_language: str, default 'en'.
+        :param **kwargs:
+                :param timeout: float, default None.
+                :param proxies: dict, default None.
+                :param sleep_seconds: float, default 0.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
+                :param update_session_after_freq: int, default 1000.
+                :param update_session_after_seconds: float, default 1500.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
+                :param if_print_warning: bool, default True.
+        :return: str or dict
+        """
+
+        timeout = kwargs.get('timeout', None)
+        proxies = kwargs.get('proxies', None)
+        sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
+        is_detail_result = kwargs.get('is_detail_result', False)
+        update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
+        update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
+
+        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
+        if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
+            self.session = requests.Session()
+            host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(host_html, **debug_lang_kwargs)
+
+        if from_language == 'auto':
+            from_language = self.warning_auto_lang('translateMe', self.default_from_language, if_print_warning)
+        from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh,
+                                                         output_en_translator='translateMe', output_en=self.output_en)
+        if self.output_en not in (from_language, to_language):
+            raise TranslatorError('Must use English as an intermediate translation.')
+
+        data_list = []
+        paragraphs = [paragraph for paragraph in query_text.split('\n') if paragraph.strip()]
+        for paragraph in paragraphs:
+            payload = {
+                'text': paragraph,
+                'lang_from': from_language,
+                'lang_to': to_language,
+                'action': 'tm_my_action',
+                'type': 'convert'
+            }
+            payload = urllib.parse.urlencode(payload)
+            r = self.session.post(self.api_url, data=payload, headers=self.api_headers, timeout=timeout, proxies=proxies)
+            r.raise_for_status()
+            data = r.json()
+            data_list.append(data)
+        time.sleep(sleep_seconds)
+        self.query_count += 1
+        return {'data': data_list} if is_detail_result else '\n'.join([item['to'] for item in data_list])
+
     @Tse.time_stat
     @Tse.check_query
     def translateMe_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs: ApiKwargsType) -> Union[str, dict]:
@@ -4251,33 +4375,20 @@ class TranslateMe(Tse):
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
-            self.language_map = self.get_language_map(host_html, from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(host_html, **debug_lang_kwargs)
 
         if from_language == 'auto':
             from_language = self.warning_auto_lang('translateMe', self.default_from_language, if_print_warning)
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh,
                                                          output_en_translator='translateMe', output_en=self.output_en)
-        if self.output_en not in (from_language, to_language):
-            raise TranslatorError('Must use English as an intermediate translation.')
+        if self.output_en in (from_language, to_language):
+            return self._translateMe_api(query_text, from_language, to_language, **kwargs)
 
-        data_list = []
-        paragraphs = [paragraph for paragraph in query_text.split('\n') if paragraph.strip()]
-        for paragraph in paragraphs:
-            payload = {
-                'text': paragraph,
-                'lang_from': from_language,
-                'lang_to': to_language,
-                'action': 'tm_my_action',
-                'type': 'convert'
-            }
-            payload = urllib.parse.urlencode(payload)
-            r = self.session.post(self.api_url, data=payload, headers=self.api_headers, timeout=timeout, proxies=proxies)
-            r.raise_for_status()
-            data = r.json()
-            data_list.append(data)
-        time.sleep(sleep_seconds)
-        self.query_count += 1
-        return {'data': data_list} if is_detail_result else '\n'.join([item['to'] for item in data_list])
+        tmp_kwargs = kwargs.copy()
+        tmp_kwargs.update({'is_detail_result': False, 'if_show_time_stat': False})
+        next_query_text = self._translateMe_api(query_text, from_language, self.output_en, **tmp_kwargs)
+        return self._translateMe_api(next_query_text, self.output_en, to_language, **kwargs)
 
 
 class Elia(Tse):
@@ -4296,6 +4407,7 @@ class Elia(Tse):
         self.query_count = 0
         self.output_zh = None  # unsupported
         self.input_limit = int(1e2)
+        self.default_from_language = 'fr'
 
     @Tse.debug_language_map
     def get_language_map(self, dd: dict, **kwargs: LangMapKwargsType) -> dict:
@@ -4355,7 +4467,8 @@ class Elia(Tse):
             self.token = re.compile('"csrfmiddlewaretoken": "(.*?)"').search(host_html).group(1)
             d_lang_str = re.compile('var languagePairs = JSON.parse\\((.*?)\\);').search(host_html).group()
             d_lang_map = json.loads(d_lang_str[43:-4].replace('&quot;', '"'))
-            self.language_map = self.get_language_map(d_lang_map, from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(d_lang_map, **debug_lang_kwargs)
             self.professional_field = self.get_professional_field_list(d_lang_map)
             self.langpair_domain = self.get_langpair_domain(d_lang_map)
 
@@ -4475,8 +4588,8 @@ class LanguageWire(Tse):
             self.api_headers.update(self.lwt_data)
 
             _ = self.session.post(self.cookie_url, headers=self.api_headers, timeout=timeout, proxies=proxies)
-            self.language_map = self.get_language_map(self.lang_url, self.session, self.api_headers, timeout, proxies,
-                                                      from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(self.lang_url, self.session, self.api_headers, timeout, proxies, **debug_lang_kwargs)
 
         if from_language == 'auto':
             from_language = self.warning_auto_lang('translateMe', self.default_from_language, if_print_warning)
@@ -4554,7 +4667,8 @@ class Judic(Tse):
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
-            self.language_map = self.get_language_map(self.lang_list, from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(self.lang_list, **debug_lang_kwargs)
 
         if from_language == 'auto':
             from_language = self.warning_auto_lang('judic', self.default_from_language, if_print_warning)
@@ -4633,7 +4747,8 @@ class Yeekit(Tse):
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
-            self.language_map = self.get_language_map(self.lang_list, from_language=from_language, to_language=to_language, if_print_warning=if_print_warning)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(self.lang_list, **debug_lang_kwargs)
 
         if from_language == 'auto':
             from_language = self.warning_auto_lang('yeekit', self.default_from_language, if_print_warning)
@@ -4655,7 +4770,6 @@ class Yeekit(Tse):
 
 class TranslatorsServer:
     def __init__(self):
-        self.pre_acceleration_label = False
         self.cpu_cnt = os.cpu_count()
         self.server_region = GuestSeverRegion().get_server_region
         self._alibaba = AlibabaV2()
@@ -4742,6 +4856,11 @@ class TranslatorsServer:
         self.translators_pool = list(self.translators_dict.keys())
         self.not_en_langs = {'utibet': 'ti', 'mglip': 'mon'}
         self.not_zh_langs = {'languageWire': 'fr', 'tilde': 'fr', 'elia': 'fr', 'apertium': 'spa'}
+        self.pre_acceleration_label = 0
+        self.example_query_text = '你好。\n欢迎你！'
+        self.success_translators_pool = []
+        self.failure_translators_pool = []
+
 
     def translate_text(self,
                        query_text: str,
@@ -4846,37 +4965,62 @@ class TranslatorsServer:
         _get_result_func = lambda k: result_dict.get(k.group(1), '')
         return pattern.sub(repl=_get_result_func, string=html_text)
 
-    def preaccelerate(self, timeout: float = None, if_show_time_stat: bool = False) -> dict:
-        """
-        :param timeout: float, default None.
-        :param if_show_time_stat: bool, default False.
-        :return: dict
-        """
-        query_text = '你好。\n欢迎你！'
-        success_pool, failure_pool = [], []
+    def _test_translate(self, _ts: str, timeout: Optional[float] = None, if_show_time_stat: bool = False) -> str:
+        from_language = self.not_zh_langs[_ts] if _ts in self.not_zh_langs else 'auto'
+        to_language = self.not_en_langs[_ts] if _ts in self.not_en_langs else 'en'
+        result = self.translators_dict[_ts](
+            query_text=self.example_query_text,
+            translator=_ts,
+            from_language=from_language,
+            to_language=to_language,
+            if_print_warning=False,
+            timeout=timeout,
+            if_show_time_stat=if_show_time_stat
+        )
+        return result
 
-        if self.pre_acceleration_label:
+    def preaccelerate(self, timeout: Optional[float] = None, if_show_time_stat: bool = True, **kwargs: str) -> dict:
+        if self.pre_acceleration_label > 0:
             raise TranslatorError('Preacceleration can only be performed once.')
-        else:
-            for i in tqdm.tqdm(range(len(self.translators_pool)), desc='Preacceleration Process', ncols=80):
-                _ts = self.translators_pool[i]
-                try:
-                    from_language = self.not_zh_langs[_ts] if _ts in self.not_zh_langs else 'auto'
-                    to_language = self.not_en_langs[_ts] if _ts in self.not_en_langs else 'en'
-                    _ = self.translators_dict[_ts](query_text=query_text,
-                                                   translator=_ts,
-                                                   from_language=from_language,
-                                                   to_language=to_language,
-                                                   if_print_warning=False,
-                                                   timeout=timeout,
-                                                   if_show_time_stat=if_show_time_stat
-                                                   )
-                    success_pool.append(_ts)
-                except:
-                    failure_pool.append(_ts)
 
-            self.pre_acceleration_label = True
-        return {'success': success_pool, 'failure': failure_pool}
+        self.example_query_text = kwargs.get('example_query_text', self.example_query_text)
+
+        sys.stderr.write('Preacceleration-Process will take a few minutes.\n')
+        sys.stderr.write('Tips: The smaller `timeout` value, the fewer translators pass the test '
+                         'and the less time it takes to preaccelerate. However, the slow speed of '
+                         'preacceleration does not mean the slow speed of later translation.\n\n')
+
+        for i in tqdm.tqdm(range(len(self.translators_pool)), desc='Preacceleration Process', ncols=80):
+            _ts = self.translators_pool[i]
+            try:
+                _ = self._test_translate(_ts, timeout, if_show_time_stat)
+                self.success_translators_pool.append(_ts)
+            except:
+                self.failure_translators_pool.append(_ts)
+
+            self.pre_acceleration_label += 1
+        return {'success': self.success_translators_pool, 'failure': self.failure_translators_pool}
+
+    def speedtest(self, **kwargs: List[str]) -> None:
+        if self.pre_acceleration_label < 1:
+            raise TranslatorError('Preacceleration first.')
+
+        test_translators_pool = kwargs.get('test_translators_pool', self.success_translators_pool)
+
+        sys.stderr.write('SpeedTest-Process will take a few seconds.\n\n')
+        for i in tqdm.tqdm(range(len(test_translators_pool)), desc='SpeedTest Process', ncols=80):
+            _ts = test_translators_pool[i]
+            try:
+                _ = self._test_translate(_ts, timeout=None, if_show_time_stat=True)
+            except:
+                pass
+        return
+
+    def preaccelerate_and_speedtest(self, timeout: Optional[float] = None, **kwargs: str) -> dict:
+        result = self.preaccelerate(timeout=timeout, **kwargs)
+        sys.stderr.write('\n\n')
+        self.speedtest()
+        return result
 
 
 tss = TranslatorsServer()
@@ -4959,4 +5103,6 @@ translate_html = tss.translate_html
 translators_pool = tss.translators_pool
 
 preaccelerate = tss.preaccelerate
+speedtest = tss.speedtest
+preaccelerate_and_speedtest = tss.preaccelerate_and_speedtest
 # sys.stderr.write(f'Support translators {translators_pool} only.\n')
