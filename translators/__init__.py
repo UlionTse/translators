@@ -1,4 +1,4 @@
-__version__ = "5.7.7"
+__version__ = "5.7.8"
 __author__ = "UlionTse"
 
 

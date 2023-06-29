@@ -399,3 +399,7 @@ update email.
 stronger parameter type.
 stronger sysTran().
 check translateMe(), server is bad now.
+
+5.7.8
+stronger myMemory() and add languages.  #132
+update readme.md

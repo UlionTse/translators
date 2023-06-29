@@ -3628,19 +3628,28 @@ class MyMemory(Tse):
         self.host_url = 'https://mymemory.translated.net'
         self.api_web_url = 'https://mymemory.translated.net/api/ajaxfetch'
         self.api_api_url = 'https://api.mymemory.translated.net/get'
+        self.get_matecat_language_url = 'https://www.matecat.com/api/v2/languages'
         self.host_headers = self.get_headers(self.host_url, if_api=False)
         self.session = None
         self.language_map = None
+        self.myMemory_language_list = None
+        self.mateCat_language_list = None
         self.query_count = 0
         self.output_zh = 'zh-CN'
         self.input_limit = int(5e2)
         self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
-    def get_language_map(self, host_html: str, **kwargs: LangMapKwargsType) -> dict:
-        et = lxml.etree.HTML(host_html)
+    def get_language_map(self, myMemory_host_html: str, matecat_lang_url: str, ss: SessionType, headers: dict,
+                         timeout: Optional[float], proxies: Optional[dict], **kwargs: LangMapKwargsType) -> dict:
+        et = lxml.etree.HTML(myMemory_host_html)
         lang_list = et.xpath('//*[@id="select_source_mm"]/option/@value')[2:]
-        lang_list = sorted(list(set(lang_list)))
+        self.myMemory_language_list = sorted(list(set(lang_list)))
+
+        lang_d_list = ss.get(matecat_lang_url, headers=headers, timeout=timeout, proxies=proxies).json()
+        self.mateCat_language_list = sorted(list(set([item['code'] for item in lang_d_list])))
+
+        lang_list = sorted(list(set(self.myMemory_language_list + self.mateCat_language_list)))
         return {}.fromkeys(lang_list, lang_list)
 
     @Tse.time_stat
@@ -3684,7 +3693,8 @@ class MyMemory(Tse):
             self.session = requests.Session()
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
-            self.language_map = self.get_language_map(host_html, **debug_lang_kwargs)
+            self.language_map = self.get_language_map(host_html, self.get_matecat_language_url, self.session,
+                                                      self.host_headers, timeout, proxies, **debug_lang_kwargs)
 
         if from_language == 'auto':
             from_language = self.warning_auto_lang('myMemory', self.default_from_language, if_print_warning)
