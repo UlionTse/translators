@@ -2,13 +2,13 @@
   <img src="https://github.com/UlionTse/translators/blob/master/docs/translators_logo.png" width="500"/>
 </p>
 <p align="center">
-  <a href="https://pypi.org/project/translators"><img alt="PyPI - Version" src="https://img.shields.io/pypi/v/translators.svg"></a>
-  <a href="https://anaconda.org/conda-forge/translators"><img alt="Conda - Version" src="https://img.shields.io/conda/vn/conda-forge/translators.svg"></a>
-  <a href="https://pypi.org/project/translators"><img alt="PyPI - License" src="https://img.shields.io/pypi/l/translators.svg"></a>
-  <a href="https://pypi.org/project/translators"><img alt="PyPI - Python" src="https://img.shields.io/pypi/pyversions/translators.svg"></a>
-  <a href="https://pypi.org/project/translators"><img alt="PyPI - Status" src="https://img.shields.io/pypi/status/translators.svg"></a>
+  <a href="https://pypi.org/project/translators"><img alt="PyPI - Version" src="https://img.shields.io/pypi/v/translators.svg?color=blue"></a>
+  <a href="https://anaconda.org/conda-forge/translators"><img alt="Conda - Version" src="https://img.shields.io/conda/vn/conda-forge/translators.svg?color=blue"></a>
+  <a href="https://pypi.org/project/translators"><img alt="PyPI - License" src="https://img.shields.io/pypi/l/translators.svg?color=brightgreen"></a>
+  <a href="https://pypi.org/project/translators"><img alt="PyPI - Python" src="https://img.shields.io/pypi/pyversions/translators.svg?color=blue"></a>
+  <a href="https://pypi.org/project/translators"><img alt="PyPI - Status" src="https://img.shields.io/pypi/status/translators.svg?color=brightgreen"></a>
   <a href="https://pypi.org/project/translators"><img alt="PyPI - Wheel" src="https://img.shields.io/badge/wheel-yes-brightgreen.svg"></a>
-  <a href="https://pypi.org/project/translators"><img alt="Downloads" src="https://pepy.tech/badge/translators"></a>
+  <a href="https://pypi.org/project/translators"><img alt="PyPI - Downloads" src="https://static.pepy.tech/personalized-badge/translators?left_text=downloads&left_color=gray&right_color=blue"></a>
 </p>
 
 * * *
