@@ -1,7 +1,7 @@
 # coding=utf-8
 # author=UlionTse
 
-"""GPL3 License
+"""GPLv3 License
 Copyright (C) 2017-2023  UlionTse
 
 This program is free software: you can redistribute it and/or modify
