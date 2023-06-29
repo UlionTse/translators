@@ -3,14 +3,14 @@
 
 import re
 import pathlib
-from setuptools import setup, find_packages
+import setuptools
 
 
 NAME = "translators"
 PACKAGE = "translators"
 
 AUTHOR = "UlionTse"
-AUTHOR_EMAIL = "shinalone@outlook.com"
+AUTHOR_EMAIL = "uliontse@outlook.com"
 HOMEPAGE_URL = "https://github.com/uliontse/translators"
 DESCRIPTION = "Translators is a library which aims to bring free, multiple, enjoyable translation to individuals and students in Python."
 LONG_DESCRIPTION = pathlib.Path('README.md').read_text(encoding='utf-8')
@@ -18,7 +18,7 @@ VERSION_TEXT = pathlib.Path(f'{PACKAGE}/__init__.py').read_text(encoding='utf-8'
 VERSION = re.compile('^__version__\\s*=\\s*[\'"]([^\'"]*)[\'"]', re.MULTILINE).search(VERSION_TEXT).group(1)
 
 
-setup(
+setuptools.setup(
     name=NAME,
     version=VERSION,
     description=DESCRIPTION,
@@ -26,8 +26,8 @@ setup(
     long_description_content_type="text/markdown",
     author=AUTHOR,
     author_email=AUTHOR_EMAIL,
-    license="MIT",
-    packages=find_packages(),
+    license="GPLv3",
+    packages=setuptools.find_packages(),
     include_package_data=True,
     package_dir={"translators": "translators"},
     url=HOMEPAGE_URL,
@@ -40,7 +40,7 @@ setup(
         "Development Status :: 5 - Production/Stable",
         "Environment :: Web Environment",
         "Intended Audience :: Developers",
-        "License :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
