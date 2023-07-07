@@ -403,3 +403,6 @@ check translateMe(), server is bad now.
 5.7.8
 stronger myMemory() and add languages.  #132
 update readme.md
+
+5.7.9
+no change (only for updates of conda information)

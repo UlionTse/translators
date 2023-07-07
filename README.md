@@ -8,7 +8,7 @@
   <a href="https://pypi.org/project/translators"><img alt="PyPI - Python" src="https://img.shields.io/pypi/pyversions/translators.svg?color=blue"></a>
   <a href="https://pypi.org/project/translators"><img alt="PyPI - Status" src="https://img.shields.io/pypi/status/translators.svg?color=brightgreen"></a>
   <a href="https://pypi.org/project/translators"><img alt="PyPI - Wheel" src="https://img.shields.io/badge/wheel-yes-brightgreen.svg"></a>
-  <a href="https://pypi.org/project/translators"><img alt="PyPI - Downloads" src="https://static.pepy.tech/personalized-badge/translators?left_text=downloads&left_color=gray&right_color=blue"></a>
+  <a href="https://pypi.org/project/translators"><img alt="PyPI - Downloads" src="https://static.pepy.tech/personalized-badge/translators?period=total&units=international_system&left_text=downloads&left_color=grey&right_color=blue"></a>
 </p>
 
 * * *
