@@ -466,7 +466,7 @@ class GoogleV1(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.api_url):
             self.session = requests.Session()
@@ -584,7 +584,7 @@ class GoogleV2(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -672,7 +672,7 @@ class BaiduV1(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -788,7 +788,7 @@ class BaiduV2(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.token and self.sign):
             self.session = requests.Session()
@@ -933,7 +933,7 @@ class YoudaoV1(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.sign_key):
             self.session = requests.Session()
@@ -1056,7 +1056,7 @@ class YoudaoV2(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.secret_key):
             self.session = requests.Session()
@@ -1150,7 +1150,7 @@ class YoudaoV3(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -1233,7 +1233,7 @@ class QQFanyi(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.qtv_qtk):
             self.session = requests.Session()
@@ -1328,7 +1328,7 @@ class QQTranSmart(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -1460,7 +1460,7 @@ class AlibabaV1(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.dmtrack_pageid):
             self.session = requests.Session()
@@ -1562,7 +1562,7 @@ class AlibabaV2(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.csrf_token):
             self.session = requests.Session()
@@ -1672,7 +1672,7 @@ class Bing(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.tk and self.ig_iid):
             self.session = requests.Session()
@@ -1791,7 +1791,7 @@ class Sogou(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.uuid):
             self.uuid = str(uuid.uuid4())
@@ -1898,7 +1898,7 @@ class Caiyun(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.tk and self.jwt):
             self.session = requests.Session()
@@ -2057,7 +2057,7 @@ class Deepl(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -2189,7 +2189,7 @@ class Yandex(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.sid and self.yu):
             self.session = requests.Session()
@@ -2298,7 +2298,7 @@ class Argos(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -2372,7 +2372,7 @@ class Iciba(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -2461,7 +2461,7 @@ class IflytekV1(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -2551,7 +2551,7 @@ class IflytekV2(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -2631,7 +2631,7 @@ class Iflyrec(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -2724,7 +2724,7 @@ class Reverso(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.decrypt_language_map):
             self.session = requests.Session()
@@ -2820,7 +2820,7 @@ class Itranslate(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -2906,7 +2906,7 @@ class TranslateCom(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -2988,7 +2988,7 @@ class Utibet(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -3080,7 +3080,7 @@ class Papago(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.auth_key):
             self.device_id = str(uuid.uuid4())
@@ -3197,7 +3197,7 @@ class Lingvanex(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.auth_info and self.mode == mode):
             self.session = requests.Session()
@@ -3317,7 +3317,7 @@ class Niutrans(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.account_info and self.api_headers):
             self.session = requests.Session()
@@ -3407,7 +3407,7 @@ class Mglip(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -3508,7 +3508,7 @@ class VolcEngine(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -3594,7 +3594,7 @@ class ModernMt(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -3687,7 +3687,7 @@ class MyMemory(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -3780,7 +3780,7 @@ class Mirai(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.tran_key):
             self.session = requests.Session()
@@ -3886,7 +3886,7 @@ class Apertium(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -3981,7 +3981,7 @@ class Tilde(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -4081,7 +4081,7 @@ class CloudYi(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -4206,7 +4206,7 @@ class SysTran(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -4317,7 +4317,7 @@ class TranslateMe(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -4385,7 +4385,7 @@ class TranslateMe(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -4475,7 +4475,7 @@ class Elia(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -4595,7 +4595,7 @@ class LanguageWire(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -4678,7 +4678,7 @@ class Judic(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
@@ -4758,7 +4758,7 @@ class Yeekit(Tse):
         update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
         self.check_input_limit(query_text, self.input_limit)
 
-        not_update_cond_freq = 1 if self.query_count < update_session_after_freq else 0
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.session = requests.Session()
