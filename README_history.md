@@ -15,14 +15,8 @@
 
 **Translators** is a library which aims to bring **free, multiple, enjoyable** translation to individuals and students in Python. 
 
-- [Supported Translation Services](#supported-translation-services)
-- [Installation](#installation)
-- [Getting Started](#getting-started)
-- [Supported Languages](#supported-languages)
-- [Debug Tips](#debug-tips)
-- [License](#license)
-
-## Supported Translation Services
+<details>
+<summary>Supported Translation Services</summary>
 
 | ID  | Translator                                                                        | Number of Supported Languages | Advantage                                                                                   | Service                                                                                                           | Status                          |
 | --- | --------------------------------------------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------- |
@@ -63,7 +57,10 @@
 | 35  | [Mglip](http://fy.mglip.com/pc)                                                   | 3                             | good at Mongolia translation                                                                | [Inner Mongolia University](https://www.imu.edu.cn/yw/Home.htm), China                                            | stable                          |
 | 36  | [Utibet](http://mt.utibet.edu.cn/mt)                                              | 2                             | good at Tibet translation                                                                   | [Tibet University](http://www.utibet.edu.cn/), China                                                              | stable                          |
 
-## Installation
+</details>
+
+<details>
+<summary>Installation</summary>
 
 ```sh
 # PYPI
@@ -78,7 +75,10 @@ cd translators
 python setup.py install
 ```
 
-## Getting Started
+</details>
+
+<details>
+<summary>Getting Started</summary>
 
 ```python
 import translators as ts
@@ -126,7 +126,10 @@ translate_text(query_text: str, translator: str = 'bing', from_language: str = '
 """
 ```
 
-## Supported Languages
+</details>
+
+<details>
+<summary>Supported Languages</summary>
 
 | Language             | Language of Translator | [Google](https://translate.google.com) | [Yandex](https://translate.yandex.com) | [Bing](https://www.bing.com/Translator) | [Baidu](https://fanyi.baidu.com) | [Alibaba](https://translate.alibaba.com) | [Tencent](https://fanyi.qq.com) | [Youdao](https://fanyi.youdao.com) | [Sogou](https://fanyi.sogou.com) | [Deepl](https://www.deepl.com/translator) | [Caiyun](https://fanyi.caiyunapp.com) | [Argos](https://translate.argosopentech.com) | others... |
 | -------------------- | ---------------------- | -------------------------------------- | -------------------------------------- | --------------------------------------- | -------------------------------- | ---------------------------------------- | ------------------------------- | ---------------------------------- | -------------------------------- | ----------------------------------------- | ------------------------------------- | -------------------------------------------- | --------- |
@@ -202,7 +205,8 @@ translate_text(query_text: str, translator: str = 'bing', from_language: str = '
 | emoji                | emj                    |                                        | Y                                      |                                         |                                  |                                          |                                 |                                    |                                  |                                           |                                       |                                              |           |
 | ...                  | ...                    |                                        |                                        |                                         |                                  |                                          |                                 |                                    |                                  |                                           |                                       |                                              |           |
 
-### About Chinese Language
+<details>
+<summary>About Chinese Language</summary>
 
 | Language      | Language of Translator | [Google](https://translate.google.com) | [Yandex](https://translate.yandex.com) | [Bing](https://www.bing.com/Translator) | [Baidu](https://fanyi.baidu.com) | [Alibaba](https://translate.alibaba.com) | [Tencent](https://fanyi.qq.com) | [Youdao](https://fanyi.youdao.com) | [Sogou](https://fanyi.sogou.com) | [Iciba](https://www.iciba.com/fy) | [Iflytek](https://fanyi.xfyun.cn/console/trans/text) | [Caiyun](https://fanyi.caiyunapp.com) | [Deepl](https://www.deepl.com/translator) | [Argos](https://translate.argosopentech.com) | [Itranslate](https://itranslate.com/webapp) | [Reverso](https://www.reverso.net/text-translation) | [TranslateCom](https://www.translate.com/machine-translation) | [Papago](https://papago.naver.com) | [Utibet](http://mt.utibet.edu.cn/mt) |
 | ------------- | ---------------------- | -------------------------------------- | -------------------------------------- | --------------------------------------- | -------------------------------- | ---------------------------------------- | ------------------------------- | ---------------------------------- | -------------------------------- | --------------------------------- | ---------------------------------------------------- | ------------------------------------- | ----------------------------------------- | -------------------------------------------- | ------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------- | ---------------------------------- | ------------------------------------ |
@@ -218,7 +222,11 @@ translate_text(query_text: str, translator: str = 'bing', from_language: str = '
 | Chinese(苗语)   | hmn                    |                                        |                                        |                                         |                                  |                                          |                                 |                                    |                                  |                                   |                                                      |                                       |                                           |                                              | Y                                           |                                                     |                                                               |                                    |                                      |
 | Chinese(壮语)   | zyb                    |                                        |                                        |                                         |                                  |                                          |                                 |                                    |                                  |                                   |                                                      |                                       |                                           |                                              |                                             |                                                     |                                                               |                                    |                                      |
 
-## Debug Tips
+</details>
+</details>
+
+<details>
+<summary>Debug Tips</summary>
 
 ### Linux Runtime Environment
 
@@ -237,6 +245,5 @@ translate_text(query_text: str, translator: str = 'bing', from_language: str = '
 1. Check whether the network is connected correctly.
 2. Check the proxy are enabled on your computer. If it is enabled, try turning it off or otherwise. 
 
-## License
+</details>
 
-[GPLv3 License](https://github.com/uliontse/translators/blob/master/LICENSE)

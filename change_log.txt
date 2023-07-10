@@ -406,3 +406,9 @@ update readme.md
 
 5.7.9
 no change (only for updates of conda information)
+
+5.8.0
+add func get_languages()
+stronger code of `update_session_after_freq`.  #134
+stronger code of `update_session_after_seconds`.
+update readme.md
