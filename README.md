@@ -20,6 +20,7 @@
 - [Getting Started](#getting-started)
 - [Supported Languages](#supported-languages)
 - [Debug Tips](#debug-tips)
+- [Star History](#star-history)
 
 ## Supported Translation Services
 
@@ -42,7 +43,7 @@
 | 15  | [SysTran](https://www.systran.net/translate/)                                     | 52                            | support more languages in the world                                                         | [SysTran](https://www.systran.net/about/), France                                                                 | stable                          |
 | 16  | [Apertium](https://www.apertium.org/)                                             | 45                            | open-source                                                                                 | [Apertium](https://github.com/apertium), Spain                                                                    | stable                          |
 | 17  | [Reverso](https://www.reverso.net/text-translation)                               | 42                            | popular on Mac and Iphone                                                                   | [Reverso](https://www.corporate-translation.reverso.com/about-us), France                                         | stable                          |
-| 18  | [CloudYi](https://www.cloudtranslation.com/#/translate)                           | 28                            | support main languages                                                                      | [Xiamen University](http://nlp.xmu.edu.cn/) / [CloudTranslation](https://www.cloudtranslation.com/#/about), China | stable                          |
+| 18  | [CloudTranslation](https://www.cloudtranslation.com/#/translate)                  | 28                            | support main languages                                                                      | [Xiamen University](http://nlp.xmu.edu.cn/) / [CloudTranslation](https://www.cloudtranslation.com/#/about), China | stable                          |
 | 19  | [Deepl](https://www.deepl.com/translator)                                         | 27                            | high quality to translate but response slowly                                               | [Deepl](https://jobs.deepl.com/l/en), Germany                                                                     | stable                          |
 | 20  | [QQTranSmart](https://transmart.qq.com)                                           | 22                            | support main languages                                                                      | [Tencent](https://www.tencent.com/en-us/about.html), China                                                        | stable                          |
 | 21  | [TranslateCom](https://www.translate.com/machine-translation)                     | 21                            | good at English translation                                                                 | [TranslateCom](https://www.translate.com/about-us), America                                                       | stable                          |
@@ -104,7 +105,7 @@ translate_text(query_text: str, translator: str = 'bing', from_language: str = '
     :param if_use_preacceleration: bool, default False.
     :param **kwargs:
             :param is_detail_result: bool, default False.
-            :param professional_field: str, default None. Support alibaba(), baidu(), caiyun(), cloudYi(), elia(), sysTran(), youdao(), volcEngine() only.
+            :param professional_field: str, default None. Support alibaba(), baidu(), caiyun(), cloudTranslation(), elia(), sysTran(), youdao(), volcEngine() only.
             :param timeout: float, default None.
             :param proxies: dict, default None.
             :param sleep_seconds: float, default 0.
@@ -222,7 +223,7 @@ translate_text(query_text: str, translator: str = 'bing', from_language: str = '
 ### Linux Runtime Environment
 
 1. To support javascript runtime environment, you should [download and install Node.js](https://nodejs.org/en/download/).
-2. baidu() doesn't work on Linux without desktop.
+2. Function baidu() doesn't work on Linux without desktop.
 
 ### HttpError 4xx
 
@@ -236,3 +237,6 @@ translate_text(query_text: str, translator: str = 'bing', from_language: str = '
 1. Check whether the network is connected correctly.
 2. Check the proxy are enabled on your computer. If it is enabled, try turning it off or otherwise. 
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=UlionTse/translators&type=Date)](https://star-history.com/#UlionTse/translators&Date)

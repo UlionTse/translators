@@ -412,3 +412,9 @@ add func get_languages()
 stronger code of `update_session_after_freq`.  #134
 stronger code of `update_session_after_seconds`.
 update readme.md
+
+5.8.2
+stronger reverso().  #135
+replace cloudYi() to cloudTranslation(), add v2.
+fix alibaba_v1.
+update readme.md

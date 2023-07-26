@@ -49,7 +49,7 @@ setuptools.setup(
     ],
     keywords=[
         'translate', 'translate_text', 'translate_html',
-        'alibaba', 'apertium', 'argos', 'baidu', 'bing', 'caiyun', 'cloudYi', 'deepl', 'elia', 'google',
+        'alibaba', 'apertium', 'argos', 'baidu', 'bing', 'caiyun', 'cloudTranslation', 'deepl', 'elia', 'google',
         'iciba', 'iflytek', 'iflyrec', 'itranslate', 'judic', 'languageWire', 'lingvanex', 'mglip', 'mirai', 'modernMt',
         'myMemory', 'niutrans', 'papago', 'qqFanyi', 'qqTranSmart', 'reverso', 'sogou', 'sysTran', 'tilde', 'translateCom',
         'translateMe', 'utibet', 'volcEngine', 'yandex', 'yeekit', 'youdao',
