@@ -418,3 +418,10 @@ stronger reverso().  #135
 replace cloudYi() to cloudTranslation(), add v2.
 fix alibaba_v1.
 update readme.md
+
+5.8.3
+stronger caiyun().  #138
+stronger deepl().
+stronger debug_language_map().
+update niutransV2().
+update readme.md

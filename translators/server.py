@@ -213,7 +213,7 @@ class Tse:
         def _wrapper(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
-            except TranslatorError as e:
+            except Exception as e:
                 if kwargs.get('if_print_warning', True):
                     warnings.warn(f'GetLanguageMapError: {str(e)}.\nThe function make_temp_language_map() works.')
                 return make_temp_language_map(kwargs.get('from_language'), kwargs.get('to_language'), kwargs.get('default_from_language'))
@@ -1859,14 +1859,13 @@ class Caiyun(Tse):
 
     @Tse.debug_language_map
     def get_language_map(self, js_html: str, **kwargs: LangMapKwargsType) -> dict:
-        return execjs.eval(re.compile('={auto:\\[(.*?)}').search(js_html).group()[1:])
+        lang_text = re.compile('lang:{(.*?)},').search(js_html).group()[5:-1]
+        lang_pair_list = re.compile('(\\w+):(.*?),').findall(lang_text)
+        lang_list = sorted([lang for lang, _ in lang_pair_list])
+        return {}.fromkeys(lang_list, lang_list)
 
     def get_tk(self, js_html: str) -> str:
         return re.compile('headers\\["X-Authorization"]="(.*?)",').findall(js_html)[0]
-
-    # def get_jwt(self, browser_id: str, api_headers: dict, ss: SessionType, timeout: float, proxies: dict) -> str:
-    #     data = {"browser_id": browser_id}
-    #     return ss.post(self.get_jwt_url, json=data, headers=api_headers, timeout=timeout, proxies=proxies).json()['jwt']
 
     def crypt(self, if_de: bool = True) -> dict:
         if if_de:
@@ -1992,7 +1991,7 @@ class Deepl(Tse):
 
     @Tse.debug_language_map
     def get_language_map(self, host_html: str, **kwargs: LangMapKwargsType) -> dict:
-        lang_list = list(set(re.compile('translateIntoLang\\.(\\w+)":').findall(host_html)))
+        lang_list = sorted(list(set(re.compile('selectLang.source.(\\w+)":').findall(host_html))))
         return {}.fromkeys(lang_list, lang_list)
 
     def split_sentences_param(self, query_text: str, from_language: str) -> dict:
@@ -3289,7 +3288,7 @@ class Lingvanex(Tse):
         return data if is_detail_result else data['result']['text']
 
 
-class Niutrans(Tse):
+class NiutransV1(Tse):
     def __init__(self):
         super().__init__()
         self.begin_time = time.time()
@@ -3409,6 +3408,158 @@ class Niutrans(Tse):
         time.sleep(sleep_seconds)
         self.query_count += 1
         return data if is_detail_result else '\n'.join([' '.join([it['data'] for it in item['sentences']]) for item in data['data']])
+
+
+class NiutransV2(Tse):
+    def __init__(self):
+        super().__init__()
+        self.begin_time = time.time()
+        self.home_url = 'https://niutrans.com'
+        self.host_url = 'https://niutrans.com/trans?type=text'
+        self.api_url = 'https://test.niutrans.com/NiuTransServer/testaligntrans'
+        self.get_language_url = 'https://niutrans.com/NiuTransFrontPage/language/getAllLanguage'
+        self.detect_language_url = 'https://test.niutrans.com/NiuTransServer/language'
+        self.login_url = 'https://niutrans.com/NiuTransConsole/user/isLogin'
+        self.geetest_host_url = 'https://www.geetest.com'
+        self.geetest_captcaha_url = 'https://www.geetest.com/adaptive-captcha-demo'
+        self.geetest_load_url = 'https://gcaptcha4.geetest.com/load'
+        self.geetest_verify_url = 'https://gcaptcha4.geetest.com/verify'
+        self.host_headers = self.get_headers(self.host_url, if_api=False)
+        self.api_headers = self.get_headers(self.host_url, if_api=True, if_json_for_api=True)
+        self.session = None
+        self.language_map = None
+        self.captcha_id = None  # '24f56dc13c40dc4a02fd0318567caef5'
+        self.geetest_load_data = None
+        self.geetest_verify_data = None
+        self.query_count = 0
+        self.output_zh = 'zh'
+        self.input_limit = int(5e3)
+        self.default_from_language = self.output_zh
+
+    @Tse.debug_language_map
+    def get_language_map(self, lang_url: str, ss: SessionType, headers: dict, timeout: Optional[float], proxies: Optional[dict], **kwargs: LangMapKwargsType) -> dict:
+        d_lang_map = ss.get(lang_url, headers=headers, timeout=timeout, proxies=proxies).json()
+        lang_list = sorted(set([it['code'] for item in d_lang_map['languageList'] for it in item['result']]))
+        return {}.fromkeys(lang_list, lang_list)
+
+    def get_captcha_id(self, captcha_url: str, ss: SessionType, headers: dict, timeout: Optional[float], proxies: Optional[dict]):
+        captcha_host_html = ss.get(captcha_url, headers=headers, timeout=timeout, proxies=proxies).text
+        captcha_js_url_path = re.compile('/_next/static/(.*?)/pages/adaptive-captcha-demo.js').search(captcha_host_html).group(0)
+        captcha_js_url = f'{self.geetest_host_url}{captcha_js_url_path}'
+        captcha_js_html = ss.get(captcha_js_url, headers=headers, timeout=timeout, proxies=proxies).text
+        captcha_id = re.compile('captchaId:"(.*?)",').search(captcha_js_html).group(1)
+        return captcha_id
+
+    def get_geetest_callback(self):
+        return f'geetest_{int(self.get_timestamp() + int(random.random() * 1e4))}'
+
+    def get_geetest_w(self, k=1088):
+        pool = list('abcdef' + '0123456789')
+        return ''.join(random.choices(pool, k=k))  # TODO
+
+    def get_geetest_data(self, timeout, proxies):
+        gl_params = {
+            'callback': self.get_geetest_callback(),
+            'captcha_id': self.captcha_id,
+            'challenge': str(uuid.uuid4()),
+            'client_type': 'web',  # 'h5'
+            'lang': 'zh-cn',
+        }
+        r_gl = self.session.get(self.geetest_load_url, params=gl_params, headers=self.host_headers, timeout=timeout, proxies=proxies)
+        self.geetest_load_data = json.loads(r_gl.text[22:-1])['data']
+
+        gv_params = {
+            'callback': self.get_geetest_callback(),
+            'captcha_id': self.captcha_id,
+            'client_type': 'web',  # 'h5'
+            'lot_number': self.geetest_load_data['lot_number'],
+            'payload': self.geetest_load_data['payload'],
+            'process_token': self.geetest_load_data['process_token'],
+            'payload_protocol': self.geetest_load_data['payload_protocol'],
+            'pt': self.geetest_load_data['pt'],
+            'w': self.get_geetest_w(),  # TODO
+        }
+        r_gv = self.session.get(self.geetest_verify_url, params=gv_params, headers=self.host_headers, timeout=timeout, proxies=proxies)
+        self.geetest_verify_data = json.loads(r_gv.text[22:-1])['data']['seccode']
+        return
+
+    @Tse.uncertified
+    @Tse.time_stat
+    @Tse.check_query
+    def niutrans_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs: ApiKwargsType) -> Union[str, dict]:
+        """
+        https://niutrans.com/trans?type=text
+        :param query_text: str, must.
+        :param from_language: str, default 'auto'.
+        :param to_language: str, default 'en'.
+        :param **kwargs:
+                :param timeout: float, default None.
+                :param proxies: dict, default None.
+                :param sleep_seconds: float, default 0.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
+                :param update_session_after_freq: int, default 1000.
+                :param update_session_after_seconds: float, default 1500.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
+                :param if_print_warning: bool, default True.
+        :return: str or dict
+        """
+
+        timeout = kwargs.get('timeout', None)
+        proxies = kwargs.get('proxies', None)
+        sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
+        is_detail_result = kwargs.get('is_detail_result', False)
+        update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
+        update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
+
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
+        not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
+        if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.captcha_id):
+            self.begin_time = time.time()
+            self.session = requests.Session()
+            _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+            _ = self.session.get(self.login_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+            self.captcha_id = self.get_captcha_id(self.geetest_captcaha_url, self.session, self.host_headers, timeout, proxies)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(self.get_language_url, self.session, self.api_headers, timeout, proxies, **debug_lang_kwargs)
+
+        from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
+        if from_language == 'auto':
+            params = {
+                'src_text': query_text,
+                'time': self.get_timestamp(),
+                'source': 'text',
+            }
+            res = self.session.get(self.detect_language_url, params=params, headers=self.host_headers, timeout=timeout, proxies=proxies)
+            from_language = res.json()['language']
+
+        self.get_geetest_data(timeout, proxies)
+        trans_params = {
+            'src_text': query_text,
+            'from': from_language,
+            'to': to_language,
+            'source': 'text',
+            'dictNo': '',
+            'memoryNo': '',
+            'lot_number': self.geetest_verify_data['lot_number'],
+            'captcha_output': self.geetest_verify_data['captcha_output'],
+            'pass_token': self.geetest_verify_data['pass_token'],
+            'gen_time': self.geetest_verify_data['gen_time'],
+            'time': self.get_timestamp(),
+            'isUseDict': 0,
+            'isUseMemory': 0,
+        }
+        r = self.session.get(self.api_url, params=trans_params, headers=self.api_headers, timeout=timeout, proxies=proxies)
+        r.raise_for_status()
+        data = r.json()
+        time.sleep(sleep_seconds)
+        self.query_count += 1
+        return data if is_detail_result else data['tgt_text']
 
 
 class Mglip(Tse):
@@ -5013,7 +5164,7 @@ class TranslatorsServer:
         self.languageWire = self._languageWire.languageWire_api
         self._lingvanex = Lingvanex()
         self.lingvanex = self._lingvanex.lingvanex_api
-        self._niutrans = Niutrans()
+        self._niutrans = NiutransV2()
         self.niutrans = self._niutrans.niutrans_api
         self._mglip = Mglip()
         self.mglip = self._mglip.mglip_api
