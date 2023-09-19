@@ -244,7 +244,7 @@ class Tse:
 
         @functools.wraps(func)
         def _wrapper(*args, **kwargs):
-            if_ignore_empty_query = kwargs.get('if_ignore_empty_query', False)
+            if_ignore_empty_query = kwargs.get('if_ignore_empty_query', True)
             if_ignore_limit_of_length = kwargs.get('if_ignore_limit_of_length', False)
             limit_of_length = kwargs.get('limit_of_length', 20000)
             is_detail_result = kwargs.get('is_detail_result', False)
@@ -5255,7 +5255,7 @@ class TranslatorsServer:
                 :param if_use_cn_host: bool, default False. Support google(), bing() only.
                 :param reset_host_url: str, default None. Support google(), argos(), yandex() only.
                 :param if_check_reset_host_url: bool, default True. Support google(), yandex() only.
-                :param if_ignore_empty_query: bool, default False.
+                :param if_ignore_empty_query: bool, default True.
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_show_time_stat: bool, default False.
@@ -5279,7 +5279,7 @@ class TranslatorsServer:
                        translator: str = 'bing',
                        from_language: str = 'auto',
                        to_language: str = 'en',
-                       n_jobs: int = -1,
+                       n_jobs: int = 1,
                        if_use_preacceleration: bool = False,
                        **kwargs: ApiKwargsType,
                        ) -> str:
@@ -5289,7 +5289,7 @@ class TranslatorsServer:
         :param translator: str, default 'bing'.
         :param from_language: str, default 'auto'.
         :param to_language: str, default 'en'.
-        :param n_jobs: int, default -1, means os.cpu_cnt().
+        :param n_jobs: int, default 1. -1 means os.cpu_cnt().
         :param if_use_preacceleration: bool, default False.
         :param **kwargs:
                 :param is_detail_result: bool, default False.
@@ -5302,7 +5302,7 @@ class TranslatorsServer:
                 :param if_use_cn_host: bool, default False. Support google(), bing() only.
                 :param reset_host_url: str, default None. Support google(), argos(), yandex() only.
                 :param if_check_reset_host_url: bool, default True. Support google(), yandex() only.
-                :param if_ignore_empty_query: bool, default False.
+                :param if_ignore_empty_query: bool, default True.
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_show_time_stat: bool, default False.
@@ -5322,14 +5322,14 @@ class TranslatorsServer:
         def _translate_text(sentence: str) -> Tuple[str, str]:
             return sentence, self.translators_dict[translator](query_text=sentence, from_language=from_language, to_language=to_language, **kwargs)
 
-        pattern = re.compile("(?:^|(?<=>))([\\s\\S]*?)(?:(?=<)|$)")  # TODO: <code></code> <div class="codetext notranslate">
+        pattern = re.compile('>([\\s\\S]*?)<')  # not perfect
         sentence_list = list(set(pattern.findall(html_text)))
 
         n_jobs = self.cpu_cnt if n_jobs <= 0 else n_jobs
         with pathos.multiprocessing.ProcessPool(n_jobs) as pool:
             result_list = pool.map(_translate_text, sentence_list)
 
-        result_dict = {text: ts_text for text, ts_text in result_list}
+        result_dict = {text: f'>{ts_text}<' for text, ts_text in result_list}
         _get_result_func = lambda k: result_dict.get(k.group(1), '')
         return pattern.sub(repl=_get_result_func, string=html_text)
 
@@ -5483,3 +5483,4 @@ preaccelerate = tss.preaccelerate
 speedtest = tss.speedtest
 preaccelerate_and_speedtest = tss.preaccelerate_and_speedtest
 # sys.stderr.write(f'Support translators {translators_pool} only.\n')
+

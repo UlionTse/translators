@@ -425,3 +425,8 @@ stronger deepl().
 stronger debug_language_map().
 update niutransV2().
 update readme.md
+
+5.8.4
+stronger and fix translate_html().  #145
+set default parameter `if_ignore_empty_query=True`.
+set default parameter `n_jobs=1`.
