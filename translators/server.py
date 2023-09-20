@@ -2,7 +2,7 @@
 # author=UlionTse
 
 """
-Copyright (C) 2017-2023  UlionTse
+Copyright (C) 2017  UlionTse
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 Email: uliontse@outlook.com
 
-translators  Copyright (C) 2017-2023  UlionTse
+translators  Copyright (C) 2017  UlionTse
 This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.
 This is free software, and you are welcome to redistribute it
 under certain conditions; type `show c' for details.
@@ -212,7 +212,10 @@ class Tse:
         @functools.wraps(func)
         def _wrapper(*args, **kwargs):
             try:
-                return func(*args, **kwargs)
+                language_map = func(*args, **kwargs)
+                if not language_map:
+                    raise TranslatorError
+                return language_map
             except Exception as e:
                 if kwargs.get('if_print_warning', True):
                     warnings.warn(f'GetLanguageMapError: {str(e)}.\nThe function make_temp_language_map() works.')
@@ -525,12 +528,6 @@ class GoogleV2(Tse):
         data = execjs.eval(data_str)
         return {'bl': data['cfb2h'], 'f.sid': data['FdrFJe']}
 
-    def get_consent_cookie(self, consent_html: str) -> str:  # by mercuree. merged but not verify.
-        et = lxml.etree.HTML(consent_html)
-        input_element = et.xpath('.//input[@type="hidden"][@name="v"]')
-        cookie_value = input_element[0].attrib.get('value') if input_element else 'cb'
-        return f'CONSENT=YES+{cookie_value}'  # cookie CONSENT=YES+cb works for now
-
     @Tse.time_stat
     @Tse.check_query
     def google_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs: ApiKwargsType) -> Union[str, dict]:
@@ -587,12 +584,7 @@ class GoogleV2(Tse):
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
             self.session = requests.Session()
-            r = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
-            if 'consent.google.com' == urllib.parse.urlparse(r.url).hostname:
-                self.host_headers.update({'cookie': self.get_consent_cookie(r.text)})
-                host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
-            else:
-                host_html = r.text
+            host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
             self.language_map = self.get_language_map(host_html, **debug_lang_kwargs)
 
@@ -5483,4 +5475,3 @@ preaccelerate = tss.preaccelerate
 speedtest = tss.speedtest
 preaccelerate_and_speedtest = tss.preaccelerate_and_speedtest
 # sys.stderr.write(f'Support translators {translators_pool} only.\n')
-
