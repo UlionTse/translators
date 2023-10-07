@@ -622,7 +622,7 @@ class GoogleV2(Tse):
         data = json.loads(json_data[0][2])
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return {'data': data} if is_detail_result else ''.join([x[0] for x in (data[1][0][0][5] or data[1][0]) if x[0]])
+        return {'data': data} if is_detail_result else ' '.join([x[0] for x in (data[1][0][0][5] or data[1][0]) if x[0]])
 
 
 class BaiduV1(Tse):
