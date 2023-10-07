@@ -435,3 +435,10 @@ set default parameter `n_jobs=1`.
 stronger debug_language_map().  #144
 delete get_consent_cookie()(And this PR error has never been reproduced by the author).  #142
 update license.
+
+5.8.6
+stronger deepl().
+stronger bing().  #122
+stronger google().  #142, #144
+stronger get_server_region().  #110
+

@@ -109,6 +109,15 @@ class Tse:
         return int(time.time() * 1e3)
 
     @staticmethod
+    def get_uuid() -> str:
+        _uuid = ''
+        for i in range(8):
+            _uuid += hex(int(65536 * (1 + random.random())))[2:][1:]
+            if 1 <= i <= 4:
+                _uuid += '-'
+        return _uuid
+
+    @staticmethod
     def get_headers(host_url: str,
                     if_api: bool = False,
                     if_referer_for_host: bool = True,
@@ -118,7 +127,7 @@ class Tse:
                     if_http_override_for_api: bool = False
                     ) -> dict:
 
-        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36"
+        user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36'
         url_path = urllib.parse.urlparse(host_url.strip('/')).path
         host_headers = {
             'Referer' if if_referer_for_host else 'Host': host_url,
@@ -288,7 +297,7 @@ class Tse:
     #     return _wrapper
 
 
-class GuestSeverRegion(Tse):
+class Region(Tse):
     def __init__(self):
         super().__init__()
         self.get_addr_url = 'https://geolocation.onetrust.com/cookieconsentpub/v1/geo/location'
@@ -309,7 +318,7 @@ class GuestSeverRegion(Tse):
                 data = json.loads(requests.get(self.get_addr_url, headers=_headers_fn(self.get_addr_url)).text[9:-2])
                 sys.stderr.write(f'Using region {data.get("stateName")} server backend.\n\n')
                 return data.get('country') if if_judge_cn else data.get("stateName")
-            except requests.exceptions.Timeout:
+            except:
                 ip_address = requests.get(self.get_ip_url, headers=_headers_fn(self.get_ip_url)).json()['origin']
                 payload = {'ip': ip_address, 'accessKey': 'alibaba-inc'}
                 data = requests.post(url=self.ip_tb_add_url, data=payload, headers=_headers_fn(self.ip_tb_add_url)).json().get('data')
@@ -501,6 +510,7 @@ class GoogleV2(Tse):
         self.en_host_url = 'https://translate.google.com'
         self.api_url = None
         self.api_url_path = '/_/TranslateWebserverUi/data/batchexecute'
+        self.consent_url = 'https://consent.google.com/save'
         self.server_region = server_region
         self.host_headers = None
         self.api_headers = None
@@ -527,6 +537,15 @@ class GoogleV2(Tse):
         data_str = re.compile(r'window.WIZ_global_data = (.*?);</script>').findall(host_html)[0]
         data = execjs.eval(data_str)
         return {'bl': data['cfb2h'], 'f.sid': data['FdrFJe']}
+
+    def get_consent_data(self, consent_html: str) -> dict:  #142 merged but not verify.
+        et = lxml.etree.HTML(consent_html)
+        form_element = et.xpath('.//form[1]')
+        self.consent_url = form_element[0].attrib.get('action') if form_element else self.consent_url
+
+        input_elements = form_element[0].xpath('.//input[@type="hidden"]')
+        data = {e.attrib.get('name'): e.attrib.get('value') for e in input_elements}
+        return data
 
     @Tse.time_stat
     @Tse.check_query
@@ -584,7 +603,12 @@ class GoogleV2(Tse):
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
             self.session = requests.Session()
-            host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
+            r = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+            if urllib.parse.urlparse(self.consent_url).hostname == urllib.parse.urlparse(r.url).hostname:
+                form_data = self.get_consent_data(r.text)
+                host_html = self.session.post(self.consent_url, data=form_data, headers=self.host_headers, timeout=timeout, proxies=proxies).text
+            else:
+                host_html = r.text
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
             self.language_map = self.get_language_map(host_html, **debug_lang_kwargs)
 
@@ -598,7 +622,7 @@ class GoogleV2(Tse):
         data = json.loads(json_data[0][2])
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return {'data': data} if is_detail_result else ' '.join([x[0] for x in (data[1][0][0][5] or data[1][0]) if x[0]])
+        return {'data': data} if is_detail_result else ''.join([x[0] for x in (data[1][0][0][5] or data[1][0]) if x[0]])
 
 
 class BaiduV1(Tse):
@@ -1632,8 +1656,7 @@ class Bing(Tse):
 
     def get_ig_iid(self, host_html: str) -> dict:
         et = lxml.etree.HTML(host_html)
-        # iid = et.xpath('//*[@id="tta_outGDCont"]/@data-iid')[0]  # browser page is different between request page.
-        iid = 'translator.5028'
+        iid = et.xpath('//*[@id="tta_outGDCont"]/@data-iid')[0]  # 'translator.5028'
         ig = re.compile('IG:"(.*?)"').findall(host_html)[0]
         return {'iid': iid, 'ig': ig}
 
@@ -1707,11 +1730,17 @@ class Bing(Tse):
         api_url = ''.join([self.api_url, api_url_param])
         r = self.session.post(api_url, headers=self.host_headers, data=payload, timeout=timeout, proxies=proxies)
         r.raise_for_status()
-        data = r.json()
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return data[0] if is_detail_result else data[0]['translations'][0]['text']
 
+        try:
+            data = r.json()
+            return data[0] if is_detail_result else data[0]['translations'][0]['text']
+        except requests.exceptions.JSONDecodeError:  #122
+            data_html = r.text
+            et = lxml.etree.HTML(data_html)
+            ss = et.xpath('//*/textarea/text()')
+            return {'data': ss} if is_detail_result else ss[-1]
 
 class Sogou(Tse):
     def __init__(self):
@@ -1746,14 +1775,6 @@ class Sogou(Tse):
         lang_item_list = json.loads(lang_list_str)
         lang_list = [item['lang'] for item in lang_item_list if item['play'] == 1]
         return {}.fromkeys(lang_list, lang_list)
-
-    # def get_uuid(self) -> str:
-    #     _uuid = ''
-    #     for i in range(8):
-    #         _uuid += hex(int(65536 * (1 + 0)))[2:][1:]
-    #         if i in range(1, 5):
-    #             _uuid += '-'
-    #     return _uuid
 
     def get_form(self, query_text: str, from_language: str, to_language: str, uid: str) -> dict:
         sign_text = "" + from_language + to_language + query_text + '109984457'  # window.__INITIAL_STATE__.common.CONFIG.secretCode
@@ -1970,6 +1991,7 @@ class Deepl(Tse):
         self.begin_time = time.time()
         self.host_url = 'https://www.deepl.com/translator'
         self.api_url = 'https://www2.deepl.com/jsonrpc'
+        self.login_url = 'https://login-wall.deepl.com'
         self.host_headers = self.get_headers(self.host_url, if_api=False)
         self.api_headers = self.get_headers(self.host_url, if_api=True, if_ajax_for_api=False, if_json_for_api=True)
         self.params = {'split': {'method': 'LMT_split_text'}, 'handle': {'method': 'LMT_handle_jobs'}}
@@ -2002,6 +2024,8 @@ class Deepl(Tse):
                 },
             },
         }
+        if from_language != 'auto':
+            data['params']['lang'].update({'lang_computed': from_language})
         return {**self.params['split'], **data}
 
     def context_sentences_param(self, sentences: List[str], from_language: str, to_language: str) -> dict:
@@ -2016,6 +2040,7 @@ class Deepl(Tse):
                     # 'regionalVariant': 'en-US',
                     'browserType': 1,
                     'mode': 'translate',
+                    'textType': 'plaintext',
                 },
                 'jobs': [
                     {
@@ -2025,14 +2050,15 @@ class Deepl(Tse):
                         'raw_en_context_before': sentences[1:i] if sentences[i-1] else [],
                         'raw_en_context_after': [sentences[i+1]] if sentences[i+1] else [],
                         'preferred_num_beams': 1 if len(sentences) >= 4 else 4,  # 1 if two sentences else 4, len>=2+2
-                    } for i in range(1, len(sentences) - 1)
+                    }
+                    for i in range(1, len(sentences) - 1)
                 ],
                 'lang': {
                     'preference': {
                         'weight': {},
                         'default': 'default',
                     },
-                    'source_lang_user_selected': from_language,  # "source_lang_computed"
+                    'source_lang_computed': from_language,  # 'source_lang_user_selected'
                     'target_lang': to_language,
                 },
             },
@@ -2080,6 +2106,7 @@ class Deepl(Tse):
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
             self.language_map = self.get_language_map(host_html, **debug_lang_kwargs)
+            _ = self.session.get(self.login_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
 
         from_language, to_language = self.check_language(from_language, to_language, language_map=self.language_map, output_zh=self.output_zh, output_auto='auto')
         from_language = from_language.upper() if from_language != 'auto' else from_language
@@ -2089,17 +2116,17 @@ class Deepl(Tse):
         r_s = self.session.post(self.api_url, params=self.params['split'], json=ssp_data, headers=self.api_headers, timeout=timeout, proxies=proxies)
         r_s.raise_for_status()
         s_data = r_s.json()
-
+        from_language = s_data['result']['lang']['detected']
         s_sentences = [it['sentences'][0]['text'] for item in s_data['result']['texts'] for it in item['chunks']]
-        h_data = self.context_sentences_param(s_sentences, from_language, to_language)
 
+        h_data = self.context_sentences_param(s_sentences, from_language, to_language)
         r_cs = self.session.post(self.api_url, params=self.params['handle'], json=h_data, headers=self.api_headers, timeout=timeout, proxies=proxies)
         r_cs.raise_for_status()
         data = r_cs.json()
         time.sleep(sleep_seconds)
         self.request_id += 3
         self.query_count += 1
-        return data if is_detail_result else '\n'.join(item['beams'][0]['sentences'][0]["text"] for item in data['result']['translations'])
+        return data if is_detail_result else ' '.join(item['beams'][0]['sentences'][0]["text"] for item in data['result']['translations'])  # either ' ' or '\n'.
 
 
 class Yandex(Tse):
@@ -5121,7 +5148,7 @@ class Yeekit(Tse):
 class TranslatorsServer:
     def __init__(self):
         self.cpu_cnt = os.cpu_count()
-        self.server_region = GuestSeverRegion().get_server_region
+        self.server_region = Region().get_server_region
         self._alibaba = AlibabaV2()
         self.alibaba = self._alibaba.alibaba_api
         self._apertium = Apertium()
@@ -5475,3 +5502,4 @@ preaccelerate = tss.preaccelerate
 speedtest = tss.speedtest
 preaccelerate_and_speedtest = tss.preaccelerate_and_speedtest
 # sys.stderr.write(f'Support translators {translators_pool} only.\n')
+
