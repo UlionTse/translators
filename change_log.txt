@@ -442,3 +442,8 @@ stronger bing().  #122
 stronger google().  #142, #144
 stronger get_server_region().  #110
 
+5.8.8
+stronger argos().
+stronger deepl().
+stronger lingvanex().
+

@@ -823,8 +823,9 @@ class BaiduV2(Tse):
             self.language_map = self.get_language_map(self.get_lang_url, self.session, self.host_headers, timeout, proxies, **debug_lang_kwargs)
 
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
+
+        res = self.session.post(self.langdetect_url, headers=self.api_headers, data={"query": query_text}, timeout=timeout, proxies=proxies)
         if from_language == 'auto':
-            res = self.session.post(self.langdetect_url, headers=self.api_headers, data={"query": query_text}, timeout=timeout, proxies=proxies)
             from_language = res.json()['lan']
 
         params = {"from": from_language, "to": to_language}
@@ -837,6 +838,7 @@ class BaiduV2(Tse):
             "sign": self.sign,
             "token": self.token,
             "domain": use_domain,
+            "ts": self.get_timestamp(),
         }
         payload = urllib.parse.urlencode(payload).encode('utf-8')
         # self.api_headers.update({'Acs-Token': self.acs_token})
@@ -2005,7 +2007,7 @@ class Deepl(Tse):
 
     @Tse.debug_language_map
     def get_language_map(self, host_html: str, **kwargs: LangMapKwargsType) -> dict:
-        lang_list = sorted(list(set(re.compile('selectLang.source.(\\w+)":').findall(host_html))))
+        lang_list = sorted(list(set(re.compile("\\['selectLang_source_(\\w+)']").findall(host_html))))
         return {}.fromkeys(lang_list, lang_list)
 
     def split_sentences_param(self, query_text: str, from_language: str) -> dict:
@@ -2280,20 +2282,19 @@ class Argos(Tse):
     def __init__(self):
         super().__init__()
         self.begin_time = time.time()
-        self.host_url = 'https://translate.argosopentech.com'
+        self.host_url = 'https://libretranslate.com'
         self.api_url = f'{self.host_url}/translate'
         self.language_url = f'{self.host_url}/languages'
+        self.secret_url = f'{self.host_url}/js/app.js?v=1.5.0'
         self.host_headers = self.get_headers(self.host_url, if_api=False, if_ajax_for_api=False)
         self.api_headers = self.get_headers(self.host_url, if_api=True, if_ajax_for_api=False, if_json_for_api=True)
         self.language_headers = self.get_headers(self.host_url, if_api=False, if_json_for_api=True)
-        self.host_pool = ['https://translate.argosopentech.com', 'https://libretranslate.de',
-                          'https://translate.astian.org', 'https://translate.mentality.rip',
-                          'https://translate.api.skitzen.com', 'https://trans.zillyhuhn.com']
         self.language_map = None
+        self.api_secret = None
         self.session = None
         self.query_count = 0
         self.output_zh = 'zh'
-        self.input_limit = int(5e3)  # unknown
+        self.input_limit = int(2e3)
         self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
@@ -2302,11 +2303,16 @@ class Argos(Tse):
         lang_list = sorted([lang['code'] for lang in lang_list])
         return {}.fromkeys(lang_list, lang_list)
 
+    def get_secret(self, secret_url: str, ss: SessionType, headers: dict, timeout: Optional[float], proxies: Optional[dict]) -> str:
+        js_html = ss.get(secret_url, headers=headers, timeout=timeout, proxies=proxies).text
+        secret = re.compile('apiSecret: "(.*?)"').findall(js_html)[0]
+        return secret
+
     @Tse.time_stat
     @Tse.check_query
     def argos_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs: ApiKwargsType) -> Union[str, dict]:
         """
-        https://translate.argosopentech.com
+        https://libretranslate.com
         :param query_text: str, must.
         :param from_language: str, default 'auto'.
         :param to_language: str, default 'en'.
@@ -2323,17 +2329,8 @@ class Argos(Tse):
                 :param if_show_time_stat: bool, default False.
                 :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
-                :param reset_host_url: str, default None.
         :return: str or dict
         """
-
-        reset_host_url = kwargs.get('reset_host_url', None)
-        if reset_host_url and reset_host_url != self.host_url:
-            if reset_host_url not in self.host_pool:
-                raise TranslatorError
-            self.host_url = reset_host_url
-            self.api_url = f'{self.host_url}/translate'
-            self.language_url = f'{self.host_url}/languages'
 
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
@@ -2346,15 +2343,23 @@ class Argos(Tse):
 
         not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
-        if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
+        if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.api_secret):
             self.begin_time = time.time()
             self.session = requests.Session()
-            _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
+            _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
+            self.api_secret = self.get_secret(self.secret_url, self.session, self.host_headers, timeout, proxies)
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
             self.language_map = self.get_language_map(self.language_url, self.session, self.language_headers, timeout, proxies, **debug_lang_kwargs)
 
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
-        payload = {'q': query_text, 'source': from_language, 'target': to_language, 'format': 'text'}
+        payload = {
+            'q': query_text,
+            'source': from_language,
+            'target': to_language,
+            'format': 'text',
+            'api_key': '',
+            'secret': self.api_secret,
+        }
         r = self.session.post(self.api_url, headers=self.api_headers, json=payload, timeout=timeout, proxies=proxies)
         r.raise_for_status()
         data = r.json()
@@ -2432,8 +2437,18 @@ class Iciba(Tse):
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
 
         sign = hashlib.md5(f"6key_web_fanyi{self.s_y2}{query_text}".encode()).hexdigest()[:16]  # strip()
-        params = {'c': 'trans', 'm': 'fy', 'client': 6, 'auth_user': 'key_web_fanyi', 'sign': sign}
-        payload = {'from': from_language, 'to': to_language, 'q': query_text}
+        params = {
+            'c': 'trans',
+            'm': 'fy',
+            'client': 6,
+            'auth_user': 'key_web_fanyi',
+            'sign': sign
+        }
+        payload = {
+            'from': from_language,
+            'to': to_language,
+            'q': query_text,
+        }
         r = self.session.post(self.api_url, headers=self.api_headers, params=params, data=payload, timeout=timeout, proxies=proxies)
         r.raise_for_status()
         data = r.json()
@@ -3194,10 +3209,10 @@ class Lingvanex(Tse):
     def __init__(self):
         super().__init__()
         self.begin_time = time.time()
-        self.host_url = 'https://lingvanex.com/demo/'
+        self.host_url = 'https://lingvanex.com/translate/'
         self.api_url = None
         self.language_url = None
-        self.auth_url = 'https://lingvanex.com/lingvanex_demo_page/js/api-base.js'
+        self.auth_url = 'https://lingvanex.com/translate/js/api-base.js'
         self.host_headers = self.get_headers(self.host_url, if_api=False)
         self.api_headers = self.get_headers(self.host_url, if_api=True, if_json_for_api=False)
         self.session = None
@@ -3232,7 +3247,7 @@ class Lingvanex(Tse):
     @Tse.check_query
     def lingvanex_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs: ApiKwargsType) -> Union[str, dict]:
         """
-        https://lingvanex.com/demo/
+        https://lingvanex.com/translate/
         :param query_text: str, must.
         :param from_language: str, default 'auto'.
         :param to_language: str, default 'en'.
@@ -3296,7 +3311,7 @@ class Lingvanex(Tse):
             'to': to_language,
             'text': query_text,
             'platform': 'dp',
-            'is_return_text_split_ranges': 'true'
+            # 'is_return_text_split_ranges': 'true'
         }
         payload = urllib.parse.urlencode(payload)
         r = self.session.post(self.api_url, data=payload, headers=self.api_headers, timeout=timeout, proxies=proxies)
@@ -3304,7 +3319,7 @@ class Lingvanex(Tse):
         data = r.json()
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return data if is_detail_result else data['result']['text']
+        return data if is_detail_result else data['result']
 
 
 class NiutransV1(Tse):
@@ -5272,7 +5287,7 @@ class TranslatorsServer:
                 :param update_session_after_freq: int, default 1000.
                 :param update_session_after_seconds: float, default 1500.
                 :param if_use_cn_host: bool, default False. Support google(), bing() only.
-                :param reset_host_url: str, default None. Support google(), argos(), yandex() only.
+                :param reset_host_url: str, default None. Support google(), yandex() only.
                 :param if_check_reset_host_url: bool, default True. Support google(), yandex() only.
                 :param if_ignore_empty_query: bool, default True.
                 :param if_ignore_limit_of_length: bool, default False.
