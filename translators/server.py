@@ -306,17 +306,18 @@ class Region(Tse):
         self.ip_tb_add_url = 'https://ip.taobao.com/outGetIpInfo'
         self.default_region = os.environ.get('translators_default_region', None)
 
-    @property
-    def get_server_region(self, if_judge_cn: bool = True) -> str:
+    def get_region_of_server(self, if_judge_cn: bool = True, if_print_region: bool = True) -> str:
         if self.default_region:
-            sys.stderr.write(f'Using customized region {self.default_region} server backend.\n\n')
+            if if_print_region:
+                sys.stderr.write(f'Using customized region {self.default_region} server backend.\n\n')
             return ('CN' if self.default_region == 'China' else 'EN') if if_judge_cn else self.default_region
 
         _headers_fn = lambda url: self.get_headers(url, if_api=False, if_referer_for_host=True)
         try:
             try:
                 data = json.loads(requests.get(self.get_addr_url, headers=_headers_fn(self.get_addr_url)).text[9:-2])
-                sys.stderr.write(f'Using region {data.get("stateName")} server backend.\n\n')
+                if if_print_region:
+                    sys.stderr.write(f'Using region {data.get("stateName")} server backend.\n\n')
                 return data.get('country') if if_judge_cn else data.get("stateName")
             except:
                 ip_address = requests.get(self.get_ip_url, headers=_headers_fn(self.get_ip_url)).json()['origin']
@@ -5163,7 +5164,9 @@ class Yeekit(Tse):
 class TranslatorsServer:
     def __init__(self):
         self.cpu_cnt = os.cpu_count()
-        self.server_region = Region().get_server_region
+        self._region = Region()
+        self.get_region_of_server = self._region.get_region_of_server
+        self.server_region = self.get_region_of_server(if_print_region=False)
         self._alibaba = AlibabaV2()
         self.alibaba = self._alibaba.alibaba_api
         self._apertium = Apertium()
@@ -5512,6 +5515,7 @@ translate_text = tss.translate_text
 translate_html = tss.translate_html
 translators_pool = tss.translators_pool
 get_languages = tss.get_languages
+get_region_of_server = tss.get_region_of_server
 
 preaccelerate = tss.preaccelerate
 speedtest = tss.speedtest
