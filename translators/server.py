@@ -648,7 +648,7 @@ class BaiduV1(Tse):
         self.host_url = 'https://fanyi.baidu.com'
         self.api_url = 'https://fanyi.baidu.com/transapi'
         self.get_lang_url = None
-        self.get_lang_url_pattern = 'https://fanyi-cdn.cdn.bcebos.com/webStatic/translation/js/index.(.*?).js'
+        self.get_lang_url_pattern = 'https://fanyi-cdn.cdn.bcebos.com/static/cat/js/index.(.*?).js'
         self.host_headers = self.get_headers(self.host_url, if_api=False)
         self.api_headers = self.get_headers(self.host_url, if_api=True)
         self.language_map = None
@@ -747,7 +747,7 @@ class BaiduV2(Tse):
         self.langdetect_url = 'https://fanyi.baidu.com/langdetect'
         self.get_sign_url = 'https://fanyi-cdn.cdn.bcebos.com/static/translation/pkg/index_bd36cef.js'
         self.get_lang_url = None
-        self.get_lang_url_pattern = 'https://fanyi-cdn.cdn.bcebos.com/webStatic/translation/js/index.(.*?).js'
+        self.get_lang_url_pattern = 'https://fanyi-cdn.cdn.bcebos.com/static/cat/js/index.(.*?).js'
         self.acs_url = 'https://dlswbr.baidu.com/heicha/mm/{i}/acs-{i}.js'.format(i=2060)
         self.host_headers = self.get_headers(self.host_url, if_api=False)
         self.api_headers = self.get_headers(self.host_url, if_api=True)
@@ -5680,4 +5680,3 @@ preaccelerate = tss.preaccelerate
 speedtest = tss.speedtest
 preaccelerate_and_speedtest = tss.preaccelerate_and_speedtest
 # sys.stderr.write(f'Support translators {translators_pool} only.\n')
-

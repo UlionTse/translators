@@ -455,3 +455,5 @@ add hujiang().
 stronger iciba().  #151
 add bias_of_length with func check_query_text().  #154
 
+5.9.1
+stronger baidu().  #155
