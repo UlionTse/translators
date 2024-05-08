@@ -457,3 +457,6 @@ add bias_of_length with func check_query_text().  #154
 
 5.9.1
 stronger baidu().  #155
+
+5.9.2
+fix yandex().  #94

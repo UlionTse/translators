@@ -2162,7 +2162,7 @@ class Deepl(Tse):
         return data if is_detail_result else ' '.join(item['beams'][0]['sentences'][0]["text"] for item in data['result']['translations'])  # either ' ' or '\n'.
 
 
-class Yandex(Tse):
+class YandexV1(Tse):
     def __init__(self):
         super().__init__()
         self.begin_time = time.time()
@@ -2307,6 +2307,92 @@ class Yandex(Tse):
         time.sleep(sleep_seconds)
         self.query_count += 1
         return data if is_detail_result else '\n'.join(data['text'])
+
+
+class YandexV2(Tse):
+    def __init__(self):
+        super().__init__()
+        self.begin_time = time.time()
+        self.home_url = 'https://www.youtube.com'
+        self.api_url = 'https://browser.translate.yandex.net/api/v1/tr.json'
+        self.ua_yandex = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 YaBrowser/24.1.5.825 Yowser/2.5 Safari/537.36'
+        self.api_headers = self.get_headers(self.home_url, if_api=True)
+        self.api_headers.update({'User-Agent': self.ua_yandex})
+        self.language_map = None
+        self.session = None
+        self.srv = 'browser_video_translation'
+        self.api_payload = {'maxRetryCount': 2, 'fetchAbortTimeout': 500}
+        self.query_count = 0
+        self.output_zh = 'zh'
+        self.input_limit = int(1e4)  # ten thousand.
+        self.default_from_language = self.output_zh
+
+    def get_request_data(self, ss: SessionType, method: str, params: dict, timeout: float, proxies: dict):
+        url = f'{self.api_url}/{method}'
+        params = {**{'srv': self.srv}, **params}
+        r = ss.post(url=url, params=params, data=self.api_payload, headers=self.api_headers, timeout=timeout, proxies=proxies)
+        r.raise_for_status()
+        data = r.json()
+        return data
+
+    @Tse.debug_language_map
+    def get_language_map(self, ss: SessionType, timeout: float, proxies: dict, **kwargs: LangMapKwargsType) -> dict:
+        lang_map = {}
+        lang_data = self.get_request_data(ss=ss, method='getLangs', params={}, timeout=timeout, proxies=proxies)
+        for k, v in [lang_pair.split('-') for lang_pair in lang_data['dirs']]:
+            lang_map.setdefault(k, []).append(v)
+        return lang_map
+
+    @Tse.time_stat
+    @Tse.check_query
+    def yandex_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs: ApiKwargsType) -> Union[str, dict]:
+        """
+        https://browser.translate.yandex.net
+        :param query_text: str, must.
+        :param from_language: str, default 'auto'.
+        :param to_language: str, default 'en'.
+        :param **kwargs:
+                :param timeout: float, default None.
+                :param proxies: dict, default None.
+                :param sleep_seconds: float, default 0.
+                :param is_detail_result: bool, default False.
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
+                :param update_session_after_freq: int, default 1000.
+                :param update_session_after_seconds: float, default 1500.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
+                :param if_print_warning: bool, default True.
+        :return: str or dict
+        """
+
+        timeout = kwargs.get('timeout', None)
+        proxies = kwargs.get('proxies', None)
+        sleep_seconds = kwargs.get('sleep_seconds', 0)
+        if_print_warning = kwargs.get('if_print_warning', True)
+        is_detail_result = kwargs.get('is_detail_result', False)
+        update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
+        update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
+
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
+        not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
+        if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
+            self.begin_time = time.time()
+            self.session = requests.Session()
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(ss=self.session, timeout=timeout, proxies=proxies, **debug_lang_kwargs)
+
+        from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
+        if from_language == 'auto':
+            from_language = self.get_request_data(ss=self.session, method='detect', params={'text': query_text}, timeout=timeout, proxies=proxies)['lang']
+
+        params = {'text': query_text, 'lang': f'{from_language}-{to_language}'}
+        data = self.get_request_data(ss=self.session, method='translate', params=params, timeout=timeout, proxies=proxies)
+        time.sleep(sleep_seconds)
+        self.query_count += 1
+        return data if is_detail_result else data['text'][0]
 
 
 class Argos(Tse):
@@ -5390,7 +5476,7 @@ class TranslatorsServer:
         self.utibet = self._utibet.utibet_api
         self._volcEngine = VolcEngine()
         self.volcEngine = self._volcEngine.volcEngine_api
-        self._yandex = Yandex()
+        self._yandex = YandexV2()
         self.yandex = self._yandex.yandex_api
         self._yeekit = Yeekit()
         self.yeekit = self._yeekit.yeekit_api
