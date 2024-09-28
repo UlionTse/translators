@@ -460,3 +460,10 @@ stronger baidu().  #155
 
 5.9.2
 fix yandex().  #94
+
+5.9.3
+stronger papago().  #161
+stronger yandex().  #162
+stronger argos().
+stronger caiyun().
+stronger lingvanex().

@@ -33,11 +33,11 @@ body:
       label: Expected Python Version
       description: What version of python did you expect?
       options:
-        - ">=3.8 (Default)"
-        - "3.11"
-        - "3.10"
-        - "3.9"
-        - "3.8"
+        - ">=3.12 (default)"
+        - ">=3.11"
+        - ">=3.10"
+        - ">=3.9"
+        - ">=3.8"
         - "<3.8"
     validations:
       required: true
@@ -47,10 +47,10 @@ body:
       label: Expected Runtime Environment
       description: What runtime environment(OS) did you expect?
       options:
-        - "NoArch (Default)"
-        - "Linux CentOS"
+        - "NoArch (default)"
         - "Linux Ubuntu"
-        - "Windows 10"
+        - "Linux CentOS"
+        - "Windows"
         - "MacOS"
         - "Other"
     validations:

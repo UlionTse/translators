@@ -32,9 +32,9 @@ body:
       label: Runtime Environment
       description: What runtime environment(OS) are you running?
       options:
-        - "Linux CentOS (Default)"
-        - "Linux Ubuntu"
-        - "Windows 10"
+        - "Linux Ubuntu (default)"
+        - "Linux CentOS"
+        - "Windows"
         - "MacOS"
         - "Other"
     validations:
@@ -45,7 +45,7 @@ body:
       label: Country/Region
       description: What Country(Region) are you running? (Translation services may be different in different regions)
       placeholder: Tell us what you see!
-      value: "Qatar(example)"
+      value: "Qatar (example)"
     validations:
       required: true
   - type: textarea

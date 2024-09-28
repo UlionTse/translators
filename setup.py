@@ -46,6 +46,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
     keywords=[
         'translate', 'translate_text', 'translate_html',
@@ -67,6 +68,6 @@ setuptools.setup(
         'cryptography>=42.0.4',
     ],
     python_requires='>=3.8',
-    extras_require={'pypi': ['build>=0.8.0', 'twine>=4.0.1']},
+    extras_require={'pypi': ['build>=1.2.2', 'twine>=5.1.1']},
     zip_safe=False,
 )
