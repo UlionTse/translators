@@ -47,6 +47,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
     ],
     keywords=[
         'translate', 'translate_text', 'translate_html',
@@ -60,7 +61,7 @@ setuptools.setup(
         'yeekit', 'youdao',
     ],
     install_requires=[
-        'requests>=2.29.0',
+        'niquests>=3.10,<4',
         'PyExecJS>=1.5.1',
         'lxml>=4.9.1',
         'tqdm>=4.65.0',

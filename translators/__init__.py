@@ -10,3 +10,15 @@ from translators.server import (
     get_region_of_server,
     preaccelerate_and_speedtest,
 )
+
+
+__all__ = (
+    "__version__",
+    "__author__",
+    "translate_text",
+    "translators_pool",
+    "get_languages",
+    "get_region_of_server",
+    "preaccelerate_and_speedtest",
+    "translate_html",
+)
