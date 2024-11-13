@@ -44,7 +44,7 @@ from typing import Optional, Union, Tuple, List
 
 import tqdm
 import execjs
-import requests
+import niquests as requests
 import lxml.etree
 import pathos.multiprocessing
 import cryptography.hazmat.primitives.ciphers as cry_ciphers
@@ -494,7 +494,7 @@ class GoogleV1(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.api_url):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
 
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
@@ -618,7 +618,7 @@ class GoogleV2(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             r = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             if urllib.parse.urlparse(self.consent_url).hostname == urllib.parse.urlparse(r.url).hostname:
                 form_data = self.get_consent_data(r.text)
@@ -709,7 +709,7 @@ class BaiduV1(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)  # must twice, send cookies.
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
 
@@ -837,7 +837,7 @@ class BaiduV2(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.token and self.sign):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)  # must twice, reload token.
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             self.token = self.get_tk(host_html)
@@ -990,7 +990,7 @@ class YoudaoV1(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.sign_key):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             self.sign_key = self.get_sign_key(host_html, self.session, timeout, proxies)
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
@@ -1115,7 +1115,7 @@ class YoudaoV2(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.secret_key):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             _ = self.session.get(self.login_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             self.professional_field_map = self.session.get(self.domain_url, headers=self.host_headers, timeout=timeout, proxies=proxies).json()['data']
@@ -1211,7 +1211,7 @@ class YoudaoV3(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
             self.language_map = self.get_language_map(host_html, **debug_lang_kwargs)
@@ -1297,7 +1297,7 @@ class QQFanyi(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.qtv_qtk):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             self.qtv_qtk = self.get_qt(self.session, timeout, proxies)
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
@@ -1394,7 +1394,7 @@ class QQTranSmart(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
 
             if not self.get_lang_url:
@@ -1528,7 +1528,7 @@ class AlibabaV1(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.dmtrack_pageid):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             host_response = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             self.dmtrack_pageid = self.get_dmtrack_pageid(host_response)
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
@@ -1632,7 +1632,7 @@ class AlibabaV2(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.csrf_token):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             self.get_language_url = f'https:{re.compile(self.get_language_pattern).search(host_html).group()}'
             lang_html = self.session.get(self.get_language_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -1743,7 +1743,7 @@ class Bing(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.tk and self.ig_iid):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             self.tk = self.get_tk(host_html)
             self.ig_iid = self.get_ig_iid(host_html)
@@ -1863,7 +1863,7 @@ class Sogou(Tse):
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.uuid):
             self.uuid = str(uuid.uuid4())
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
             self.language_map = self.get_language_map(host_html, self.get_language_old_url, self.session, timeout, proxies, **debug_lang_kwargs)
@@ -1977,7 +1977,7 @@ class Caiyun(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.tk and self.jwt):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             js_url_path = re.compile(self.get_js_pattern).search(host_html).group()
             self.get_js_url = ''.join([self.host_url, js_url_path])
@@ -2145,7 +2145,7 @@ class Deepl(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
             self.language_map = self.get_language_map(host_html, **debug_lang_kwargs)
@@ -2280,7 +2280,7 @@ class YandexV1(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.sid and self.yu):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             _ = self.session.get(self.home_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -2391,7 +2391,7 @@ class YandexV2(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
             self.language_map = self.get_language_map(ss=self.session, timeout=timeout, proxies=proxies, **debug_lang_kwargs)
             if not self.language_map.get('zh'):
@@ -2478,7 +2478,7 @@ class Argos(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.api_secret):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             self.secret = self.get_secret(self.secret_url, self.session, self.host_headers, timeout, proxies)
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
@@ -2608,7 +2608,7 @@ class Iciba(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
             self.language_map = self.get_language_map(self.api_url, self.session, self.language_headers, timeout, proxies, **debug_lang_kwargs)
@@ -2643,7 +2643,7 @@ class IflytekV1(Tse):
         self.host_url = 'https://saas.xfyun.cn/translate?tabKey=text'
         self.api_url = 'https://saas.xfyun.cn/ai-application/trans/its'
         self.language_old_url = 'https://saas.xfyun.cn/_next/static/4bzLSGCWUNl67Xal-AfIl/pages/translate.js'
-        self.language_url_pattern = '/_next/static/(\w+([-]?\w+))/pages/translate.js'
+        self.language_url_pattern = r'/_next/static/(\w+([-]?\w+))/pages/translate.js'
         self.language_url = None
         self.cookies_url = 'https://sso.xfyun.cn//SSOService/login/getcookies'
         self.info_url = 'https://saas.xfyun.cn/ai-application/user/info'
@@ -2709,7 +2709,7 @@ class IflytekV1(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             _ = self.session.get(self.cookies_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             _ = self.session.get(self.info_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
@@ -2801,7 +2801,7 @@ class IflytekV2(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
             self.language_map = self.get_language_map(host_html, self.session, self.host_headers, timeout, proxies, **debug_lang_kwargs)
@@ -2883,7 +2883,7 @@ class Iflyrec(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
             self.language_map = self.get_language_map(self.lang_index, **debug_lang_kwargs)
@@ -2978,7 +2978,7 @@ class Reverso(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.decrypt_language_map):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             self.language_url = re.compile(self.language_pattern).search(host_html).group()
             lang_html = self.session.get(self.language_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
@@ -3076,7 +3076,7 @@ class Itranslate(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
 
             if not self.language_url:
@@ -3164,7 +3164,7 @@ class TranslateCom(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             lang_r = self.session.get(self.language_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             self.language_description = lang_r.json()
@@ -3248,7 +3248,7 @@ class Utibet(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
 
         if from_language == 'auto':
@@ -3343,7 +3343,7 @@ class Papago(Tse):
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.auth_key):
             self.device_id = str(uuid.uuid4())
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             url_path = re.compile(self.language_url_pattern).search(host_html).group()
             self.language_url = ''.join([self.host_url, url_path])
@@ -3460,7 +3460,7 @@ class LingvanexV1(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.auth_info and self.mode == mode):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             self.auth_info = self.get_auth(self.auth_url, self.session, self.host_headers, timeout, proxies)
 
@@ -3564,7 +3564,7 @@ class LingvanexV2(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.auth):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             self.auth = self.get_auth(host_html)
             self.host_headers.update({'authorization': self.auth})
@@ -3674,7 +3674,7 @@ class NiutransV1(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.account_info and self.api_headers):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             _ = self.session.options(self.cookie_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
 
@@ -3825,7 +3825,7 @@ class NiutransV2(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.captcha_id):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             _ = self.session.get(self.login_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             self.captcha_id = self.get_captcha_id(self.geetest_captcaha_url, self.session, self.host_headers, timeout, proxies)
@@ -3918,7 +3918,7 @@ class Mglip(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
 
         if from_language == 'auto':
@@ -4021,7 +4021,7 @@ class VolcEngine(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
             self.language_map = self.get_language_map(host_html, **debug_lang_kwargs)
@@ -4109,7 +4109,7 @@ class ModernMt(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
             self.language_map = self.get_language_map(self.language_url, self.session, self.host_headers, timeout, proxies, **debug_lang_kwargs)
@@ -4203,7 +4203,7 @@ class MyMemory(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
             self.language_map = self.get_language_map(host_html, self.get_matecat_language_url, self.session,
@@ -4298,7 +4298,7 @@ class Mirai(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.tran_key):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             # _ = self.session.get(self.home_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             self.tran_key = re.compile('var tran = "(.*?)";').search(host_html).group(1)
@@ -4406,7 +4406,7 @@ class Apertium(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
             self.language_map = self.get_language_map(self.get_lang_url, self.session, self.host_headers, timeout, proxies, **debug_lang_kwargs)
@@ -4503,7 +4503,7 @@ class Tilde(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             self.config_data = self.session.get(self.get_config_url, headers=self.host_headers, timeout=timeout, proxies=proxies).json()
             self.api_headers.update({'client-id': self.config_data['mt']['api']['clientId']})  # must lower keyword
@@ -4605,7 +4605,7 @@ class cloudTranslationV1(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             _ = self.session.get(self.get_cookie_url, headers=self.api_headers, timeout=timeout, proxies=proxies)
             d_lang_map = self.session.get(self.get_lang_url, headers=self.api_headers, timeout=timeout, proxies=proxies).json()
@@ -4714,7 +4714,7 @@ class cloudTranslationV2(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             _ = self.session.get(self.get_cookie_url, headers=self.api_headers, timeout=timeout, proxies=proxies)
             d_lang_map = self.session.get(self.get_lang_url, headers=self.api_headers, timeout=timeout, proxies=proxies).json()
@@ -4843,7 +4843,7 @@ class SysTran(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             self.client_data = self.get_client_data(self.get_client_url, self.session, self.host_headers, timeout, proxies)
             payload = urllib.parse.urlencode(self.client_data)
@@ -4956,7 +4956,7 @@ class TranslateMe(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
             self.language_map = self.get_language_map(host_html, **debug_lang_kwargs)
@@ -5025,7 +5025,7 @@ class TranslateMe(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
             self.language_map = self.get_language_map(host_html, **debug_lang_kwargs)
@@ -5117,7 +5117,7 @@ class Elia(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             self.token = re.compile('"csrfmiddlewaretoken": "(.*?)"').search(host_html).group(1)
             d_lang_str = re.compile('var languagePairs = JSON.parse\\((.*?)\\);').search(host_html).group()
@@ -5239,7 +5239,7 @@ class LanguageWire(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             self.lwt_data = self.get_lwt_data()
             self.api_headers.update(self.lwt_data)
@@ -5325,7 +5325,7 @@ class Judic(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
             self.language_map = self.get_language_map(self.lang_list, **debug_lang_kwargs)
@@ -5407,7 +5407,7 @@ class Yeekit(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             _ = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies)
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
             self.language_map = self.get_language_map(self.lang_list, **debug_lang_kwargs)
@@ -5489,7 +5489,7 @@ class Hujiang(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
-            self.session = requests.Session()
+            self.session = requests.Session(happy_eyeballs=True)
             self.session.cookies.update({'HJ_UID': self.hj_uid, 'HJC_USRC': 'uzhi', 'HJC_NUID': '1'})
             host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout, proxies=proxies).text
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)

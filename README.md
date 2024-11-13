@@ -219,6 +219,11 @@ translate_text(query_text: str, translator: str = 'bing', from_language: str = '
 | Chinese(苗语)   | hmn                    |                                        |                                        |                                         |                                  |                                          |                                 |                                    |                                  |                                   |                                                      |                                       |                                           |                                              | Y                                           |                                                     |                                                               |                                    |                                      |
 | Chinese(壮语)   | zyb                    |                                        |                                        |                                         |                                  |                                          |                                 |                                    |                                  |                                   |                                                      |                                       |                                           |                                              |                                             |                                                     |                                                               |                                    |                                      |
 
+## DNS
+
+We support custom DNS server by setting the environment variable `NIQUESTS_DNS_URL`.
+See https://niquests.readthedocs.io/en/latest/user/quickstart.html#set-dns-via-environment for more information.
+
 ## Debug Tips
 
 ### Linux Runtime Environment

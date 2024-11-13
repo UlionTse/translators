@@ -1,4 +1,4 @@
-requests
+niquests
 PyExecJS
 lxml
 tqdm
