@@ -342,7 +342,7 @@ class Region(Tse):
 
         except requests.exceptions.ConnectionError:
             raise TranslatorError('Unable to connect the Internet.\n\n')
-        except:
+        except Exception:
             warnings.warn('Unable to find server backend.\n\n')
             region = input('Please input your server region need to visit:\neg: [Qatar, China, ...]\n\n')
             sys.stderr.write(f'Using region {region} server backend.\n\n')

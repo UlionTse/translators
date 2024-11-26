@@ -127,6 +127,30 @@ translate_text(query_text: str, translator: str = 'bing', from_language: str = '
 """
 ```
 
+## CLI
+
+You can leverage a simple CLI that ships with **translators**.
+
+```
+> translate --help                                                                                                                                                                                                                               ─╯
+usage: translate [-h] [-p PROVIDER] [-f FROM_LANGUAGE] [-t TO_LANGUAGE] [--version] input
+
+Bring free, multiple, enjoyable translations to individuals and students.
+
+positional arguments:
+  input                 Raw text or path to a file to be translated
+
+options:
+  -h, --help            show this help message and exit
+  -p PROVIDER, --provider PROVIDER
+                        Choose one of the supported providers. e.g. bing, google, yandex, bing etc...
+  -f FROM_LANGUAGE, --from FROM_LANGUAGE
+                        Enforce the language of origin. By default it is auto detected.
+  -t TO_LANGUAGE, --to TO_LANGUAGE
+                        Set the destination language. Always default to english.
+  --version             Show version information and exit.
+```
+
 ## Supported Languages
 
 | Language             | Language of Translator | [Google](https://translate.google.com) | [Yandex](https://translate.yandex.com) | [Bing](https://www.bing.com/Translator) | [Baidu](https://fanyi.baidu.com) | [Alibaba](https://translate.alibaba.com) | [Tencent](https://fanyi.qq.com) | [Youdao](https://fanyi.youdao.com) | [Sogou](https://fanyi.sogou.com) | [Deepl](https://www.deepl.com/translator) | [Caiyun](https://fanyi.caiyunapp.com) | [Argos](https://translate.argosopentech.com) | others... |
