@@ -71,4 +71,10 @@ setuptools.setup(
     python_requires='>=3.8',
     extras_require={'pypi': ['build>=1.2.2', 'twine>=5.1.1']},
     zip_safe=False,
+    entry_points={
+        'console_scripts':
+            [
+                'translate = translators.__main__:main'
+            ]
+    },
 )
