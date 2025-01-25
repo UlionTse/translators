@@ -1,5 +1,5 @@
 1.0.1
-build translate_api on 10,10,2017.
+build translate_api on 10, 10, 2017.
 
 ...(history)
 
@@ -279,7 +279,7 @@ fix func request_server_region_info().
 5.4.3
 fix func en_tran().
 fix iflytek() about getting language_map.
-add self.default_country by os.environ, merged from @kevindragon  #79
+add self.default_country by `os.environ`, merged from @kevindragon  #79
 stronger papago().
 
 5.4.6
@@ -467,3 +467,10 @@ stronger yandex().  #162
 stronger argos().
 stronger caiyun().
 stronger lingvanex().
+
+5.9.4
+add http_client in (requests, niquests, httpx)
+add CLI named `fanyi`.  #166
+stronger papago
+stronger reverso
+stronger utibet

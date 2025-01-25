@@ -1,6 +1,8 @@
-niquests
-PyExecJS
 lxml
 tqdm
+httpx
 pathos
+requests
+niquests
+PyExecJS
 cryptography

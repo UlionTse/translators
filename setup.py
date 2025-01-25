@@ -61,20 +61,22 @@ setuptools.setup(
         'yeekit', 'youdao',
     ],
     install_requires=[
-        'niquests>=3.10,<4',
+        'httpx>=0.28.1',
+        'requests>=2.32.3',
+        'niquests>=3.12.2',
         'PyExecJS>=1.5.1',
-        'lxml>=4.9.1',
-        'tqdm>=4.65.0',
-        'pathos>=0.2.9',
+        'lxml>=5.3.0',
+        'tqdm>=4.66.4',
+        'pathos>=0.3.3',
         'cryptography>=42.0.4',
     ],
     python_requires='>=3.8',
-    extras_require={'pypi': ['build>=1.2.2', 'twine>=5.1.1']},
+    extras_require={'pypi': ['build>=1.2.2', 'twine>=6.1.0']},
     zip_safe=False,
     entry_points={
         'console_scripts':
             [
-                'translate = translators.__main__:main'
+                'fanyi = translators.cli:translate_cli'
             ]
     },
 )

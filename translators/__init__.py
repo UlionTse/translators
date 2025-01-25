@@ -1,4 +1,4 @@
-__version__ = "5.9.3"
+__version__ = "5.9.4"
 __author__ = "UlionTse"
 
 
@@ -16,9 +16,9 @@ __all__ = (
     "__version__",
     "__author__",
     "translate_text",
+    "translate_html",
     "translators_pool",
     "get_languages",
     "get_region_of_server",
     "preaccelerate_and_speedtest",
-    "translate_html",
 )

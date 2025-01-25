@@ -18,6 +18,7 @@
 - [Supported Translation Services](#supported-translation-services)
 - [Installation](#installation)
 - [Getting Started](#getting-started)
+- [Command Line Interface](#Command-Line-Interface)
 - [Supported Languages](#supported-languages)
 - [Debug Tips](#debug-tips)
 - [Star History](#star-history)
@@ -61,7 +62,7 @@
 | 33  | [LanguageWire](https://www.languagewire.com/en/technology/languagewire-translate) | 8                             | good at English translation                                                                 | [LanguageWire](https://www.languagewire.com/about-us), Denmark                                                    | stable                          |
 | 34  | [Elia](https://elia.eus/translator)                                               | 6                             | good at Basque translation                                                                  | [Elhuyar](https://www.elhuyar.eus/eu/nor-gara), Spain                                                             | stable                          |
 | 35  | [Judic](https://judic.io/en/translate)                                            | 4                             | good at European translation                                                                | [CrossLang](https://crosslang.com/about-us/), Belgium                                                             | /                               |
-| 36  | [Mglip](http://fy.mglip.com/pc)                                                   | 3                             | good at Mongolia translation                                                                | [Inner Mongolia University](https://www.imu.edu.cn/yw/Home.htm), China                                            | stable                          |
+| 36  | [Mglip](http://fy.mglip.com/pc)                                                   | 3                             | good at Mongolia translation                                                                | [Inner Mongolia University](https://www.imu.edu.cn/yw/Home.htm), China                                            | /                               |
 | 37  | [Utibet](http://mt.utibet.edu.cn/mt)                                              | 2                             | good at Tibet translation                                                                   | [Tibet University](http://www.utibet.edu.cn/), China                                                              | stable                          |
 
 ## Installation
@@ -106,9 +107,10 @@ translate_text(query_text: str, translator: str = 'bing', from_language: str = '
     :param if_use_preacceleration: bool, default False.
     :param **kwargs:
             :param is_detail_result: bool, default False.
+            :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
             :param professional_field: str, default None. Support alibaba(), baidu(), caiyun(), cloudTranslation(), elia(), sysTran(), youdao(), volcEngine() only.
-            :param timeout: float, default None.
-            :param proxies: dict, default None.
+            :param timeout: Optional[float], default None.
+            :param proxies: Optional[dict], default None.
             :param sleep_seconds: float, default 0.
             :param update_session_after_freq: int, default 1000.
             :param update_session_after_seconds: float, default 1500.
@@ -127,28 +129,25 @@ translate_text(query_text: str, translator: str = 'bing', from_language: str = '
 """
 ```
 
-## CLI
+## Command Line Interface
 
-You can leverage a simple CLI that ships with **translators**.
+You can leverage a simple CLI named **fanyi** that ships with **translators**.
 
-```
-> translate --help                                                                                                                                                                                                                               ─╯
-usage: translate [-h] [-p PROVIDER] [-f FROM_LANGUAGE] [-t TO_LANGUAGE] [--version] input
+```sh
+>fanyi --help                                                                                                                                                                                                                               ─╯
+usage: fanyi input [--help] [--translator] [--from] [--to] [--version]
 
-Bring free, multiple, enjoyable translations to individuals and students.
+Translators(fanyi for CLI) is a library that aims to bring free, multiple, enjoyable translations to individuals and students in Python.
 
 positional arguments:
-  input                 Raw text or path to a file to be translated
+  input                 raw text or path to a file to be translated.
 
 options:
-  -h, --help            show this help message and exit
-  -p PROVIDER, --provider PROVIDER
-                        Choose one of the supported providers. e.g. bing, google, yandex, bing etc...
-  -f FROM_LANGUAGE, --from FROM_LANGUAGE
-                        Enforce the language of origin. By default it is auto detected.
-  -t TO_LANGUAGE, --to TO_LANGUAGE
-                        Set the destination language. Always default to english.
-  --version             Show version information and exit.
+  --help                show help information.
+  --translator          e.g. bing, google, yandex, etc...
+  --from                from_language, default `auto` detected.
+  --to                  to_language, default `en`.
+  --version             Show version information.
 ```
 
 ## Supported Languages
@@ -243,10 +242,7 @@ options:
 | Chinese(苗语)   | hmn                    |                                        |                                        |                                         |                                  |                                          |                                 |                                    |                                  |                                   |                                                      |                                       |                                           |                                              | Y                                           |                                                     |                                                               |                                    |                                      |
 | Chinese(壮语)   | zyb                    |                                        |                                        |                                         |                                  |                                          |                                 |                                    |                                  |                                   |                                                      |                                       |                                           |                                              |                                             |                                                     |                                                               |                                    |                                      |
 
-## DNS
 
-We support custom DNS server by setting the environment variable `NIQUESTS_DNS_URL`.
-See https://niquests.readthedocs.io/en/latest/user/quickstart.html#set-dns-via-environment for more information.
 
 ## Debug Tips
 
