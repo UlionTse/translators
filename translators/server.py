@@ -43,7 +43,7 @@ from typing import Optional, Union, Tuple, List
 
 import tqdm
 import httpx
-import execjs
+import exejs
 import requests
 import niquests
 import lxml.etree as lxml_etree
@@ -570,7 +570,7 @@ class GoogleV2(Tse):
 
     def get_info(self, host_html: str) -> dict:
         data_str = re.compile(r'window.WIZ_global_data = (.*?);</script>').findall(host_html)[0]
-        data = execjs.eval(data_str)
+        data = exejs.evaluate(data_str)
         return {'bl': data['cfb2h'], 'f.sid': data['FdrFJe']}
 
     def get_consent_data(self, consent_html: str) -> dict:  #142 merged but not verify.
@@ -682,7 +682,7 @@ class BaiduV1(Tse):
     # @Tse.debug_language_map
     # def get_language_map(self, host_html: str, **kwargs: LangMapKwargsType) -> dict:
     #     lang_str = re.compile('langMap: {(.*?)}').search(host_html.replace('\n', '').replace('  ', '')).group()[8:]
-    #     return execjs.eval(lang_str)
+    #     return exejs.evaluate(lang_str)
 
     @Tse.debug_language_map
     def get_language_map(self, lang_url: str, ss: SessionType, headers: dict, timeout: Optional[float], **kwargs: LangMapKwargsType) -> dict:
@@ -802,7 +802,7 @@ class BaiduV2(Tse):
         end_label = 'var i=null;t.exports=e});'
         sign_js = sign_html[sign_html.find(begin_label) + len(begin_label):sign_html.find(end_label)]
         sign_js = sign_js.replace('function e(r)', 'function e(r,i)')
-        return execjs.compile(sign_js).call('e', query_text, gtk)
+        return exejs.compile(sign_js).call('e', query_text, gtk)
 
     def get_tk(self, host_html: str) -> str:
         tk_list = re.compile("""token: '(.*?)',|token: "(.*?)",""").findall(host_html)[0]
@@ -1285,7 +1285,7 @@ class QQFanyi(Tse):
         r = ss.get(language_url, headers=self.host_headers, timeout=timeout)
         r.raise_for_status()
         lang_map_str = re.compile('C={(.*?)}|languagePair = {(.*?)}', flags=re.S).search(r.text).group()  # C=
-        return execjs.eval(lang_map_str)
+        return exejs.evaluate(lang_map_str)
 
     def get_qt(self, ss: SessionType, timeout: Optional[float]) -> dict:
         return ss.post(self.get_qt_url, headers=self.qt_headers, json=self.qtv_qtk, timeout=timeout).json()
@@ -1378,7 +1378,7 @@ class QQTranSmart(Tse):
     def get_language_map(self, lang_url: str, ss: SessionType, timeout: Optional[float], **kwargs: LangMapKwargsType) -> dict:
         js_html = ss.get(lang_url, headers=self.host_headers, timeout=timeout).text
         lang_str_list = re.compile('lngs:\\[(.*?)]').findall(js_html)  # 'lngs:\\[(.*?)\\]'
-        lang_list = [execjs.eval(f'[{x}]') for x in lang_str_list]
+        lang_list = [exejs.evaluate(f'[{x}]') for x in lang_str_list]
         lang_list = sorted(list(set([lang for langs in lang_list for lang in langs])))
         return {}.fromkeys(lang_list, lang_list)
 
@@ -1735,7 +1735,7 @@ class Bing(Tse):
 
     def get_tk(self, host_html: str) -> dict:
         result_str = re.compile('var params_AbusePreventionHelper = (.*?);').findall(host_html)[0]
-        result = execjs.eval(result_str)
+        result = exejs.evaluate(result_str)
         return {'key': result[0], 'token': result[1]}
 
     @Tse.time_stat
@@ -2723,7 +2723,7 @@ class IflytekV1(Tse):
 
         js_html = r.text
         lang_str = re.compile('languageList:\\(e={(.*?)}').search(js_html).group()[16:]
-        lang_list = sorted(list(execjs.eval(lang_str).keys()))
+        lang_list = sorted(list(exejs.evaluate(lang_str).keys()))
         return {}.fromkeys(lang_list, lang_list)
 
     @Tse.uncertified
@@ -2993,13 +2993,13 @@ class Reverso(Tse):
     @Tse.debug_language_map
     def get_language_map(self, lang_html: str, **kwargs: LangMapKwargsType) -> dict:
         lang_dict_str = re.compile('={eng:(.*?)}').search(lang_html).group()[1:]
-        lang_dict = execjs.eval(lang_dict_str)
+        lang_dict = exejs.evaluate(lang_dict_str)
         lang_list = sorted(list(lang_dict.values()))
         return {}.fromkeys(lang_list, lang_list)
 
     def decrypt_lang_map(self, lang_html: str) -> dict:
         lang_dict_str = re.compile('={eng:(.*?)}').search(lang_html).group()[1:]
-        lang_dict = execjs.eval(lang_dict_str)
+        lang_dict = exejs.evaluate(lang_dict_str)
         return {k: v for v, k in lang_dict.items()}
 
     @Tse.time_stat
@@ -3096,7 +3096,7 @@ class Itranslate(Tse):
     @Tse.debug_language_map
     def get_language_map(self, lang_html: str, **kwargs: LangMapKwargsType) -> dict:
         lang_str = re.compile('\\[{dialect:"auto",(.*?)}]').search(lang_html).group()
-        lang_origin_list = execjs.eval(lang_str)
+        lang_origin_list = exejs.evaluate(lang_str)
         lang_list = sorted(list(set([dd['dialect'] for dd in lang_origin_list])))
         return {}.fromkeys(lang_list, lang_list)
 

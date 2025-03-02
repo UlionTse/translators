@@ -474,3 +474,7 @@ add CLI named `fanyi`.  #166
 stronger papago
 stronger reverso
 stronger utibet
+
+5.9.6
+use exejs, remove pyexecjs.
+

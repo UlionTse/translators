@@ -64,14 +64,14 @@ setuptools.setup(
         'httpx>=0.28.1',
         'requests>=2.32.3',
         'niquests>=3.12.2',
-        'PyExecJS>=1.5.1',
+        'exejs>=0.0.2',
         'lxml>=5.3.0',
         'tqdm>=4.66.4',
         'pathos>=0.3.3',
         'cryptography>=42.0.4',
     ],
     python_requires='>=3.8',
-    extras_require={'pypi': ['build>=1.2.2', 'twine>=6.1.0']},
+    extras_require={'pypi': ['build>=1.2.2', 'twine>=6.1.0', 'setuptools>=75.3.0']},
     zip_safe=False,
     entry_points={
         'console_scripts':
