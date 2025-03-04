@@ -101,12 +101,13 @@ help(ts.translate_text)
 """
 translate_text(query_text: str, translator: str = 'bing', from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]
     :param query_text: str, must.
-    :param translator: str, default 'bing'.
+    :param translator: str, default 'alibaba'.
     :param from_language: str, default 'auto'.
     :param to_language: str, default 'en'.
     :param if_use_preacceleration: bool, default False.
     :param **kwargs:
             :param is_detail_result: bool, default False.
+            :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
             :param professional_field: str, default None. Support alibaba(), baidu(), caiyun(), cloudTranslation(), elia(), sysTran(), youdao(), volcEngine() only.
             :param timeout: float, default None.
             :param proxies: dict, default None.
