@@ -478,6 +478,6 @@ stronger utibet
 5.9.6
 use exejs, remove pyexecjs.
 
-5.9.7
+5.9.8
 stronger class Region.  #167
 
