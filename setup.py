@@ -64,7 +64,7 @@ setuptools.setup(
         'httpx>=0.28.1',
         'requests>=2.32.3',
         'niquests>=3.12.2',
-        'exejs>=0.0.3',
+        'exejs>=0.0.4',
         'lxml>=5.3.0',
         'tqdm>=4.66.4',
         'pathos>=0.3.3',

@@ -481,3 +481,5 @@ use exejs, remove pyexecjs.
 5.9.8
 stronger class Region.  #167
 
+5.9.9
+need exejs>=0.0.4  # 169
