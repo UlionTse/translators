@@ -107,7 +107,7 @@ translate_text(query_text: str, translator: str = 'bing', from_language: str = '
     :param if_use_preacceleration: bool, default False.
     :param **kwargs:
             :param is_detail_result: bool, default False.
-            :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+            :param http_client: str, default 'requests' (except reverso). Union['requests', 'niquests', 'httpx', 'cloudscraper']
             :param professional_field: str, default None. Support alibaba(), baidu(), caiyun(), cloudTranslation(), elia(), sysTran(), youdao(), volcEngine() only.
             :param timeout: float, default None.
             :param proxies: dict, default None.

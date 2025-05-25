@@ -26,7 +26,6 @@ under certain conditions; type `show c' for details.
 """
 
 import os
-import re
 import sys
 import platform
 import argparse
@@ -68,6 +67,14 @@ def translate_cli() -> None:
         help='to_language, default `en`.',
     )
     parser.add_argument(
+        '--is_html',
+        action='store',
+        default=0,
+        type=int,
+        dest='is_html',
+        help='is_html, default `0`.',
+    )
+    parser.add_argument(
         '--version',
         action='version',
         version='Translators(fanyi for CLI) {} - Python {}'.format(__version__, platform.python_version()),
@@ -85,15 +92,18 @@ def translate_cli() -> None:
     else:
         query_text = args.input
 
-    is_html = bool(re.findall(r'<(.*)>(.*)</(.*)>', query_text))
-    fn = translate_html if is_html else translate_text
-
     try:
-        print(fn(query_text, translator=args.translator, from_language=args.from_language, to_language=args.to_language))
+        translate_fn = translate_html if bool(args.is_html) else translate_text
+        result = translate_fn(
+            query_text=query_text,
+            translator=args.translator,
+            from_language=args.from_language,
+            to_language=args.to_language,
+        )
+        print(result)
     except Exception as e:
         print(str(e))
         sys.exit(1)
-
     return
 
 

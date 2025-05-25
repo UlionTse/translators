@@ -107,7 +107,7 @@ translate_text(query_text: str, translator: str = 'bing', from_language: str = '
     :param if_use_preacceleration: bool, default False.
     :param **kwargs:
             :param is_detail_result: bool, default False.
-            :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+            :param http_client: str, default 'requests' (except reverso). Union['requests', 'niquests', 'httpx', 'cloudscraper']
             :param professional_field: str, default None. Support alibaba(), baidu(), caiyun(), cloudTranslation(), elia(), sysTran(), youdao(), volcEngine() only.
             :param timeout: Optional[float], default None.
             :param proxies: Optional[dict], default None.
@@ -135,7 +135,7 @@ You can leverage a simple CLI named **fanyi** that ships with **translators**.
 
 ```sh
 >fanyi --help                                                                                                                                                                                                                               ─╯
-usage: fanyi input [--help] [--translator] [--from] [--to] [--version]
+usage: fanyi input [--help] [--translator] [--from] [--to] [--is_html] [--version]
 
 Translators(fanyi for CLI) is a library that aims to bring free, multiple, enjoyable translations to individuals and students in Python.
 
@@ -147,6 +147,7 @@ options:
   --translator          e.g. bing, google, yandex, etc...
   --from                from_language, default `auto` detected.
   --to                  to_language, default `en`.
+  --is_html             is_html, default `0`.
   --version             Show version information.
 ```
 

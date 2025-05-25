@@ -469,7 +469,7 @@ stronger caiyun().
 stronger lingvanex().
 
 5.9.4
-add http_client in (requests, niquests, httpx)
+add http_client, (requests, niquests, httpx)
 add CLI named `fanyi`.  #166
 stronger papago
 stronger reverso
@@ -483,3 +483,10 @@ stronger class Region.  #167
 
 5.9.9
 need exejs>=0.0.4  # 169
+
+6.0.0
+stronger papago().
+stronger reverso() about Cloudflare.  #161(reopen)
+add http_client, (requests, niquests, httpx, cloudscraper)
+stronger fanyi(cli)
+

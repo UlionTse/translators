@@ -68,6 +68,7 @@ setuptools.setup(
         'lxml>=5.3.0',
         'tqdm>=4.66.4',
         'pathos>=0.3.3',
+        'cloudscraper>=1.2.71',
         'cryptography>=42.0.4',
     ],
     python_requires='>=3.8',

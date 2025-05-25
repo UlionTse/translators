@@ -46,6 +46,7 @@ import httpx
 import exejs
 import requests
 import niquests
+import cloudscraper
 import lxml.etree as lxml_etree
 import pathos.multiprocessing as pathos_multiprocessing
 import cryptography.hazmat.primitives.ciphers as cry_ciphers
@@ -311,7 +312,7 @@ class Tse:
 
     @staticmethod
     def get_client_session(http_client: str = 'requests', proxies: Optional[dict] = None) -> SessionType:
-        if http_client not in ('requests', 'niquests', 'httpx'):
+        if http_client not in ('requests', 'niquests', 'httpx', 'cloudscraper'):
             raise TranslatorError
 
         if proxies is None:
@@ -323,9 +324,12 @@ class Tse:
         elif http_client == 'niquests':
             session = niquests.Session(happy_eyeballs=True)
             session.proxies = proxies
-        else:
+        elif http_client == 'httpx':
             proxy_url = proxies.get('http') or proxies.get('https')
             session = httpx.Client(follow_redirects=True, proxy=proxy_url)
+        else:
+            session = cloudscraper.create_scraper()
+            session.proxies = proxies
         return session
 
 
@@ -333,7 +337,7 @@ class Region(Tse):
     def __init__(self, default_region=None):
         super().__init__()
         self.get_addr_url = 'https://geolocation.onetrust.com/cookieconsentpub/v1/geo/location'
-        self.get_ip_url = 'https://httpbin.org/ip'
+        self.get_ip_url = 'https://httpbin.org/ip'  # 'https://get.geojs.io/v1/ip/country'
         self.ip_api_addr_url = 'http://ip-api.com/json'  # must http.
         self.ip_tb_add_url = 'https://ip.taobao.com/outGetIpInfo'
         self.default_region = os.environ.get('translators_default_region', None) or default_region
@@ -471,7 +475,7 @@ class GoogleV1(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -596,7 +600,7 @@ class GoogleV2(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -707,7 +711,7 @@ class BaiduV1(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -832,7 +836,7 @@ class BaiduV2(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -992,7 +996,7 @@ class YoudaoV1(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -1114,7 +1118,7 @@ class YoudaoV2(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -1217,7 +1221,7 @@ class YoudaoV3(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -1305,7 +1309,7 @@ class QQFanyi(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -1404,7 +1408,7 @@ class QQTranSmart(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -1535,7 +1539,7 @@ class AlibabaV1(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -1641,7 +1645,7 @@ class AlibabaV2(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -1752,7 +1756,7 @@ class Bing(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -1880,7 +1884,7 @@ class Sogou(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -1996,7 +2000,7 @@ class Caiyun(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -2167,7 +2171,7 @@ class Deepl(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -2296,7 +2300,7 @@ class YandexV1(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -2417,7 +2421,7 @@ class YandexV2(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -2506,7 +2510,7 @@ class Argos(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -2638,7 +2642,7 @@ class Iciba(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -2741,7 +2745,7 @@ class IflytekV1(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -2835,7 +2839,7 @@ class IflytekV2(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -2919,7 +2923,7 @@ class Iflyrec(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -2979,7 +2983,7 @@ class Reverso(Tse):
         self.begin_time = time.time()
         self.host_url = 'https://www.reverso.net/text-translation'
         self.api_url = 'https://api.reverso.net/translate/v1/translation'
-        self.language_url = 'https://cdn.reverso.net/trans/v2.21.6/main.js'
+        self.language_url = 'https://cdn.reverso.net/trans/v2.22.8/main.js'
         # self.language_pattern = 'https://cdn.reverso.net/trans/v(\\d+).(\\d+).(\\d+)/main.js'
         self.host_headers = self.get_headers(self.host_url, if_api=False)
         self.api_headers = self.get_headers(self.host_url, if_api=True, if_json_for_api=True)
@@ -2990,6 +2994,7 @@ class Reverso(Tse):
         self.output_zh = 'zh'  # 'chi', because there are self.language_tran
         self.input_limit = int(2e3)
         self.default_from_language = self.output_zh
+        self.scraper = None
 
     @Tse.debug_language_map
     def get_language_map(self, lang_html: str, **kwargs: LangMapKwargsType) -> dict:
@@ -3016,7 +3021,7 @@ class Reverso(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'cloudscraper'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -3031,7 +3036,7 @@ class Reverso(Tse):
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
-        http_client = kwargs.get('http_client', 'requests')
+        http_client = kwargs.get('http_client', 'cloudscraper')  #
         if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
@@ -3050,6 +3055,7 @@ class Reverso(Tse):
             self.decrypt_language_map = self.decrypt_lang_map(lang_html)
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
             self.language_map = self.get_language_map(lang_html, **debug_lang_kwargs)
+            self.api_headers.update({'X-Reverso-Origin': 'translation.web'})
 
         if from_language == 'auto':
             from_language = self.warning_auto_lang('reverso', self.default_from_language, if_print_warning)
@@ -3117,7 +3123,7 @@ class Itranslate(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -3207,7 +3213,7 @@ class TranslateCom(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -3293,7 +3299,7 @@ class Utibet(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -3354,7 +3360,7 @@ class Papago(Tse):
         self.language_map = None
         self.session = None
         self.device_id = None
-        self.auth_key = 'v1.8.8_3ab8f7c2df'  #'v1.8.4_bbf86e0446'  # 'v1.7.1_12f919c9b5'  #'v1.6.7_cc60b67557'
+        self.auth_key = 'v1.8.10_9e022f68fb'  #'v1.8.8_3ab8f7c2df'  #'v1.8.4_bbf86e0446'  # 'v1.7.1_12f919c9b5'  #'v1.6.7_cc60b67557'
         self.query_count = 0
         self.output_zh = 'zh-CN'
         self.input_limit = int(1e3)
@@ -3389,7 +3395,7 @@ class Papago(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -3507,7 +3513,7 @@ class LingvanexV1(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -3615,7 +3621,7 @@ class LingvanexV2(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -3727,7 +3733,7 @@ class NiutransV1(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -3880,7 +3886,7 @@ class NiutransV2(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -3976,7 +3982,7 @@ class Mglip(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -4076,7 +4082,7 @@ class VolcEngine(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -4171,7 +4177,7 @@ class ModernMt(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -4265,7 +4271,7 @@ class MyMemory(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -4364,7 +4370,7 @@ class Mirai(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -4474,7 +4480,7 @@ class Apertium(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -4573,7 +4579,7 @@ class Tilde(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -4675,7 +4681,7 @@ class cloudTranslationV1(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -4786,7 +4792,7 @@ class cloudTranslationV2(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -4917,7 +4923,7 @@ class SysTran(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -5034,7 +5040,7 @@ class TranslateMe(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -5105,7 +5111,7 @@ class TranslateMe(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -5197,7 +5203,7 @@ class Elia(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -5323,7 +5329,7 @@ class LanguageWire(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -5411,7 +5417,7 @@ class Judic(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -5495,7 +5501,7 @@ class Yeekit(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -5579,7 +5585,7 @@ class Hujiang(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -5749,7 +5755,7 @@ class TranslatorsServer:
         :param if_use_preacceleration: bool, default False.
         :param **kwargs:
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests' (except reverso). Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param professional_field: str, support alibaba(), baidu(), caiyun(), cloudTranslation(), elia(), sysTran(), youdao(), volcEngine() only.
                 :param timeout: Optional[float], default None.
                 :param proxies: Optional[dict], default None.
@@ -5797,7 +5803,7 @@ class TranslatorsServer:
         :param if_use_preacceleration: bool, default False.
         :param **kwargs:
                 :param is_detail_result: bool, default False, must False.
-                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx']
+                :param http_client: str, default 'requests' (except reverso). Union['requests', 'niquests', 'httpx', 'cloudscraper']
                 :param professional_field: str, support alibaba(), baidu(), caiyun(), cloudTranslation(), elia(), sysTran(), youdao(), volcEngine() only.
                 :param timeout: Optional[float], default None.
                 :param proxies: Optional[dict], default None.
