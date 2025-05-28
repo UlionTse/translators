@@ -490,3 +490,6 @@ stronger reverso() about Cloudflare.  #161(reopen)
 add http_client, (requests, niquests, httpx, cloudscraper)
 stronger fanyi(cli)
 
+6.0.1
+update Dependency's version
+upgrade conda version
