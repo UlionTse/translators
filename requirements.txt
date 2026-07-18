@@ -6,7 +6,7 @@ httpx
 aiohttp
 requests
 niquests
-ai-cloudscraper
+cloudscraper
 cryptography
 brotlicffi
 brotli

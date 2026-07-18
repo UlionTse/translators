@@ -39,6 +39,7 @@ import asyncio
 import datetime
 import warnings
 import functools
+import inspect
 import urllib.parse
 from typing import Optional, Union, Tuple, List
 
@@ -47,7 +48,6 @@ import exejs
 import httpx
 import aiohttp
 import requests
-import cloudscraper
 import lxml.etree as lxml_etree
 import cryptography.hazmat.primitives.ciphers as cry_ciphers
 import cryptography.hazmat.primitives.padding as cry_padding
@@ -92,6 +92,26 @@ __all__ = [
 
 class TranslatorError(Exception):
     pass
+
+
+def _resolve_http_client(
+    session: Optional[SessionType],
+    requested_http_client: Optional[str],
+    default: str = 'aiohttp',
+) -> str:
+    if session is None:
+        return requested_http_client or default
+
+    if isinstance(session, aiohttp.ClientSession):
+        session_http_client = 'aiohttp'
+    elif isinstance(session, httpx.AsyncClient):
+        session_http_client = 'httpx'
+    else:
+        raise TranslatorError('session must be aiohttp.ClientSession or httpx.AsyncClient.')
+
+    if requested_http_client and requested_http_client != session_http_client:
+        raise TranslatorError('http_client does not match the provided session type.')
+    return session_http_client
 
 
 class Tse:
@@ -327,13 +347,19 @@ class Tse:
 
         if http_client == 'aiohttp':
             proxy_url = proxies.get('http') or proxies.get('https')
-            session = aiohttp.ClientSession(
-                trust_env=True,
-                proxy=proxy_url,
-                requote_redirect_url=True,
-                raise_for_status=True,
-                connector=aiohttp.TCPConnector(force_close=True, enable_cleanup_closed=True),
-            )
+            if proxy_url and 'proxy' not in inspect.signature(aiohttp.ClientSession).parameters:
+                raise TranslatorError(
+                    'This aiohttp version does not support session-level proxies; use httpx instead.'
+                )
+            session_kwargs = {
+                'trust_env': True,
+                'requote_redirect_url': True,
+                'raise_for_status': True,
+                'connector': aiohttp.TCPConnector(force_close=True, enable_cleanup_closed=True),
+            }
+            if proxy_url:
+                session_kwargs['proxy'] = proxy_url
+            session = aiohttp.ClientSession(**session_kwargs)
 
         else:
             proxy_url = proxies.get('http') or proxies.get('https')
@@ -3174,7 +3200,7 @@ class Reverso(Tse):
                 :param proxies: Optional[dict], default None.
                 :param sleep_seconds: float, default 0.
                 :param is_detail_result: bool, default False.
-                :param http_client: str, default 'aiohttp'.
+                :param http_client: str, default 'aiohttp'. Union['aiohttp', 'httpx']
                 :param if_ignore_limit_of_length: bool, default False.
                 :param limit_of_length: int, default 20000.
                 :param if_ignore_empty_query: bool, default False.
@@ -3189,7 +3215,15 @@ class Reverso(Tse):
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
-        http_client = 'aiohttp'  # kwargs.get('http_client', 'aiohttp')  # ai-cloudscraper's aiohttp
+        provided_session = kwargs.get('session', None)
+        requested_http_client = kwargs.get('http_client', None)
+        if provided_session is not None and not Tse.if_session_exists(provided_session):
+            raise TranslatorError('The provided session is already closed.')
+        cached_session = self.session if Tse.if_session_exists(self.session) else None
+        if provided_session is not None and cached_session is not None and provided_session is not cached_session:
+            raise TranslatorError('Close the existing Reverso session before replacing it.')
+        active_session = provided_session or cached_session
+        http_client = _resolve_http_client(active_session, requested_http_client)
         if_print_warning = kwargs.get('if_print_warning', True)
         is_detail_result = kwargs.get('is_detail_result', False)
         update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
@@ -3200,9 +3234,7 @@ class Reverso(Tse):
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
         if not (Tse.if_session_exists(self.session) and self.language_map and not_update_cond_freq and not_update_cond_time and self.decrypt_language_map):
             self.begin_time = time.time()
-            self.session = kwargs.get('session', None) or Tse.get_client_session(http_client, proxies)
-            self.session = cloudscraper.create_async_scraper()
-            self.session.proxies = proxies
+            self.session = provided_session or Tse.get_client_session(http_client, proxies)
             # _ = await self.session.get(self.host_url, headers=self.host_headers, timeout=timeout)
 
             # self.language_url = re.compile(self.language_pattern).search(host_html).group()

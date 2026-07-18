@@ -72,6 +72,9 @@
 # PYPI
 pip install --upgrade translators
 
+# Include asynchronous translation support
+pip install --upgrade 'translators[async]'
+
 # Conda (Not recommended)
 conda install conda-forge::translators
 
@@ -96,7 +99,7 @@ print(ts.translators_pool)
 print(ts.translate_text(q_text))
 print(ts.translate_html(q_html, translator='alibaba'))
 
-# async
+# async (requires translators[async])
 import asyncio
 print(asyncio.run(ts.translate_text(q_text, http_client='aiohttp', if_use_async=True)))
 
