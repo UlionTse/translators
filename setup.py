@@ -67,14 +67,16 @@ setuptools.setup(
         'lxml>=5.4.0',
         'tqdm>=4.67.1',
         'pathos>=0.3.4',
-        # 'cloudscraper>=1.2.71',
-        'ai-cloudscraper>=3.7.6',
+        'cloudscraper>=1.2.71',
         'cryptography>=42.0.4',
         'brotlicffi>=1.2.0.0',
         'brotli>=1.2.0',
     ],
     python_requires='>=3.8',
-    extras_require={'pypi': ['build>=1.4.0', 'twine>=6.2.0', 'setuptools>=75.3.0']},
+    extras_require={
+        'async': ['aiohttp>=3.10.11'],
+        'pypi': ['build>=1.4.0', 'twine>=6.2.0', 'setuptools>=75.3.0'],
+    },
     zip_safe=False,
     entry_points={
         'console_scripts':
