@@ -51,7 +51,7 @@ setuptools.setup(
     keywords=[
         'translate', 'translate_text', 'translate_html',
         'alibaba', 'apertium', 'argos', 'baidu', 'bing',
-        'caiyun', 'cloudTranslation', 'deepl', 'elia', 'google',
+        'caiyun', 'cloudTranslation', 'deepl', 'edge', 'elia', 'google',
         'hujiang', 'iciba', 'iflytek', 'iflyrec', 'itranslate',
         'judic', 'languageWire', 'lara', 'lingvanex', 'mglip',
         'mirai', 'modernMt', 'myMemory', 'niutrans', 'papago',

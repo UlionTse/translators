@@ -67,7 +67,8 @@ __all__ = [
     'translate_text', 'translate_html', 'translators_pool',
 
     'alibaba', 'apertium', 'argos', 'baidu', 'bing',
-    'caiyun', 'cloudTranslation', 'deepl', 'elia', 'google',
+    'caiyun', 'cloudTranslation', 'deepl', 'edge', 'elia',
+    'google',
     'hujiang', 'iciba', 'iflytek', 'iflyrec', 'itranslate',
     'judic', 'languageWire', 'lara', 'lingvanex', 'mglip',
     'mirai', 'modernMt', 'myMemory', 'niutrans', 'papago',
@@ -76,14 +77,15 @@ __all__ = [
     'xunjie', 'yandex', 'yeekit', 'youdao',
 
     '_alibaba', '_apertium', '_argos', '_baidu', '_bing',
-    '_caiyun', '_cloudTranslation', '_deepl', '_elia', '_google',
+    '_caiyun', '_cloudTranslation', '_deepl', '_edge', '_elia',
+    '_google',
     '_hujiang', '_iciba', '_iflytek', '_iflyrec', '_itranslate',
     '_judic', '_languageWire', '_lara', '_lingvanex', '_mglip',
     '_mirai', '_modernMt', '_myMemory', '_niutrans', '_papago',
     '_qqFanyi', '_qqTranSmart', '_reverso', '_sogou', '_sysTran',
     '_tilde', '_translateCom', '_translateMe', '_utibet', '_volcEngine',
     '_xunjie', '_yandex', '_yeekit', '_youdao',
-]  # 39
+]  # 40
 
 
 class TranslatorError(Exception):
@@ -5888,6 +5890,98 @@ class Lara(Tse):
         return data if is_detail_result else ''.join(dt['translation'] for dt in data['content']['translations'])
 
 
+class Edge(Tse):
+    edge_user_agent = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                       'Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0')  # the endpoint rejects UAs without a supported Edg/ version
+    traditional_zh_pool = ('zh-TW', 'zh-tw', 'zh-Hant', 'zh-CHT', 'zh-HK', 'zh-hk')
+
+    def __init__(self):
+        super().__init__()
+        self.begin_time = time.time()
+        self.host_url = 'https://edge.microsoft.com/translate'
+        self.api_url = 'https://edge.microsoft.com/translate/translatetext'
+        self.get_language_url = 'https://api.cognitive.microsofttranslator.com/languages?api-version=3.0&scope=translation'
+        self.host_headers = self.get_headers(self.host_url, if_api=False)
+        self.api_headers = self.get_headers(self.host_url, if_api=True, if_json_for_api=True)
+        self.host_headers.update({'User-Agent': self.edge_user_agent})
+        self.api_headers.update({'User-Agent': self.edge_user_agent})
+        self.language_map = None
+        self.session = None
+        self.query_count = 0
+        self.output_auto = 'auto-detect'
+        self.output_zh = 'zh-Hans'
+        self.input_limit = int(5e4)
+        self.default_from_language = self.output_zh
+
+    @staticmethod
+    def to_ms_code(language: str) -> str:
+        """Map generic Chinese codes to Microsoft codes: zh/zh-CN -> zh-Hans (via zh_pool), zh-TW -> zh-Hant."""
+        return 'zh-Hant' if language in Edge.traditional_zh_pool else language
+
+    @Tse.debug_language_map
+    def get_language_map(self, lang_url: str, ss: SessionType, headers: dict, timeout: Optional[float], **kwargs: LangMapKwargsType) -> dict:
+        lang_data = ss.get(lang_url, headers=headers, timeout=timeout).json()
+        lang_list = sorted(set(lang_data['translation'].keys()))
+        return {}.fromkeys(lang_list, lang_list)
+
+    @Tse.time_stat
+    @Tse.check_query
+    def edge_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs: ApiKwargsType) -> Union[str, dict]:
+        """
+        https://edge.microsoft.com/translate/translatetext (keyless; same models as Bing)
+        :param query_text: str, must.
+        :param from_language: str, default 'auto'.
+        :param to_language: str, default 'en'.
+        :param **kwargs:
+                :param timeout: Optional[float], default None.
+                :param proxies: Optional[dict], default None.
+                :param sleep_seconds: float, default 0.
+                :param is_detail_result: bool, default False.
+                :param http_client: str, default 'requests'. Union['requests', 'niquests', 'httpx', 'cloudscraper']
+                :param if_ignore_limit_of_length: bool, default False.
+                :param limit_of_length: int, default 20000.
+                :param if_ignore_empty_query: bool, default False.
+                :param update_session_after_freq: int, default 1000.
+                :param update_session_after_seconds: float, default 1500.
+                :param if_show_time_stat: bool, default False.
+                :param show_time_stat_precision: int, default 2.
+                :param if_print_warning: bool, default True.
+        :return: str or dict
+        """
+
+        timeout = kwargs.get('timeout', None)
+        proxies = kwargs.get('proxies', None)
+        sleep_seconds = kwargs.get('sleep_seconds', 0)
+        http_client = kwargs.get('http_client', 'requests')
+        if_print_warning = kwargs.get('if_print_warning', True)
+        is_detail_result = kwargs.get('is_detail_result', False)
+        update_session_after_freq = kwargs.get('update_session_after_freq', self.default_session_freq)
+        update_session_after_seconds = kwargs.get('update_session_after_seconds', self.default_session_seconds)
+        self.check_input_limit(query_text, self.input_limit)
+        from_language, to_language = self.to_ms_code(from_language), self.to_ms_code(to_language)
+
+        not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
+        not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
+        if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
+            self.begin_time = time.time()
+            self.session = Tse.get_client_session(http_client, proxies)
+            debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
+            self.language_map = self.get_language_map(self.get_language_url, self.session, self.host_headers, timeout, **debug_lang_kwargs)
+
+        from_language, to_language = self.check_language(from_language, to_language, self.language_map,
+                                                         output_zh=self.output_zh, output_auto=self.output_auto)
+
+        params = {'to': to_language, 'isEnterpriseClient': 'false'}
+        if from_language != self.output_auto:  # `from=auto` is rejected (400); omit it to auto-detect
+            params['from'] = from_language
+        r = self.session.post(self.api_url, params=params, headers=self.api_headers, json=[query_text], timeout=timeout)
+        r.raise_for_status()
+        data = r.json()
+        time.sleep(sleep_seconds)
+        self.query_count += 1
+        return data if is_detail_result else data[0]['translations'][0]['text']
+
+
 class TranslatorsServer:
     def __init__(self):
         self.cpu_cnt = os.cpu_count()
@@ -5910,6 +6004,8 @@ class TranslatorsServer:
         self.cloudTranslation = self._cloudTranslation.cloudTranslation_api
         self._deepl = Deepl()
         self.deepl = self._deepl.deepl_api
+        self._edge = Edge()
+        self.edge = self._edge.edge_api
         self._elia = Elia()
         self.elia = self._elia.elia_api
         self._google = GoogleV2(server_region=self.server_region)
@@ -5974,7 +6070,7 @@ class TranslatorsServer:
         self.youdao = self._youdao.youdao_api
         self._translators_dict = {
             'alibaba': self._alibaba, 'apertium': self._apertium, 'argos': self._argos, 'baidu': self._baidu, 'bing': self._bing,
-            'caiyun': self._caiyun, 'cloudTranslation': self._cloudTranslation, 'deepl': self._deepl, 'elia': self._elia, 'google': self._google,
+            'caiyun': self._caiyun, 'cloudTranslation': self._cloudTranslation, 'deepl': self._deepl, 'edge': self._edge, 'elia': self._elia, 'google': self._google,
             'hujiang': self._hujiang, 'iciba': self._iciba, 'iflytek': self._iflytek, 'iflyrec': self._iflyrec, 'itranslate': self._itranslate,
             'judic': self._judic, 'languageWire': self._languageWire, 'lara': self._lara, 'lingvanex': self._lingvanex, 'niutrans': self._niutrans,
             'mglip': self._mglip, 'mirai': self._mirai, 'modernMt': self._modernMt, 'myMemory': self._myMemory, 'papago': self._papago,
@@ -5984,7 +6080,7 @@ class TranslatorsServer:
         }
         self.translators_dict = {
             'alibaba': self.alibaba, 'apertium': self.apertium, 'argos': self.argos, 'baidu': self.baidu, 'bing': self.bing,
-            'caiyun': self.caiyun, 'cloudTranslation': self.cloudTranslation, 'deepl': self.deepl, 'elia': self.elia, 'google': self.google,
+            'caiyun': self.caiyun, 'cloudTranslation': self.cloudTranslation, 'deepl': self.deepl, 'edge': self.edge, 'elia': self.elia, 'google': self.google,
             'hujiang': self.hujiang, 'iciba': self.iciba, 'iflytek': self.iflytek, 'iflyrec': self.iflyrec, 'itranslate': self.itranslate,
             'judic': self.judic, 'languageWire': self.languageWire, 'lara': self.lara, 'lingvanex': self.lingvanex, 'niutrans': self.niutrans,
             'mglip': self.mglip, 'mirai': self.mirai, 'modernMt': self.modernMt, 'myMemory': self.myMemory, 'papago': self.papago,
@@ -6220,6 +6316,8 @@ _cloudTranslation = tss._cloudTranslation
 cloudTranslation = tss.cloudTranslation
 _deepl = tss._deepl
 deepl = tss.deepl
+_edge = tss._edge
+edge = tss.edge
 _elia = tss._elia
 elia = tss.elia
 _google = tss._google
