@@ -57,7 +57,16 @@ def translate_cli() -> None:
         default='alibaba',
         type=str,
         dest='translator',
-        help='eg: bing, google, yandex, etc...',
+        help='eg: bing, google, yandex, etc... A comma-separated list (eg: google,bing) is tried in order as fallbacks.',
+    )
+    parser.add_argument(
+        '--preserve',
+        action='append',
+        default=None,
+        type=str,
+        dest='preserve',
+        metavar='REGEX',
+        help='regex of spans to keep untranslated; repeatable.',
     )
     parser.add_argument(
         '--from',
@@ -103,11 +112,13 @@ def translate_cli() -> None:
 
     try:
         translate_fn = translate_html if bool(args.is_html) else translate_text
+        extra_kwargs = {'preserve': args.preserve} if args.preserve and not args.is_html else {}
         result = translate_fn(
             query_text=query_text,
             translator=args.translator,
             from_language=args.from_language,
             to_language=args.to_language,
+            **extra_kwargs,
         )
         print(result)
     except Exception as e:
