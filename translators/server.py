@@ -3372,37 +3372,22 @@ class Papago(Tse):
         super().__init__()
         self.begin_time = time.time()
         self.host_url = 'https://papago.naver.com'
-        self.api_url = 'https://papago.naver.com/apis/n2mt/translate'  # nsmt
+        self.api_url = 'https://papago.naver.com/api/text/translation'
         self.web_api_url = 'https://papago.naver.net/website'
-        self.lang_detect_url = 'https://papago.naver.com/apis/langs/dect'
-        self.language_url = None
-        self.language_url_pattern = '/home.(.*?).chunk.js'
+        self.lang_detect_url = 'https://papago.naver.com/api/langs/dect'
         self.host_headers = self.get_headers(self.host_url, if_api=False)
         self.api_headers = self.get_headers(self.host_url, if_api=True, if_json_for_api=False)
         self.language_map = None
         self.session = None
-        self.device_id = None
-        self.auth_key = 'v1.8.10_9e022f68fb'  #'v1.8.8_3ab8f7c2df'  #'v1.8.4_bbf86e0446'  # 'v1.7.1_12f919c9b5'  #'v1.6.7_cc60b67557'
         self.query_count = 0
         self.output_zh = 'zh-CN'
         self.input_limit = int(1e3)
         self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
-    def get_language_map(self, lang_html: str, **kwargs: LangMapKwargsType) -> dict:
-        lang_str = re.compile('={ALL:(.*?)}').search(lang_html).group()[1:]
-        lang_str = lang_str.lower().replace('zh-cn', 'zh-CN').replace('zh-tw', 'zh-TW')
-        lang_list = re.compile(',"(.*?)":|,(.*?):').findall(lang_str)
-        lang_list = [j if j else k for j, k in lang_list]
-        lang_list = sorted(list(filter(lambda x: x not in ('all', 'auto'), lang_list)))
+    def get_language_map(self, **kwargs: LangMapKwargsType) -> dict:
+        lang_list = ['ar', 'de', 'en', 'es', 'fr', 'hi', 'id', 'it', 'ja', 'ko', 'pt', 'ru', 'th', 'vi', 'zh-CN', 'zh-TW']
         return {}.fromkeys(lang_list, lang_list)
-
-    # def get_auth_key(self, lang_html: str) -> str:
-    #     return re.compile('AUTH_KEY:"(.*?)"').findall(lang_html)[0]
-
-    def get_authorization(self, url: str, auth_key: str, device_id: str, timestamp: int) -> str:
-        auth = hmac.new(key=auth_key.encode(), msg=f'{device_id}\n{url}\n{timestamp}'.encode(), digestmod='md5').digest()
-        return f'PPG {device_id}:{base64.b64encode(auth).decode()}'
 
     @Tse.time_stat
     @Tse.check_query
@@ -3441,42 +3426,26 @@ class Papago(Tse):
 
         not_update_cond_freq = 1 if self.query_count % update_session_after_freq != 0 else 0
         not_update_cond_time = 1 if time.time() - self.begin_time < update_session_after_seconds else 0
-        if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time and self.auth_key):
-            self.device_id = str(uuid.uuid4())
+        if not (self.session and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
             self.session = Tse.get_client_session(http_client, proxies)
-            host_html = self.session.get(self.host_url, headers=self.host_headers, timeout=timeout).text
-            url_path = re.compile(self.language_url_pattern).search(host_html).group()
-            self.language_url = ''.join([self.host_url, url_path])
-            lang_html = self.session.get(self.language_url, headers=self.host_headers, timeout=timeout).text
+            self.session.get(self.host_url, headers=self.host_headers, timeout=timeout)
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
-            self.language_map = self.get_language_map(lang_html, **debug_lang_kwargs)
+            self.language_map = self.get_language_map(**debug_lang_kwargs)
 
         from_language, to_language = self.check_language(from_language, to_language, self.language_map, output_zh=self.output_zh)
 
-        detect_time = self.get_timestamp()
-        detect_auth = self.get_authorization(self.lang_detect_url, self.auth_key, self.device_id, detect_time)
-        detect_add_headers = {'device-type': 'pc', 'timestamp': str(detect_time), 'authorization': detect_auth}
-        detect_headers = {**self.api_headers, **detect_add_headers}
-
         if from_language == 'auto':
             detect_form = urllib.parse.urlencode({'query': query_text})
-            r_detect = self.session.post(self.lang_detect_url, headers=detect_headers, data=detect_form, timeout=timeout)
+            r_detect = self.session.post(self.lang_detect_url, headers=self.api_headers, data=detect_form, timeout=timeout)
             from_language = r_detect.json()['langCode']
 
-        trans_time = self.get_timestamp()
-        trans_auth = self.get_authorization(self.api_url, self.auth_key, self.device_id, trans_time)
-        trans_update_headers = {'x-apigw-partnerid': 'papago', 'timestamp': str(trans_time), 'authorization': trans_auth}
-        detect_headers.update(trans_update_headers)
-        trans_headers = detect_headers
-
         payload = {
-            'deviceId': self.device_id,
-            'text': query_text, 'source': from_language, 'target': to_language, 'locale': 'en',
-            'dict': 'true', 'dictDisplay': 30, 'honorific': 'false', 'instant': 'false', 'paging': 'false',
+            'source': from_language, 'target': to_language, 'text': query_text,
+            'dict': 'true', 'useGlossary': 'false', 'honorific': 'false', 'dictDisplay': 30,
         }
         payload = urllib.parse.urlencode(payload)
-        r = self.session.post(self.api_url, headers=trans_headers, data=payload, timeout=timeout)
+        r = self.session.post(self.api_url, headers=self.api_headers, data=payload, timeout=timeout)
         r.raise_for_status()
         data = r.json()
         time.sleep(sleep_seconds)
