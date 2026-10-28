@@ -40,7 +40,7 @@ import datetime
 import warnings
 import functools
 import urllib.parse
-from typing import Optional, Union, Tuple, List
+from typing import Optional, Union, Tuple, List, Iterable
 
 import tqdm
 import exejs
@@ -54,6 +54,8 @@ import cryptography.hazmat.primitives.padding as cry_padding
 import cryptography.hazmat.primitives.hashes as cry_hashes
 import cryptography.hazmat.primitives.serialization as cry_serialization
 import cryptography.hazmat.primitives.asymmetric.padding as cry_asym_padding
+
+from translators import preserve as preserve_helper
 
 
 SessionType = Union[aiohttp.ClientSession, httpx.AsyncClient]
@@ -1109,7 +1111,7 @@ class YoudaoV2(Tse):
         self.api_url = 'https://dict.youdao.com/webtranslate'
         self.api_host = 'https://dict.youdao.com'
         self.get_js_url = None
-        self.get_js_pattern = 'https://shared.ydstatic.com/dict/translation-website/([^/]+)/js/app.([^\.]+).js'
+        self.get_js_pattern = r'https://shared.ydstatic.com/dict/translation-website/([^/]+)/js/app.([^\.]+).js'
         self.get_sign_url = None
         self.get_sign_pattern = ''
         self.login_url = 'https://dict.youdao.com/login/acc/query/accountinfo'
@@ -6232,19 +6234,23 @@ class TranslatorsServer:
     async def translate_text(
         self,
         query_text: str,
-        translator: str = "alibaba",
+        translator: Union[str, Iterable[str]] = "alibaba",
         from_language: str = "auto",
         to_language: str = "en",
         if_use_preacceleration: bool = False,
         if_close_session: bool = True,
+        preserve: Optional[Iterable[str]] = None,
+        if_return_engine: bool = False,
         **kwargs: ApiKwargsType,
-    ) -> Union[str, dict]:
+    ) -> Union[str, dict, tuple]:
         """
         :param query_text: str, must.
-        :param translator: str, default 'alibaba'.
+        :param translator: str or list/tuple of str, default 'alibaba'. A list (or a comma string like 'google,bing') is tried in order until one engine succeeds.
         :param from_language: str, default 'auto'.
         :param to_language: str, default 'en'.
         :param if_use_preacceleration: bool, default False.
+        :param preserve: Optional[Union[str, Iterable[str]]], default None. Regex patterns of spans that must stay untranslated, or preset names ('code': code spans, URLs, paths, file names, flags, identifiers, versions, #refs). Not allowed with is_detail_result.
+        :param if_return_engine: bool, default False. If True, return (result, engine_name).
         :param **kwargs:
                 :param is_detail_result: bool, default False.
                 :param if_close_session: bool, default True.
@@ -6267,20 +6273,61 @@ class TranslatorsServer:
                 :param if_print_warning: bool, default True.
                 :param lingvanex_model: str, default 'B2C', choose from ("B2C", "B2B").
                 :param myMemory_mode: str, default "web", choose from ("web", "api").
-        :return: str or dict
+        :return: str or dict, or (str or dict, engine_name) if if_return_engine.
         """
         if_print_warning = kwargs.get('if_print_warning', True)
 
-        if translator not in self.translators_pool:
-            raise TranslatorError
+        if isinstance(translator, str) and ',' not in translator and not preserve:
+            if translator not in self.translators_pool:
+                raise TranslatorError
+
+            if not self.pre_acceleration_label and if_use_preacceleration:
+                _ = await self.preaccelerate()
+
+            result = await self.translators_dict[translator](query_text=query_text, from_language=from_language, to_language=to_language, **kwargs)
+            if if_close_session:
+                await self.close(translator=translator, if_print_warning=if_print_warning)
+            return (result, translator) if if_return_engine else result
+
+        engines = preserve_helper.normalize_engines(translator)
+        if not engines:
+            raise TranslatorError('No translator given.')
+        if preserve and kwargs.get('is_detail_result', False):
+            raise TranslatorError('`preserve` cannot be combined with `is_detail_result`.')
 
         if not self.pre_acceleration_label and if_use_preacceleration:
             _ = await self.preaccelerate()
 
-        result = await self.translators_dict[translator](query_text=query_text, from_language=from_language, to_language=to_language, **kwargs)
-        if if_close_session:
-            await self.close(translator=translator, if_print_warning=if_print_warning)
-        return result
+        masked_text, spans = preserve_helper.mask(query_text, preserve)
+        failures = []
+        for engine in preserve_helper.HEALTH.order(engines):
+            if engine not in self.translators_pool:
+                failures.append((engine, 'not in translators_pool'))
+                continue
+            try:
+                try:
+                    result = await self.translators_dict[engine](query_text=masked_text, from_language=from_language, to_language=to_language, **kwargs)
+                finally:
+                    if if_close_session:
+                        try:
+                            await self.close(translator=engine, if_print_warning=if_print_warning)
+                        except Exception:
+                            pass
+                if isinstance(result, str):
+                    if query_text.strip() and not result.strip():
+                        raise TranslatorError('empty result')
+                    result = preserve_helper.restore(result, spans)
+                elif not result:
+                    raise TranslatorError('empty result')
+            except Exception as e:
+                if not isinstance(e, preserve_helper.PreserveError):
+                    preserve_helper.HEALTH.fail(engine)
+                failures.append((engine, '{}: {}'.format(type(e).__name__, e)))
+                continue
+            preserve_helper.HEALTH.ok(engine)
+            return (result, engine) if if_return_engine else result
+
+        raise TranslatorError('All translators failed: ' + '; '.join('{} -> {}'.format(e, r) for e, r in failures))
 
     async def translate_html(
             self,

@@ -106,11 +106,13 @@ help(ts.translate_text)
 """
 translate_text(query_text: str, translator: str = 'bing', from_language: str = 'auto', to_language: str = 'en', **kwargs) -> Union[str, dict]
     :param query_text: str, must.
-    :param translator: str, default 'alibaba'.
+    :param translator: str or list/tuple of str, default 'alibaba'. A list or comma string is tried in order as fallbacks.
     :param from_language: str, default 'auto'.
     :param to_language: str, default 'en'.
     :param if_use_async: bool, default False.
     :param if_use_preacceleration: bool, default False.
+    :param preserve: Optional[Iterable[str]], default None. Regex patterns of spans to keep untranslated.
+    :param if_return_engine: bool, default False. If True, return (text, engine_name).
     :param **kwargs:
             :param is_detail_result: bool, default False.
             :param http_client: str, default 'requests' (except reverso). Union['requests', 'niquests', 'httpx', 'cloudscraper']
@@ -135,13 +137,36 @@ translate_text(query_text: str, translator: str = 'bing', from_language: str = '
 """
 ```
 
+## Engine Fallback and Preserve
+
+Pass several engines to `translator` (a list, a tuple or a comma string). They are tried in order; an exception, an empty result or a lost placeholder moves on to the next engine. If every engine fails, `TranslatorError` lists each engine and its reason. Use `if_return_engine=True` to get `(text, engine_name)`.
+
+```python
+import translators as ts
+
+text, engine = ts.translate_text(
+    q_text, translator=['google', 'bing', 'alibaba'], to_language='en', if_return_engine=True,
+)
+```
+
+`preserve` takes regex patterns for spans that must stay untranslated (code, versions, names). Each match is swapped for a placeholder token (`QX1Z`, `QX2Z`, ...) before the engine call and restored afterwards. An engine that drops or duplicates a token counts as failed, so the next engine is tried. `preserve` cannot be combined with `is_detail_result=True`. The helpers live in `translators/preserve.py`.
+
+```python
+print(ts.translate_text(
+    'Run `make test` before you push.',
+    translator='google,bing', to_language='zh', preserve=[r'`[^`]*`'],
+))
+```
+
+The CLI accepts the same: `fanyi "Run `make test` first." --translator google,bing --to zh --preserve "`[^`]*`"` (`--preserve` is repeatable).
+
 ## Command Line Interface
 
 You can leverage a simple CLI named **fanyi** that ships with **translators**.
 
 ```sh
 >fanyi --help                                                                                                                                                                                                                               ─╯
-usage: fanyi input [--text_file] [--translator] [--from] [--to] [--is_html] [--version] [--help]
+usage: fanyi input [--text_file] [--translator] [--preserve] [--from] [--to] [--is_html] [--version] [--help]
 
 Translators(fanyi for CLI) is a library that aims to bring free, multiple, enjoyable translations to individuals and students in Python.
 
@@ -151,6 +176,7 @@ positional arguments:
 options:
   --text_file           path to a file to be translated.
   --translator          e.g. bing, google, yandex, etc...
+  --preserve            regex of spans to keep untranslated, repeatable.
   --from                from_language, default `auto` detected.
   --to                  to_language, default `en`.
   --is_html             is_html, default `0`.
