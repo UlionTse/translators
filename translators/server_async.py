@@ -4220,50 +4220,26 @@ class VolcEngine(Tse):
         super().__init__()
         self.begin_time = time.time()
         self.host_url = 'https://translate.volcengine.com'
-        self.api_url = 'https://translate.volcengine.com/web/translate/v1'
-        self.host_headers = self.get_headers(self.host_url, if_api=False)
+        self.api_url = 'https://translate.volcengine.com/crx/translate/v1/'
         self.api_headers = self.get_headers(self.host_url, if_api=True, if_json_for_api=True)
         self.session = None
         self.language_map = None
-        self.ms_token = ''
-        self.x_bogus = 'DFS#todo'
-        self.signature = '_02B#todo'
         self.query_count = 0
-        self.output_auto = 'detect'
+        self.output_auto = 'auto'
         self.output_zh = 'zh'
         self.input_limit = int(5e3)
         self.default_from_language = self.output_zh
 
     @Tse.debug_language_map
-    async def get_language_map(self, host_html: str, **kwargs: LangMapKwargsType) -> dict:
-        lang_list = re.compile('"language_(.*?)":').findall(host_html)
-        lang_list = sorted(list(set(lang_list)))
+    async def get_language_map(self, **kwargs: LangMapKwargsType) -> dict:
+        lang_list = ['auto', 'zh', 'zh-Hant', 'en', 'ja', 'ko', 'fr', 'de', 'es', 'ru']
         return {}.fromkeys(lang_list, lang_list)
 
-    @property
-    def professional_field_map(self) -> dict:
-        data = {
-            '': {'category': '', 'glossary_list': []},
-            'clean': {'category': 'clean', 'glossary_list': []},
-            'novel': {'category': 'novel', 'glossary_list': []},
-            'finance': {'category': 'finance', 'glossary_list': []},
-            'biomedical': {'category': 'biomedical', 'glossary_list': []},
-
-            'ai': {'category': '', 'glossary_list': ['ailab/ai']},
-            'menu': {'category': '', 'glossary_list': ['ailab/menu']},
-            'techfirm': {'category': '', 'glossary_list': ['ailab/techfirm']},
-
-            'ecommerce': {'category': 'ecommerce', 'glossary_list': ['ailab/ecommerce']},
-            'technique': {'category': 'technique', 'glossary_list': ['ailab/technique']},
-        }
-        return data
-
-    @Tse.uncertified
     @Tse.time_stat
     @Tse.check_query
     async def volcEngine_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'en', **kwargs: ApiKwargsType) -> Union[str, dict]:
         """
-        https://translate.volcengine.com
+        https://translate.volcengine.com (browser-extension endpoint, keyless)
         :param query_text: str, must.
         :param from_language: str, default 'auto'.
         :param to_language: str, default 'en'.
@@ -4282,13 +4258,8 @@ class VolcEngine(Tse):
                 :param if_show_time_stat: bool, default False.
                 :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
-                :param professional_field: str, default '', choose from ('', 'clean')
         :return: str or dict
         """
-
-        use_domain = kwargs.get('professional_field', '')
-        if use_domain not in self.professional_field_map:
-            raise TranslatorError
 
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
@@ -4305,29 +4276,17 @@ class VolcEngine(Tse):
         if not (Tse.if_session_exists(self.session) and self.language_map and not_update_cond_freq and not_update_cond_time):
             self.begin_time = time.time()
             self.session = kwargs.get('session', None) or Tse.get_client_session(http_client, proxies)
-            response = await self.session.get(self.host_url, headers=self.host_headers, timeout=timeout)
-            host_html = await Tse.get_response_text(response, http_client)
             debug_lang_kwargs = self.debug_lang_kwargs(from_language, to_language, self.default_from_language, if_print_warning)
-            self.language_map = await self.get_language_map(host_html, **debug_lang_kwargs)
+            self.language_map = await self.get_language_map(**debug_lang_kwargs)
 
         from_language, to_language = self.check_language(from_language, to_language, self.language_map,
                                                          output_auto=self.output_auto, output_zh=self.output_zh)
-        params = {
-            'msToken': self.ms_token,
-            'X-Bogus': self.x_bogus,
-            '_signature': self.signature,
-        }
-        payload = {
-            'text': query_text,
-            'source_language': from_language,
-            'target_language': to_language,
-            'home_language': 'zh',
-            'enable_user_glossary': 'false',
-        }
-        payload.update(self.professional_field_map[use_domain])
-        response = await self.session.post(self.api_url, params=params, json=payload, headers=self.api_headers, timeout=timeout)
+        payload = {'text': query_text, 'source_language': from_language, 'target_language': to_language}
+        response = await self.session.post(self.api_url, json=payload, headers=self.api_headers, timeout=timeout)
         response.raise_for_status()
         data = await Tse.get_response_json(response, http_client)
+        if data.get('base_resp', {}).get('status_code', 0) != 0:
+            raise TranslatorError(data['base_resp'])
         time.sleep(sleep_seconds)
         self.query_count += 1
         return data if is_detail_result else data['translation']
@@ -6249,7 +6208,7 @@ class TranslatorsServer:
                 :param is_detail_result: bool, default False.
                 :param if_close_session: bool, default True.
                 :param http_client: str, default 'aiohttp'. Union['aiohttp', 'httpx']
-                :param professional_field: str, support alibaba(), baidu(), caiyun(), cloudTranslation(), elia(), sysTran(), youdao(), volcEngine() only.
+                :param professional_field: str, support alibaba(), baidu(), caiyun(), cloudTranslation(), elia(), sysTran(), youdao() only.
                 :param session: Optinal[SessionType], default None.
                 :param timeout: Optional[float], default None.
                 :param proxies: Optional[dict], default None.
@@ -6304,7 +6263,7 @@ class TranslatorsServer:
                 :param is_detail_result: bool, default False, must False.
                 :param session: Optional[SessionType], default None.
                 :param http_client: str, default 'aiohttp'. Union['aiohttp', 'httpx']
-                :param professional_field: str, support alibaba(), baidu(), caiyun(), cloudTranslation(), elia(), sysTran(), youdao(), volcEngine() only.
+                :param professional_field: str, support alibaba(), baidu(), caiyun(), cloudTranslation(), elia(), sysTran(), youdao() only.
                 :param session: Optinal[SessionType], default None.
                 :param timeout: Optional[float], default None.
                 :param proxies: Optional[dict], default None.
