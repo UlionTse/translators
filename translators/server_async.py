@@ -4475,11 +4475,11 @@ class MyMemory(Tse):
                 :param if_show_time_stat: bool, default False.
                 :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
-                :param myMemory_mode: str, default "web", choose from ("web", "api").
+                :param myMemory_mode: str, default "api", choose from ("api", "web").
         :return: str or dict
         """
 
-        mode = kwargs.get('myMemory_mode', 'web')
+        mode = kwargs.get('myMemory_mode', 'api')
         timeout = kwargs.get('timeout', None)
         proxies = kwargs.get('proxies', None)
         sleep_seconds = kwargs.get('sleep_seconds', 0)
@@ -6266,7 +6266,7 @@ class TranslatorsServer:
                 :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
                 :param lingvanex_model: str, default 'B2C', choose from ("B2C", "B2B").
-                :param myMemory_mode: str, default "web", choose from ("web", "api").
+                :param myMemory_mode: str, default "api", choose from ("api", "web").
         :return: str or dict
         """
         if_print_warning = kwargs.get('if_print_warning', True)
@@ -6321,7 +6321,7 @@ class TranslatorsServer:
                 :param show_time_stat_precision: int, default 2.
                 :param if_print_warning: bool, default True.
                 :param lingvanex_model: str, default 'B2C', choose from ("B2C", "B2B").
-                :param myMemory_mode: str, default "web", choose from ("web", "api").
+                :param myMemory_mode: str, default "api", choose from ("api", "web").
         :return: str
         """
         if_print_warning = kwargs.get('if_print_warning', True)
