@@ -4529,7 +4529,7 @@ class Mirai(Tse):
         self.host_url = 'https://miraitranslate.com/trial/'
         self.api_url = 'https://trial.miraitranslate.com/trial/api/translate.php'
         self.lang_url = None
-        self.lang_url_pattern = 'main-es2015.(.*?).js'
+        self.lang_url_pattern = r'main\.\w+\.js'
         self.detect_lang_url = 'https://trial.miraitranslate.com/trial/api/detect_lang.php'
         self.trace_url = 'https://trial.miraitranslate.com/trial/api/trace.php'
         self.host_headers = self.get_headers(self.home_url, if_api=False)
@@ -4553,7 +4553,6 @@ class Mirai(Tse):
         lang_pairs = re.compile('"/trial/(\\w{2})/(\\w{2})"').findall(js_html)
         return {f_lang: [v for k, v in lang_pairs if k == f_lang] for f_lang, t_lang in lang_pairs}
 
-    @Tse.uncertified
     @Tse.time_stat
     @Tse.check_query
     async def mirai_api(self, query_text: str, from_language: str = 'auto', to_language: str = 'ja', **kwargs: ApiKwargsType) -> Union[str, dict]:
@@ -4630,17 +4629,17 @@ class Mirai(Tse):
             'adaptPhrases': [],
             'filter_profile': 'nmt',
             'profile': 'inmt',
-            'usePrefix': 'false',
-            'zt': 'true' if 'zt' in (from_language, to_language) else 'false',
+            'usePrefix': False,
+            'zt': 'zt' in (from_language, to_language),
             'InmtTarget': '',
             'InmtTranslateType': 'gisting',
         }
-        response = await self.session.post(self.api_url, data=payload, headers=self.api_text_headers, timeout=timeout)
+        response = await self.session.post(self.api_url, json=payload, headers=self.api_json_headers, timeout=timeout)
         response.raise_for_status()
         data = await Tse.get_response_json(response, http_client)
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return data if is_detail_result else data['ouputs'][0]['output'][0]['translation']
+        return data if is_detail_result else data['outputs'][0]['output'][0]['translation']
 
 
 class Apertium(Tse):
