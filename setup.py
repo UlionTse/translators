@@ -74,7 +74,7 @@ setuptools.setup(
         'brotli>=1.2.0',
     ],
     python_requires='>=3.8',
-    extras_require={'pypi': ['build>=1.4.0', 'twine>=6.2.0', 'setuptools>=75.3.0']},
+    extras_require={'pypi': ['build>=1.4.0', 'twine>=6.2.0', 'setuptools>=75.3.0'], 'keyring': ['keyring>=24']},
     zip_safe=False,
     entry_points={
         'console_scripts':
