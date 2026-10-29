@@ -2039,7 +2039,10 @@ class Sogou(Tse):
         data = await Tse.get_response_json(response, http_client)
         time.sleep(sleep_seconds)
         self.query_count += 1
-        return data if is_detail_result else data['data']['translate']['dit']
+        translate = data['data']['translate']
+        if str(translate.get('errorCode', '0')) != '0':  # a rejected call puts a random id in 'dit'
+            raise TranslatorError(f"sogou errorCode {translate.get('errorCode')}")
+        return data if is_detail_result else translate['dit']
 
 
 class Caiyun(Tse):
