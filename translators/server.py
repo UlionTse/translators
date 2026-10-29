@@ -39,7 +39,7 @@ import datetime
 import warnings
 import functools
 import urllib.parse
-from typing import Optional, Union, Tuple, List
+from typing import Optional, Union, Tuple, List, Iterable
 
 import tqdm
 import httpx
@@ -55,6 +55,11 @@ import cryptography.hazmat.primitives.padding as cry_padding
 import cryptography.hazmat.primitives.hashes as cry_hashes
 import cryptography.hazmat.primitives.serialization as cry_serialization
 import cryptography.hazmat.primitives.asymmetric.padding as cry_asym_padding
+
+from translators import preserve as preserve_helper
+from translators import retired as retired_helper
+from translators import credentials as credentials_helper
+from translators import keyed as keyed_helper
 
 
 LangMapKwargsType = Union[str, bool]
@@ -1048,7 +1053,7 @@ class YoudaoV2(Tse):
         self.api_url = 'https://dict.youdao.com/webtranslate'
         self.api_host = 'https://dict.youdao.com'
         self.get_js_url = None
-        self.get_js_pattern = 'https://shared.ydstatic.com/dict/translation-website/([^/]+)/js/app.([^\.]+).js'
+        self.get_js_pattern = r'https://shared.ydstatic.com/dict/translation-website/([^/]+)/js/app.([^\.]+).js'
         self.get_sign_url = None
         self.get_sign_pattern = ''
         self.login_url = 'https://dict.youdao.com/login/acc/query/accountinfo'
@@ -5992,7 +5997,12 @@ class TranslatorsServer:
             'tilde': self.tilde, 'translateCom': self.translateCom, 'translateMe': self.translateMe, 'utibet': self.utibet, 'volcEngine': self.volcEngine,
             'xunjie': self.xunjie, 'yandex': self.yandex, 'yeekit': self.yeekit, 'youdao': self.youdao,
         }
+        for _name in list(retired_helper.RETIRED_TRANSLATORS) + list(retired_helper.TRANSLATOR_ALIASES):
+            self.translators_dict.pop(_name, None)
+            self._translators_dict.pop(_name, None)
         self.translators_pool = list(self.translators_dict.keys())
+        self._keyed = {name: cls() for name, cls in keyed_helper.KEYED_CLASSES.items()}
+        self.keyed_translators = self.refresh_keyed_engines()
         self.not_en_langs = {"utibet": "ti", "mglip": "mon"}
         self.not_zh_langs = {
             "languageWire": "fr",
@@ -6006,21 +6016,54 @@ class TranslatorsServer:
         self.success_translators_pool = []
         self.failure_translators_pool = []
 
+    def configured_keyed(self) -> List[str]:
+        """Keyed engines currently in translators_pool, in keyed_helper.KEYED_PRIORITY order."""
+        return [n for n in keyed_helper.KEYED_PRIORITY if n in self.translators_pool]
+
+    def refresh_keyed_engines(self, path: Optional[str] = None) -> List[str]:
+        """
+        Put keyed (official API) engines whose credentials are configured into translators_pool, drop the rest.
+        :param path: credentials file, default ~/.config/translators/credentials.toml or $TRANSLATORS_CREDENTIALS.
+        :return: names of the configured keyed engines.
+        """
+        creds = credentials_helper.load(path)
+        on = [n for n in self._keyed if credentials_helper.is_configured(n, creds)]
+        for name, engine in self._keyed.items():
+            if name in on:
+                self.translators_dict[name] = engine.api
+                self._translators_dict[name] = engine
+            else:
+                self.translators_dict.pop(name, None)
+                self._translators_dict.pop(name, None)
+        self.translators_pool[:] = list(self.translators_dict.keys())
+        return on
+
+    @staticmethod
+    def _resolve_translator(translator: str) -> str:
+        try:
+            return retired_helper.resolve(translator)
+        except LookupError as e:
+            raise TranslatorError(str(e))
+
     def translate_text(
         self,
         query_text: str,
-        translator: str = 'alibaba',
+        translator: Union[str, Iterable[str]] = 'alibaba',
         from_language: str = 'auto',
         to_language: str = 'en',
         if_use_preacceleration: bool = False,
+        preserve: Optional[Iterable[str]] = None,
+        if_return_engine: bool = False,
         **kwargs: ApiKwargsType,
-    ) -> Union[str, dict]:
+    ) -> Union[str, dict, tuple]:
         """
         :param query_text: str, must.
-        :param translator: str, default 'alibaba'.
+        :param translator: str or list/tuple of str, default 'alibaba'. A list (or a comma string like 'google,bing') is tried in order until one engine succeeds.
         :param from_language: str, default 'auto'.
         :param to_language: str, default 'en'.
         :param if_use_preacceleration: bool, default False.
+        :param preserve: Optional[Union[str, Iterable[str]]], default None. Regex patterns of spans that must stay untranslated, or preset names ('code': code spans, URLs, paths, file names, flags, identifiers, versions, #refs). Not allowed with is_detail_result.
+        :param if_return_engine: bool, default False. If True, return (result, engine_name).
         :param **kwargs:
                 :param is_detail_result: bool, default False.
                 :param http_client: str, default 'requests' (except reverso). Union['requests', 'niquests', 'httpx', 'cloudscraper']
@@ -6041,16 +6084,58 @@ class TranslatorsServer:
                 :param if_print_warning: bool, default True.
                 :param lingvanex_model: str, default 'B2C', choose from ("B2C", "B2B").
                 :param myMemory_mode: str, default "web", choose from ("web", "api").
-        :return: str or dict
+        :return: str or dict, or (str or dict, engine_name) if if_return_engine.
         """
 
-        if translator not in self.translators_pool:
-            raise TranslatorError
+        if isinstance(translator, str) and ',' not in translator and not preserve and translator.strip() not in preserve_helper.CHAIN_TOKENS:
+            translator = self._resolve_translator(translator)
+            if translator not in self.translators_pool:
+                raise TranslatorError
+
+            if not self.pre_acceleration_label and if_use_preacceleration:
+                _ = self.preaccelerate()
+
+            result = self.translators_dict[translator](query_text=query_text, from_language=from_language, to_language=to_language, **kwargs)
+            return (result, translator) if if_return_engine else result
+
+        engines = preserve_helper.expand_chain(preserve_helper.normalize_engines(translator), self.configured_keyed())
+        if not engines:
+            raise TranslatorError('No translator given.')
+        if preserve and kwargs.get('is_detail_result', False):
+            raise TranslatorError('`preserve` cannot be combined with `is_detail_result`.')
 
         if not self.pre_acceleration_label and if_use_preacceleration:
             _ = self.preaccelerate()
 
-        return self.translators_dict[translator](query_text=query_text, from_language=from_language, to_language=to_language, **kwargs)
+        kwargs.setdefault('timeout', preserve_helper.CHAIN_TIMEOUT)
+        masked_text, spans = preserve_helper.mask(query_text, preserve)
+        failures, resolved = [], []
+        for engine in engines:
+            try:
+                resolved.append(retired_helper.resolve(engine))
+            except LookupError as e:
+                failures.append((engine, str(e)))
+        for engine in preserve_helper.HEALTH.order(list(dict.fromkeys(resolved))):
+            if engine not in self.translators_pool:
+                failures.append((engine, 'not in translators_pool'))
+                continue
+            try:
+                result = self.translators_dict[engine](query_text=masked_text, from_language=from_language, to_language=to_language, **kwargs)
+                if isinstance(result, str):
+                    if query_text.strip() and not result.strip():
+                        raise TranslatorError('empty result')
+                    result = preserve_helper.restore(result, spans)
+                elif not result:
+                    raise TranslatorError('empty result')
+            except Exception as e:
+                if not isinstance(e, preserve_helper.PreserveError):
+                    preserve_helper.HEALTH.fail(engine, preserve_helper.is_rate_limited(e))
+                failures.append((engine, '{}: {}'.format(type(e).__name__, e)))
+                continue
+            preserve_helper.HEALTH.ok(engine)
+            return (result, engine) if if_return_engine else result
+
+        raise TranslatorError('All translators failed: ' + '; '.join('{} -> {}'.format(e, r) for e, r in failures))
 
     def translate_html(
         self,
@@ -6095,6 +6180,7 @@ class TranslatorsServer:
         :return: str
         """
 
+        translator = self._resolve_translator(translator)
         if translator not in self.translators_pool or kwargs.get('is_detail_result', False) or n_jobs > self.cpu_cnt:
             raise TranslatorError
         if parallel_way not in ['threading', 'multiprocessing']:
@@ -6148,6 +6234,7 @@ class TranslatorsServer:
         return result
 
     def get_languages(self, translator: str = 'bing'):
+        translator = self._resolve_translator(translator)
         language_map = self._translators_dict[translator].language_map
         if language_map:
             return language_map
@@ -6288,6 +6375,7 @@ translate_html = tss.translate_html
 translators_pool = tss.translators_pool
 get_languages = tss.get_languages
 get_region_of_server = tss.get_region_of_server
+refresh_keyed_engines = tss.refresh_keyed_engines
 
 preaccelerate = tss.preaccelerate
 speedtest = tss.speedtest
